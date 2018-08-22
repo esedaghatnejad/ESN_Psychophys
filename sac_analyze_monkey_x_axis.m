@@ -36,6 +36,7 @@ for counter_file = 1 : 1 : length(SESSION_PARAMS.filenames)
     %% Analyze trials
     clearvars -except counter_file SESSION_PARAMS TRIALS_DATA_ALL SACS_PRIM_DATA_ALL data;
     num_trials = length(data.trials);
+    if ~exist('counter_file','var'); counter_file = 1; end;
     fprintf([SESSION_PARAMS.filename{counter_file} ': Analyzing TRIALS ...'])
     for counter_trial = 1 : 1 : num_trials-1
         %% Extract Trial Varibales
@@ -88,38 +89,44 @@ for counter_file = 1 : 1 : length(SESSION_PARAMS.filenames)
         TRIAL.ind_trial_end   = find(time_array<TRIAL.time_end, 1, 'last');
         TRIAL.inds_trial          = TRIAL.ind_trial_str:TRIAL.ind_trial_end;
         % trial timeseries
-        TRIAL.inds_invalid = false(1, length(TRIAL.inds_trial));
-        TRIAL.time     = double(data.t(1, TRIAL.inds_trial));                                      TRIAL.inds_invalid = isnan(TRIAL.time)     | TRIAL.inds_invalid;
-        TRIAL.eye_r_px = double(data.right_horizontal_eye(1, TRIAL.inds_trial));                   TRIAL.inds_invalid = isnan(TRIAL.eye_r_px) | TRIAL.inds_invalid;
-        TRIAL.eye_r_py = double(data.right_vertical_eye(  1, TRIAL.inds_trial));                   TRIAL.inds_invalid = isnan(TRIAL.eye_r_py) | TRIAL.inds_invalid;
-        TRIAL.eye_l_px = double(data.left_horizontal_eye( 1, TRIAL.inds_trial));                   TRIAL.inds_invalid = isnan(TRIAL.eye_l_px) | TRIAL.inds_invalid;
-        TRIAL.eye_l_py = double(data.left_vertical_eye(   1, TRIAL.inds_trial));                   TRIAL.inds_invalid = isnan(TRIAL.eye_l_py) | TRIAL.inds_invalid;
-        TRIAL.eye_r_vx = double(data.right_horizontal_eye_velocity_filtered(1, TRIAL.inds_trial)); TRIAL.inds_invalid = isnan(TRIAL.eye_r_vx) | TRIAL.inds_invalid;
-        TRIAL.eye_r_vy = double(data.right_vertical_eye_velocity_filtered(  1, TRIAL.inds_trial)); TRIAL.inds_invalid = isnan(TRIAL.eye_r_vy) | TRIAL.inds_invalid;
-        TRIAL.eye_l_vx = double(data.left_horizontal_eye_velocity_filtered( 1, TRIAL.inds_trial)); TRIAL.inds_invalid = isnan(TRIAL.eye_l_vx) | TRIAL.inds_invalid;
-        TRIAL.eye_l_vy = double(data.left_vertical_eye_velocity_filtered(   1, TRIAL.inds_trial)); TRIAL.inds_invalid = isnan(TRIAL.eye_l_vy) | TRIAL.inds_invalid;
-        TRIAL.eye_r_vm = sqrt(TRIAL.eye_r_vx.^2 + TRIAL.eye_r_vy.^2);
-        TRIAL.eye_l_vm = sqrt(TRIAL.eye_l_vx.^2 + TRIAL.eye_l_vy.^2);
-        TRIAL.tgt_px   = double(data.target_x(1, TRIAL.inds_trial)); TRIAL.inds_invalid = isnan(TRIAL.tgt_px) | TRIAL.inds_invalid;
-        TRIAL.tgt_py   = double(data.target_y(1, TRIAL.inds_trial)); TRIAL.inds_invalid = isnan(TRIAL.tgt_py) | TRIAL.inds_invalid;
+        TRIAL.inds_invalid   = false(1, length(TRIAL.inds_trial));
+        TRIAL.time_eyelink   = double(data.eyelink_time(1, TRIAL.inds_trial));                           TRIAL.inds_invalid = isnan(TRIAL.time_eyelink) | TRIAL.inds_invalid;
+        TRIAL.eye_r_px       = double(data.right_horizontal_eye(1, TRIAL.inds_trial));                   TRIAL.inds_invalid = isnan(TRIAL.eye_r_px)     | TRIAL.inds_invalid;
+        TRIAL.eye_r_py       = double(data.right_vertical_eye(  1, TRIAL.inds_trial));                   TRIAL.inds_invalid = isnan(TRIAL.eye_r_py)     | TRIAL.inds_invalid;
+        TRIAL.eye_l_px       = double(data.left_horizontal_eye( 1, TRIAL.inds_trial));                   TRIAL.inds_invalid = isnan(TRIAL.eye_l_px)     | TRIAL.inds_invalid;
+        TRIAL.eye_l_py       = double(data.left_vertical_eye(   1, TRIAL.inds_trial));                   TRIAL.inds_invalid = isnan(TRIAL.eye_l_py)     | TRIAL.inds_invalid;
+        TRIAL.eye_r_vx       = double(data.right_horizontal_eye_velocity_filtered(1, TRIAL.inds_trial)); TRIAL.inds_invalid = isnan(TRIAL.eye_r_vx)     | TRIAL.inds_invalid;
+        TRIAL.eye_r_vy       = double(data.right_vertical_eye_velocity_filtered(  1, TRIAL.inds_trial)); TRIAL.inds_invalid = isnan(TRIAL.eye_r_vy)     | TRIAL.inds_invalid;
+        TRIAL.eye_l_vx       = double(data.left_horizontal_eye_velocity_filtered( 1, TRIAL.inds_trial)); TRIAL.inds_invalid = isnan(TRIAL.eye_l_vx)     | TRIAL.inds_invalid;
+        TRIAL.eye_l_vy       = double(data.left_vertical_eye_velocity_filtered(   1, TRIAL.inds_trial)); TRIAL.inds_invalid = isnan(TRIAL.eye_l_vy)     | TRIAL.inds_invalid;
+        TRIAL.eye_r_vm       = sqrt(TRIAL.eye_r_vx.^2 + TRIAL.eye_r_vy.^2);
+        TRIAL.eye_l_vm       = sqrt(TRIAL.eye_l_vx.^2 + TRIAL.eye_l_vy.^2);
+        TRIAL.time_tgt       = double(data.t(1, TRIAL.inds_trial));                                      TRIAL.inds_invalid = isnan(TRIAL.time_tgt)     | TRIAL.inds_invalid;
+        TRIAL.tgt_px         = double(data.target_x(1, TRIAL.inds_trial));                               TRIAL.inds_invalid = isnan(TRIAL.tgt_px)       | TRIAL.inds_invalid;
+        TRIAL.tgt_py         = double(data.target_y(1, TRIAL.inds_trial));                               TRIAL.inds_invalid = isnan(TRIAL.tgt_py)       | TRIAL.inds_invalid;
+        TRIAL.reward         = double(data.reward(1, TRIAL.inds_trial));                                 TRIAL.inds_invalid = isnan(TRIAL.reward)       | TRIAL.inds_invalid;
         TRIAL.target_visible = logical(double(data.target_visible(1, TRIAL.inds_trial)));
-        TRIAL.reward         = double(data.reward(1, TRIAL.inds_trial)); TRIAL.inds_invalid = isnan(TRIAL.reward) | TRIAL.inds_invalid;
+        % correct for the bias between time_eyelink and time_tgt
+        TRIAL.time_eyelink   = TRIAL.time_eyelink .* (TRIAL.time_tgt(end)-TRIAL.time_tgt(1)) ./ (TRIAL.time_eyelink(end)-TRIAL.time_eyelink(1));
+        TRIAL.time_eyelink   = TRIAL.time_eyelink - TRIAL.time_eyelink(1) + TRIAL.time_tgt(1);
+        TRIAL.time_1K        = TRIAL.time_eyelink(1) : 0.001 : TRIAL.time_eyelink(end);
+        % make non unique points of eye traces invalid
+        TRIAL.inds_invalid = ([false (diff(TRIAL.time_eyelink)==0)])       | TRIAL.inds_invalid;
         % remove invalid values
-        TRIAL.time(    TRIAL.inds_invalid) = [];
-        TRIAL.eye_r_px(TRIAL.inds_invalid) = [];
-        TRIAL.eye_r_py(TRIAL.inds_invalid) = [];
-        TRIAL.eye_l_px(TRIAL.inds_invalid) = [];
-        TRIAL.eye_l_py(TRIAL.inds_invalid) = [];
+        TRIAL.time_eyelink(TRIAL.inds_invalid) = [];
+        TRIAL.eye_r_px(    TRIAL.inds_invalid) = [];
+        TRIAL.eye_r_py(    TRIAL.inds_invalid) = [];
+        TRIAL.eye_l_px(    TRIAL.inds_invalid) = [];
+        TRIAL.eye_l_py(    TRIAL.inds_invalid) = [];
         % reconstruct eye_r data
-        TRIAL.time_1K  = TRIAL.time(1) : 0.001 : TRIAL.time(end);
-        TRIAL.eye_r_px = interp1(TRIAL.time, TRIAL.eye_r_px, TRIAL.time_1K, 'linear', 'extrap');
-        TRIAL.eye_r_py = interp1(TRIAL.time, TRIAL.eye_r_py, TRIAL.time_1K, 'linear', 'extrap');
+        TRIAL.eye_r_px = interp1(TRIAL.time_eyelink, TRIAL.eye_r_px, TRIAL.time_1K, 'linear', 'extrap');
+        TRIAL.eye_r_py = interp1(TRIAL.time_eyelink, TRIAL.eye_r_py, TRIAL.time_1K, 'linear', 'extrap');
         TRIAL.eye_r_vx = diff(TRIAL.eye_r_px)./diff(TRIAL.time_1K); TRIAL.eye_r_vx=[TRIAL.eye_r_vx(1) TRIAL.eye_r_vx];
         TRIAL.eye_r_vy = diff(TRIAL.eye_r_py)./diff(TRIAL.time_1K); TRIAL.eye_r_vy=[TRIAL.eye_r_vy(1) TRIAL.eye_r_vy];
         TRIAL.eye_r_vm = sqrt(TRIAL.eye_r_vx.^2 + TRIAL.eye_r_vy.^2);
         % reconstruct eye_l data
-        TRIAL.eye_l_px = interp1(TRIAL.time, TRIAL.eye_l_px, TRIAL.time_1K, 'linear', 'extrap');
-        TRIAL.eye_l_py = interp1(TRIAL.time, TRIAL.eye_l_py, TRIAL.time_1K, 'linear', 'extrap');
+        TRIAL.eye_l_px = interp1(TRIAL.time_eyelink, TRIAL.eye_l_px, TRIAL.time_1K, 'linear', 'extrap');
+        TRIAL.eye_l_py = interp1(TRIAL.time_eyelink, TRIAL.eye_l_py, TRIAL.time_1K, 'linear', 'extrap');
         TRIAL.eye_l_vx = diff(TRIAL.eye_l_px)./diff(TRIAL.time_1K); TRIAL.eye_l_vx=[TRIAL.eye_l_vx(1) TRIAL.eye_l_vx];
         TRIAL.eye_l_vy = diff(TRIAL.eye_l_py)./diff(TRIAL.time_1K); TRIAL.eye_l_vy=[TRIAL.eye_l_vy(1) TRIAL.eye_l_vy];
         TRIAL.eye_l_vm = sqrt(TRIAL.eye_l_vx.^2 + TRIAL.eye_l_vy.^2);
@@ -160,143 +167,20 @@ for counter_file = 1 : 1 : length(SESSION_PARAMS.filenames)
         sampling_freq = 1000.0;
         cutoff_freq = 100.0;
         [b_butter,a_butter] = butter(3,(cutoff_freq/(sampling_freq/2)), 'low');
-        % search slot for primary saccade
-        sac_inds_search_slot = TRIAL.ind_state_cue_present : 1 : TRIAL.ind_state_iti;
-        % extract primary sac
-        sac_analyze_flag  = true;
-        sac_validity      = true;
-        sac_vm            = TRIAL.eye_r_vm_filt(1, sac_inds_search_slot);
-        sac_vm_filt_heavy = filtfilt(b_butter,a_butter,sac_vm);
-        [~, ind_sac_vmax] = findpeaks(sac_vm_filt_heavy, 'MinPeakProminence',75, 'MinPeakHeight', 100);
-        % peaks happen very close to each other
-        if(sum(diff(ind_sac_vmax)<80))
-            sac_validity         = false;
-        end
-        [sac_vmax, ind_sac_vmax] = findpeaks(sac_vm_filt_heavy, 'MinPeakProminence',100,'SortStr','descend', 'NPeaks', 1, 'MinPeakHeight', 150);
         
-        if(isempty(sac_vmax))
-            sac_validity         = false;
-        end
+        trial_eye_velocity_trace = TRIAL.eye_r_vm_filt;
+        ind_search_begin = TRIAL.ind_state_cue_present;
+        ind_search_end    = TRIAL.ind_state_iti;
         
-        if(~sac_validity)
-            ind_sac_vmax         = round((TRIAL.ind_state_sac_onset+TRIAL.ind_state_reward)/2);
-            inds_sac             = (ind_sac_vmax -61) : 1 : min([(ind_sac_vmax -61+149), length(TRIAL.time_1K)]);
-            ind_sac_start        = ind_sac_vmax - 50;
-            ind_sac_finish       = ind_sac_vmax + 50;
-            sac_vmax             = TRIAL.eye_r_vm_filt(ind_sac_vmax);
-            sac_analyze_flag     = false;
-        end
+        output_ = ESN_Sac_Finder(trial_eye_velocity_trace, ind_search_begin, ind_search_end);
         
-        % find the ind_sac_vmax in original time series (non heavily filtered)
-        % re-define the search slot
-        if(sac_analyze_flag)
-            if ((ind_sac_vmax+10) > (length(sac_vm))) || ((ind_sac_vmax-10) < 1)
-                ind_sac_vmax_ = 9; % handling an error in which the max happened in the end
-            else
-                [~, ind_sac_vmax_] = max(sac_vm(ind_sac_vmax-10:ind_sac_vmax+10));
-            end
-            ind_sac_vmax_   = ind_sac_vmax_ + ((ind_sac_vmax-10) - 1);
-            ind_sac_vmax    = ind_sac_vmax_ + (sac_inds_search_slot(1) - 1);
-            % put the v_max at index 100, narrow the search to 300ms
-            sac_inds_search_slot = (ind_sac_vmax - 100) : 1 : min([(ind_sac_vmax - 100 + 299), length(TRIAL.time_1K)]);
-            sac_vm               = TRIAL.eye_r_vm_filt(1, sac_inds_search_slot);
-            sac_vm_filt_heavy    = filtfilt(b_butter,a_butter,sac_vm);
-        end
+        sac_validity   = output_.validity;
+        inds_sac       = output_.inds;
+        ind_sac_start  = output_.ind_start;
+        ind_sac_vmax   = output_.ind_vmax;
+        ind_sac_finish = output_.ind_finish;
         
-        % find sac begining based on 50deg/s threshold
-        sac_begining_flag = true;
-        if(sac_analyze_flag)
-            % find the index that sac_vm_filt_heavy is more than 50deg/s
-            ind_sac_start_50        = find(sac_vm_filt_heavy(1:100)<50, 1, 'last');
-            % if the data is too noisy set the ind_sac_start to 50 and make the saccade invalid
-            if(isempty(ind_sac_start_50))
-                ind_sac_start     = 50;
-                sac_validity      = false;
-                sac_begining_flag = false;
-            end
-        end
-        
-        % find sac begining based on 20deg/s threshold
-        ind_sac_start_20 = [];
-        if (sac_begining_flag && sac_analyze_flag)
-            ind_sac_start_20    = find(sac_vm_filt_heavy(1:ind_sac_start_50)<20, 1, 'last');
-        end
-        if(isempty(ind_sac_start_20) && sac_begining_flag && sac_analyze_flag)
-            % if the sac start is between 20deg/s and 50deg/s then
-            % find the ind_sac_start from original data based on 50deg/s threshold
-            window_half_length = 10;
-            ind_sac_start_       = find(sac_vm( max([(ind_sac_start_50-window_half_length), 1]) : min([(ind_sac_start_50+window_half_length), length(sac_vm)]) )<50, 1, 'last') - 1 + (max([(ind_sac_start_50-window_half_length), 1]) );
-            if(isempty(ind_sac_start_))
-                % if for whatever reason the original data is noisy but heavily filtered data is OK
-                % use the index from heavily filtered data
-                ind_sac_start    = ind_sac_start_50;
-            else
-                ind_sac_start    = ind_sac_start_;
-            end
-        end
-        if((~isempty(ind_sac_start_20)) && sac_begining_flag && sac_analyze_flag)
-            % find the ind_sac_start from original data based on 20deg/s threshold
-            window_half_length = 10;
-            ind_sac_start_       = find(sac_vm(max([(ind_sac_start_20-window_half_length), 1]) : min([(ind_sac_start_20+window_half_length), length(sac_vm)]) )<20, 1, 'last') - 1 + (max([(ind_sac_start_20-window_half_length), 1]) );
-            if(isempty(ind_sac_start_))
-                % if for whatever reason the original data is noisy but heavily filtered data is OK
-                % use the index from heavily filtered data
-                ind_sac_start    = ind_sac_start_20;
-            else
-                ind_sac_start    = ind_sac_start_;
-            end
-        end
-        
-        % find sac ending based on 50deg/s threshold
-        sac_ending_flag = true;
-        if(sac_analyze_flag)
-            % find the index that sac_vm_filt_heavy is less than 50deg/s
-            ind_sac_finish_50       = find(sac_vm_filt_heavy(100:end)<50, 1, 'first') - 1 + 100;
-            if(isempty(ind_sac_finish_50))
-                % if the data is too noisy set the ind_sac_finish to 150 and make the saccade invalid
-                ind_sac_finish      = 150;
-                sac_validity        = false;
-                sac_ending_flag     = false;
-            end
-        end
-        
-        % find sac ending based on 20deg/s threshold
-        ind_sac_finish_20 = [];
-        if ( sac_ending_flag && sac_analyze_flag)
-            ind_sac_finish_20   = find(sac_vm_filt_heavy( 100 : min([(ind_sac_finish_50+50), length(sac_vm_filt_heavy)]) )<20, 1, 'first') - 1 + 100;
-        end
-        if(isempty(ind_sac_finish_20) && sac_ending_flag && sac_analyze_flag)
-            % if the sac end is between 20deg/s and 50deg/s then
-            % find the ind_sac_finish from original data based on 50deg/s threshold
-            window_half_length = 10;
-            ind_sac_finish_       = find(sac_vm(max([(ind_sac_finish_50-window_half_length), 1]) : min([(ind_sac_finish_50+window_half_length), length(sac_vm)]) )<50, 1, 'first') - 1 + (max([(ind_sac_finish_50-window_half_length), 1]) );
-            if(isempty(ind_sac_finish_))
-                % if for whatever reason the original data is noisy but heavily filtered data is OK
-                % use the index from heavily filtered data
-                ind_sac_finish    = ind_sac_finish_50;
-            else
-                ind_sac_finish    = ind_sac_finish_;
-            end
-        end
-        if((~isempty(ind_sac_finish_20)) && sac_ending_flag && sac_analyze_flag)
-            % find the ind_sac_finish from original data based on 20deg/s threshold
-            window_half_length = 10;
-            ind_sac_finish_       = find(sac_vm(max([(ind_sac_finish_20-window_half_length), 1]) : min([(ind_sac_finish_20+window_half_length), length(sac_vm)]) )<20, 1, 'first') - 1 + (max([(ind_sac_finish_20-window_half_length), 1]));
-            if(isempty(ind_sac_finish_))
-                % if for whatever reason the original data is noisy but heavily filtered data is OK
-                % use the index from heavily filtered data
-                ind_sac_finish    = ind_sac_finish_20;
-            else
-                ind_sac_finish    = ind_sac_finish_;
-            end
-        end
-        
-        if(sac_analyze_flag)
-            ind_sac_start    = ind_sac_vmax - 1 - 100 + ind_sac_start;
-            ind_sac_finish   = ind_sac_vmax - 1 - 100 + ind_sac_finish;
-            inds_sac         = (ind_sac_vmax -61) : 1 : min([(ind_sac_vmax -61+149), length(TRIAL.time_1K)]);
-        end
-        
+        %% Save Primary Sac data to SAC_PRIM
         SAC_PRIM.validity    = sac_validity;
         SAC_PRIM.inds        = inds_sac;
         SAC_PRIM.ind_start   = ind_sac_start;
@@ -421,7 +305,7 @@ for counter_file = 1 : 1 : length(SESSION_PARAMS.filenames)
     TRIALS_DATA_ALL(counter_file) = TRIALS_DATA;
     SACS_PRIM_DATA_ALL(counter_file) = SACS_PRIM_DATA;
     fprintf('#######################################\n')
-
+    
     
 end
 

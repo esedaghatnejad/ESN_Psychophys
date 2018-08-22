@@ -1,5 +1,11 @@
 function output_ = ESN_Sac_Finder(trial_eye_velocity_trace, ind_search_begin, ind_search_end, params)
 % Author: Ehsan Sedaghat-Nejad (esedaghatnejad@gmail.com)
+% You can use this code with any of the following input configurations
+% output_ = ESN_Sac_Finder(trial_eye_velocity_trace)
+% output_ = ESN_Sac_Finder(trial_eye_velocity_trace, ind_search_begin)
+% output_ = ESN_Sac_Finder(trial_eye_velocity_trace, ind_search_begin, ind_search_end)
+% output_ = ESN_Sac_Finder(trial_eye_velocity_trace, ind_search_begin, ind_search_end, params)
+%
 % This function receives the velocity trajectory for a trial (or a portion of it) along with the
 % indeces for beginning and ending of the search window. it will return an structure as output which
 % contains:
@@ -54,8 +60,10 @@ length_input_trace = length(trial_eye_velocity_trace);
 % filter params
 [b_butter,a_butter] = butter(3,(cutoff_freq_/(sampling_freq_/2)), 'low');
 
-ind_search_begin = round(max([ind_search_begin, 1])); % make sure that the beginning of the search is not less than 1 and is also an integer
-ind_search_end    = round(min([length_input_trace, ind_search_end]));  % make sure that the ending of the search is not more than length of data and is also an integer
+% make sure that the beginning of the search is not less than 1 and is also an integer
+ind_search_begin = round(max([ind_search_begin, 1])); 
+% make sure that the ending of the search is not more than length of data and is also an integer
+ind_search_end    = round(min([length_input_trace, ind_search_end]));  
 % search slot for primary saccade
 sac_inds_search_slot = ind_search_begin : 1 : ind_search_end;
 % extract primary sac
@@ -63,12 +71,16 @@ sac_analyze_flag  = true;
 sac_validity      = true;
 sac_vm            = trial_eye_velocity_trace(sac_inds_search_slot);
 sac_vm_filt_heavy = filtfilt(b_butter,a_butter,sac_vm);
-[~, ind_sac_vmax] = findpeaks(sac_vm_filt_heavy, 'MinPeakProminence',MinPeakProminence_, 'MinPeakHeight', MinPeakHeight_);
+[~, ind_sac_vmax] = findpeaks(sac_vm_filt_heavy, 'MinPeakProminence',MinPeakProminence_, ...
+                                                 'MinPeakHeight', MinPeakHeight_);
 % peaks happen very close to each other
 if(sum(diff(ind_sac_vmax)<80))
     sac_validity         = false;
 end
-[sac_vmax, ind_sac_vmax] = findpeaks(sac_vm_filt_heavy, 'MinPeakProminence',MinPeakProminence_,'SortStr','descend', 'NPeaks', 1, 'MinPeakHeight', MinPeakHeight_);
+[sac_vmax, ind_sac_vmax] = findpeaks(sac_vm_filt_heavy, 'MinPeakProminence',MinPeakProminence_,...
+                                                        'SortStr','descend', ...
+                                                        'NPeaks', 1,...
+                                                        'MinPeakHeight', MinPeakHeight_);
 
 if(isempty(sac_vmax))
     sac_validity         = false;
@@ -77,7 +89,7 @@ end
 if(~sac_validity)
     ind_sac_vmax         = round((ind_search_begin+ind_search_end)/2);
     inds_sac             = max([(ind_sac_vmax -59), 1]) : 1 :...
-                         min([(ind_sac_vmax -59+149), length_input_trace]);
+                           min([(ind_sac_vmax -59+149), length_input_trace]);
     ind_sac_start        = max([(ind_sac_vmax - 20), 1]);
     ind_sac_finish       = min([(ind_sac_vmax + 25), length_input_trace]);
     sac_analyze_flag     = false;
@@ -121,7 +133,11 @@ end
 if(isempty(ind_sac_start_fine) && sac_begining_flag && sac_analyze_flag)
     % if the sac start is between fine (20deg/s) and rough (50deg/s) then
     % find the ind_sac_start from original data based on rough (50deg/s) threshold
-    ind_sac_start_       = find(sac_vm( max([(ind_sac_start_rough-window_half_length_), 1]) : min([(ind_sac_start_rough+window_half_length_), length(sac_vm)], 101) )<rough_threshold_, 1, 'last') - 1 + (max([(ind_sac_start_rough-window_half_length_), 1]) );
+    ind_sac_start_       = find(sac_vm( ...
+                                        max([(ind_sac_start_rough-window_half_length_), 1]) :...
+                                        min([(ind_sac_start_rough+window_half_length_), length(sac_vm)], 101) )...
+                                        < rough_threshold_, 1, 'last')...
+                                        - 1 + (max([(ind_sac_start_rough-window_half_length_), 1]) );
     if(isempty(ind_sac_start_))
         % if for whatever reason the original data is noisy but heavily filtered data is OK
         % use the index from heavily filtered data
@@ -132,7 +148,11 @@ if(isempty(ind_sac_start_fine) && sac_begining_flag && sac_analyze_flag)
 end
 if((~isempty(ind_sac_start_fine)) && sac_begining_flag && sac_analyze_flag)
     % find the ind_sac_start from original data based on fine (20deg/s) threshold
-    ind_sac_start_       = find(sac_vm(max([(ind_sac_start_fine-window_half_length_), 1]) : min([(ind_sac_start_fine+window_half_length_), length(sac_vm), 101]) )<fine_threshold_, 1, 'last') - 1 + (max([(ind_sac_start_fine-window_half_length_), 1]) );
+    ind_sac_start_       = find(sac_vm(...
+                                max([(ind_sac_start_fine-window_half_length_), 1]) : ...
+                                min([(ind_sac_start_fine+window_half_length_), length(sac_vm), 101]) )...
+                                < fine_threshold_, 1, 'last')...
+                                - 1 + (max([(ind_sac_start_fine-window_half_length_), 1]) );
     if(isempty(ind_sac_start_))
         % if for whatever reason the original data is noisy but heavily filtered data is OK
         % use the index from heavily filtered data
@@ -158,12 +178,20 @@ end
 % find sac ending based on fine (20deg/s) threshold
 ind_sac_finish_fine = [];
 if ( sac_ending_flag && sac_analyze_flag)
-    ind_sac_finish_fine   = find(sac_vm_filt_heavy( 100 : min([(ind_sac_finish_rough+50), length(sac_vm_filt_heavy)]) )<fine_threshold_, 1, 'first') - 1 + 100;
+    ind_sac_finish_fine   = find(sac_vm_filt_heavy( ...
+                                       100 :...
+                                       min([(ind_sac_finish_rough+50), length(sac_vm_filt_heavy)]) )...
+                                       < fine_threshold_, 1, 'first')...
+                                       - 1 + 100;
 end
 if(isempty(ind_sac_finish_fine) && sac_ending_flag && sac_analyze_flag)
     % if the sac end is between fine (20deg/s) and rough (50deg/s) threshold then
     % find the ind_sac_finish from original data based on rough (50deg/s) threshold
-    ind_sac_finish_       = find(sac_vm(max([(ind_sac_finish_rough-window_half_length_), 101]) : min([(ind_sac_finish_rough+window_half_length_), length(sac_vm)]) )<rough_threshold_, 1, 'first') - 1 + (max([(ind_sac_finish_rough-window_half_length_), 1]) );
+    ind_sac_finish_       = find(sac_vm(...
+                                 max([(ind_sac_finish_rough-window_half_length_), 101]) : ...
+                                 min([(ind_sac_finish_rough+window_half_length_), length(sac_vm)]) )...
+                                 < rough_threshold_, 1, 'first')...
+                                 - 1 + (max([(ind_sac_finish_rough-window_half_length_), 1]) );
     if(isempty(ind_sac_finish_))
         % if for whatever reason the original data is noisy but heavily filtered data is OK
         % use the index from heavily filtered data
@@ -174,7 +202,11 @@ if(isempty(ind_sac_finish_fine) && sac_ending_flag && sac_analyze_flag)
 end
 if((~isempty(ind_sac_finish_fine)) && sac_ending_flag && sac_analyze_flag)
     % find the ind_sac_finish from original data based on fine (20deg/s) threshold
-    ind_sac_finish_       = find(sac_vm(max([(ind_sac_finish_fine-window_half_length_), 101]) : min([(ind_sac_finish_fine+window_half_length_), length(sac_vm)]) )<fine_threshold_, 1, 'first') - 1 + (max([(ind_sac_finish_fine-window_half_length_), 1]));
+    ind_sac_finish_       = find(sac_vm(...
+                                 max([(ind_sac_finish_fine-window_half_length_), 101]) : ...
+                                 min([(ind_sac_finish_fine+window_half_length_), length(sac_vm)]) )...
+                                 < fine_threshold_, 1, 'first')...
+                                 - 1 + (max([(ind_sac_finish_fine-window_half_length_), 1]));
     if(isempty(ind_sac_finish_))
         % if for whatever reason the original data is noisy but heavily filtered data is OK
         % use the index from heavily filtered data
@@ -187,7 +219,8 @@ end
 if(sac_analyze_flag)
     ind_sac_start    = max([(ind_sac_vmax - 1 - 100 + ind_sac_start), 1]);
     ind_sac_finish   = min([(ind_sac_vmax - 1 - 100 + ind_sac_finish), length_input_trace]);
-    inds_sac         = min([(ind_sac_vmax -59), 1]) : 1 : min([(ind_sac_vmax -59+149), length_input_trace]);
+    inds_sac         = max([(ind_sac_vmax -59), 1]) : 1 :...
+                       min([(ind_sac_vmax -59+149), length_input_trace]);
 end
 
 output_.validity    = sac_validity;

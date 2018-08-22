@@ -1,3 +1,4 @@
+function sac_analyze_monkey_x_axis(pathnames)
 %% Commits
 % 20180620: change the variable names to make the code compatible with the
 % new version of the experiment
@@ -11,11 +12,17 @@
 %           random corrective task
 
 %% CLEAR
-clc; clear;close all;
+% clc; clear;close all;
 
 %% MAIN FILE LOOP
 % get the list of MAT files to analyze
-[filenames, pathnames] = uigetfile('*.mat', 'Pick list of MAT files', 'MultiSelect', 'on');
+if ~strcmp(pathnames(end), '/')
+    pathnames = [pathnames '/'];
+end
+x_axis_files = dir([pathnames 'cross_axis_adaptation_*.mat']);
+x_axis_files_cell = struct2cell(x_axis_files);
+filenames = x_axis_files_cell(1,:);
+
 SESSION_PARAMS.filenames = sort(filenames);
 SESSION_PARAMS.pathnames = pathnames;
 for counter_file = 1 : 1 : length(SESSION_PARAMS.filenames)
@@ -163,10 +170,6 @@ for counter_file = 1 : 1 : length(SESSION_PARAMS.filenames)
         %% Extract Primary Sac
         clearvars -except counter_file SESSION_PARAMS  TRIALS_DATA_ALL SACS_PRIM_DATA_ALL ...
             data TRIALS SACS_PRIM counter_trial TRIAL
-        % filter params
-        sampling_freq = 1000.0;
-        cutoff_freq = 100.0;
-        [b_butter,a_butter] = butter(3,(cutoff_freq/(sampling_freq/2)), 'low');
         
         trial_eye_velocity_trace = TRIAL.eye_r_vm_filt;
         ind_search_begin = TRIAL.ind_state_cue_present;

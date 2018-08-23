@@ -14,7 +14,7 @@ function sac_analyze_monkey_x_axis(pathnames)
 %% CLEAR
 % clc; clear;close all;
 
-%% MAIN FILE LOOP
+%% Get list of files
 % if there is no inputs, then set pathnames to pwd
 if nargin < 1
     pathnames = pwd;
@@ -34,6 +34,8 @@ end
 
 SESSION_PARAMS.filenames = sort(filenames);
 SESSION_PARAMS.pathnames = pathnames;
+
+%% MAIN FILE LOOP
 for counter_file = 1 : 1 : length(SESSION_PARAMS.filenames)
     fprintf('#######################################\n')
     %% Load Data

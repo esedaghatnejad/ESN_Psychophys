@@ -197,21 +197,21 @@ for counter_file = 1 : 1 : length(SESSION_PARAMS.filenames)
         ind_sac_prim_finish = output_.ind_finish;
         
         %% Save Primary Sac data to SAC_PRIM
-        SAC_PRIM.validity    = validity_sac_prim;
-        SAC_PRIM.inds        = inds_sac_prim;
-        SAC_PRIM.ind_start   = ind_sac_prim_start;
-        SAC_PRIM.ind_vmax    = ind_sac_prim_vmax;
-        SAC_PRIM.ind_finish  = ind_sac_prim_finish;
+        SAC_PRIM.validity                  = validity_sac_prim;
+        SAC_PRIM.inds                      = inds_sac_prim;
+        SAC_PRIM.ind_start                 = ind_sac_prim_start;
+        SAC_PRIM.ind_vmax                  = ind_sac_prim_vmax;
+        SAC_PRIM.ind_finish                = ind_sac_prim_finish;
         
-        SAC_PRIM.time                  = TRIAL.time_1K( SAC_PRIM.inds);
-        SAC_PRIM.eye_r_px              = TRIAL.eye_r_px(SAC_PRIM.inds);
-        SAC_PRIM.eye_r_py              = TRIAL.eye_r_py(SAC_PRIM.inds);
-        SAC_PRIM.eye_r_vx              = TRIAL.eye_r_vx(SAC_PRIM.inds);
-        SAC_PRIM.eye_r_vy              = TRIAL.eye_r_vy(SAC_PRIM.inds);
-        SAC_PRIM.eye_r_vm              = TRIAL.eye_r_vm(SAC_PRIM.inds);
-        SAC_PRIM.eye_r_vm_max          = TRIAL.eye_r_vm(SAC_PRIM.ind_vmax);
-        SAC_PRIM.eye_r_px_centered     = SAC_PRIM.eye_r_px - TRIAL.start_x;
-        SAC_PRIM.eye_r_py_centered     = SAC_PRIM.eye_r_py - TRIAL.start_y;
+        SAC_PRIM.time                      = TRIAL.time_1K( SAC_PRIM.inds);
+        SAC_PRIM.eye_r_px                  = TRIAL.eye_r_px(SAC_PRIM.inds);
+        SAC_PRIM.eye_r_py                  = TRIAL.eye_r_py(SAC_PRIM.inds);
+        SAC_PRIM.eye_r_vx                  = TRIAL.eye_r_vx(SAC_PRIM.inds);
+        SAC_PRIM.eye_r_vy                  = TRIAL.eye_r_vy(SAC_PRIM.inds);
+        SAC_PRIM.eye_r_vm                  = TRIAL.eye_r_vm(SAC_PRIM.inds);
+        SAC_PRIM.eye_r_vm_max              = TRIAL.eye_r_vm(SAC_PRIM.ind_vmax);
+        SAC_PRIM.eye_r_px_centered         = SAC_PRIM.eye_r_px - TRIAL.start_x;
+        SAC_PRIM.eye_r_py_centered         = SAC_PRIM.eye_r_py - TRIAL.start_y;
         
         SAC_PRIM.eye_r_px_start            = TRIAL.eye_r_px(SAC_PRIM.ind_start);
         SAC_PRIM.eye_r_px_finish           = TRIAL.eye_r_px(SAC_PRIM.ind_finish);
@@ -255,26 +255,26 @@ for counter_file = 1 : 1 : length(SESSION_PARAMS.filenames)
         ind_sac_corr_finish = output_.ind_finish;
         
         %% Save Corrective Sac data to SAC_CORR
-        SAC_CORR.validity    = validity_sac_corr;
-        SAC_CORR.inds        = inds_sac_corr;
-        SAC_CORR.ind_start   = ind_sac_corr_start;
-        SAC_CORR.ind_vmax    = ind_sac_corr_vmax;
-        SAC_CORR.ind_finish  = ind_sac_corr_finish;
+        SAC_CORR.validity                  = validity_sac_corr;
+        SAC_CORR.inds                      = inds_sac_corr;
+        SAC_CORR.ind_start                 = ind_sac_corr_start;
+        SAC_CORR.ind_vmax                  = ind_sac_corr_vmax;
+        SAC_CORR.ind_finish                = ind_sac_corr_finish;
         
-        SAC_CORR.time                  = TRIAL.time_1K( inds_sac);
-        SAC_CORR.eye_r_px              = TRIAL.eye_r_px(inds_sac);
-        SAC_CORR.eye_r_py              = TRIAL.eye_r_py(inds_sac);
-        SAC_CORR.eye_r_vx              = TRIAL.eye_r_vx(inds_sac);
-        SAC_CORR.eye_r_vy              = TRIAL.eye_r_vy(inds_sac);
-        SAC_CORR.eye_r_vm              = TRIAL.eye_r_vm(inds_sac);
-        SAC_CORR.eye_r_vm_max          = TRIAL.eye_r_vm(ind_sac_vmax);
-        SAC_CORR.eye_r_px_centered     = SAC_CORR.eye_r_px - TRIAL.start_x;
-        SAC_CORR.eye_r_py_centered     = SAC_CORR.eye_r_py - TRIAL.start_y;
+        SAC_CORR.time                      = TRIAL.time_1K( SAC_CORR.inds);
+        SAC_CORR.eye_r_px                  = TRIAL.eye_r_px(SAC_CORR.inds);
+        SAC_CORR.eye_r_py                  = TRIAL.eye_r_py(SAC_CORR.inds);
+        SAC_CORR.eye_r_vx                  = TRIAL.eye_r_vx(SAC_CORR.inds);
+        SAC_CORR.eye_r_vy                  = TRIAL.eye_r_vy(SAC_CORR.inds);
+        SAC_CORR.eye_r_vm                  = TRIAL.eye_r_vm(SAC_CORR.inds);
+        SAC_CORR.eye_r_vm_max              = TRIAL.eye_r_vm(SAC_CORR.ind_vmax);
+        SAC_CORR.eye_r_px_centered         = SAC_CORR.eye_r_px - TRIAL.start_x;
+        SAC_CORR.eye_r_py_centered         = SAC_CORR.eye_r_py - TRIAL.start_y;
         
-        SAC_CORR.eye_r_px_start            = TRIAL.eye_r_px(ind_sac_start);
-        SAC_CORR.eye_r_px_finish           = TRIAL.eye_r_px(ind_sac_finish);
-        SAC_CORR.eye_r_py_start            = TRIAL.eye_r_py(ind_sac_start);
-        SAC_CORR.eye_r_py_finish           = TRIAL.eye_r_py(ind_sac_finish);
+        SAC_CORR.eye_r_px_start            = TRIAL.eye_r_px(SAC_CORR.ind_start);
+        SAC_CORR.eye_r_px_finish           = TRIAL.eye_r_px(SAC_CORR.ind_finish);
+        SAC_CORR.eye_r_py_start            = TRIAL.eye_r_py(SAC_CORR.ind_start);
+        SAC_CORR.eye_r_py_finish           = TRIAL.eye_r_py(SAC_CORR.ind_finish);
         SAC_CORR.eye_r_px_start_centered   = SAC_CORR.eye_r_px_start  - TRIAL.start_x;
         SAC_CORR.eye_r_px_finish_centered  = SAC_CORR.eye_r_px_finish - TRIAL.start_x;
         SAC_CORR.eye_r_py_start_centered   = SAC_CORR.eye_r_py_start  - TRIAL.start_y;

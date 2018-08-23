@@ -607,6 +607,11 @@ fprintf(['Saving ' filename '_' foldername ' file ...'])
 save([pathname filename '_' foldername '.mat'], 'SESSION_PARAMS', 'TRIALS_SESSION', 'SACS_PRIM_SESSION', 'SACS_CORR_SESSION', '-v7.3');
 fprintf(' --> Completed. \n')
 
+%% Terminate the program if running in shell mode
+if ~usejava('desktop')
+    return;
+end
+
 %% plot-02: Reaction time histogram
 h_fig_ = figure(2);
 clf(h_fig_)
@@ -750,4 +755,4 @@ hold on
 plot(     sac_prim_vy_l_dir(:, inds_validity_l_dir&inds_trials_of_interest_l_dir));
 plot(mean(sac_prim_vy_l_dir(:, inds_validity_l_dir&inds_trials_of_interest_l_dir), 2), 'k', 'linewidth', 2);
 
-
+end

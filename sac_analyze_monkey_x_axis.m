@@ -171,11 +171,12 @@ for counter_file = 1 : 1 : length(SESSION_PARAMS.filenames)
         %% Extract Primary Sac
         clearvars -except counter_file SESSION_PARAMS ...
             TRIALS_DATA_ALL SACS_PRIM_DATA_ALL SACS_CORR_DATA_ALL ...
-            TRIALS SACS_PRIM SACS_CORR data counter_trial TRIAL
+            TRIALS SACS_PRIM SACS_CORR data counter_trial ...
+            TRIAL SAC_PRIM SAC_CORR
         
-        trial_eye_velocity_trace = TRIAL.eye_r_vm_filt;
-        ind_search_begin_sac_prim         = TRIAL.ind_state_cue_present;
-        ind_search_end_sac_prim           = TRIAL.ind_state_end_fixation;
+        trial_eye_velocity_trace        = TRIAL.eye_r_vm_filt;
+        ind_search_begin_sac_prim       = TRIAL.ind_state_cue_present;
+        ind_search_end_sac_prim         = TRIAL.ind_state_end_fixation;
         
         params_prim.MinPeakHeight       = 150.0; % deg/s
         params_prim.MinPeakProminence   = 100; % data points
@@ -228,11 +229,12 @@ for counter_file = 1 : 1 : length(SESSION_PARAMS.filenames)
         %% Extract Corrective Sac
         clearvars -except counter_file SESSION_PARAMS ...
             TRIALS_DATA_ALL SACS_PRIM_DATA_ALL SACS_CORR_DATA_ALL ...
-            TRIALS SACS_PRIM SACS_CORR data counter_trial TRIAL
+            TRIALS SACS_PRIM SACS_CORR data counter_trial ...
+            TRIAL SAC_PRIM SAC_CORR
         
-        trial_eye_velocity_trace = TRIAL.eye_r_vm_filt;
-        ind_search_begin_sac_corr  = SAC_PRIM.ind_finish + 20;
-        ind_search_end_sac_corr    = TRIAL.ind_state_iti;
+        trial_eye_velocity_trace       = TRIAL.eye_r_vm_filt;
+        ind_search_begin_sac_corr      = SAC_PRIM.ind_finish + 20;
+        ind_search_end_sac_corr        = TRIAL.ind_state_iti;
         
         params_corr.MinPeakHeight      = 110.0; % deg/s
         params_corr.MinPeakProminence  = 80; % data points

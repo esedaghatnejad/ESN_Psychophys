@@ -15,13 +15,22 @@ function sac_analyze_monkey_x_axis(pathnames)
 % clc; clear;close all;
 
 %% MAIN FILE LOOP
-% get the list of MAT files to analyze
+% if there is no inputs, then set pathnames to pwd
+if nargin < 1
+    pathnames = pwd;
+end
+% add '/' to the end of pathnames
 if ~strcmp(pathnames(end), '/')
     pathnames = [pathnames '/'];
 end
+% get the list of MAT files to analyze
 x_axis_files = dir([pathnames 'cross_axis_adaptation_*.mat']);
 x_axis_files_cell = struct2cell(x_axis_files);
 filenames = x_axis_files_cell(1,:);
+% if there is no cross_axis_adaptation file, then terminate the function
+if isempty(filenames)
+    fprintf('ERROR in sac_analyze_monkey_x_axis: no cross_axis_adaptation_*.mat has been found in path.\n');
+end
 
 SESSION_PARAMS.filenames = sort(filenames);
 SESSION_PARAMS.pathnames = pathnames;
@@ -299,6 +308,11 @@ for counter_file = 1 : 1 : length(SESSION_PARAMS.filenames)
         TRIALS(counter_trial) = TRIAL;
         SACS_PRIM(counter_trial) = SAC_PRIM;
         SACS_CORR(counter_trial) = SAC_CORR;
+        
+        % print a dot every 20 trials
+        if rem(counter_trial, 20) == 0
+            fprintf('.');
+        end
         
     end
     fprintf(' --> Completed. \n')

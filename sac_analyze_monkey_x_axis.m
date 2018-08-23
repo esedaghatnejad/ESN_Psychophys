@@ -29,7 +29,7 @@ for counter_file = 1 : 1 : length(SESSION_PARAMS.filenames)
     fprintf('#######################################\n')
     %% Load Data
     fprintf('Loading ...\n')
-    clearvars -except counter_file SESSION_PARAMS TRIALS_DATA_ALL SACS_PRIM_DATA_ALL;
+    clearvars -except counter_file SESSION_PARAMS TRIALS_DATA_ALL SACS_PRIM_DATA_ALL SACS_CORR_DATA_ALL;
     filename = SESSION_PARAMS.filenames{counter_file};
     pathname = SESSION_PARAMS.pathnames;
     load([pathname filename]);
@@ -41,14 +41,15 @@ for counter_file = 1 : 1 : length(SESSION_PARAMS.filenames)
     SESSION_PARAMS.num_trials(counter_file) = length(data.trials);
     
     %% Analyze trials
-    clearvars -except counter_file SESSION_PARAMS TRIALS_DATA_ALL SACS_PRIM_DATA_ALL data;
+    clearvars -except counter_file SESSION_PARAMS TRIALS_DATA_ALL SACS_PRIM_DATA_ALL SACS_CORR_DATA_ALL data;
     num_trials = length(data.trials);
     if ~exist('counter_file','var'); counter_file = 1; end;
     fprintf([SESSION_PARAMS.filename{counter_file} ': Analyzing TRIALS ...'])
     for counter_trial = 1 : 1 : num_trials-1
         %% Extract Trial Varibales
-        clearvars -except counter_file SESSION_PARAMS  TRIALS_DATA_ALL SACS_PRIM_DATA_ALL ...
-            data TRIALS SACS_PRIM counter_trial;
+        clearvars -except counter_file SESSION_PARAMS ...
+            TRIALS_DATA_ALL SACS_PRIM_DATA_ALL SACS_CORR_DATA_ALL ...
+            TRIALS SACS_PRIM SACS_CORR data counter_trial;
         if ~exist('counter_trial','var'); counter_trial = 1; end;
         % get trial struct
         trial_struct = data.trials{1, counter_trial};
@@ -168,42 +169,53 @@ for counter_file = 1 : 1 : length(SESSION_PARAMS.filenames)
         TRIAL.ind_state_next_trial     = find(TRIAL.time>TRIAL.time_state_next_trial(end), 1, 'first');
         
         %% Extract Primary Sac
-        clearvars -except counter_file SESSION_PARAMS  TRIALS_DATA_ALL SACS_PRIM_DATA_ALL ...
-            data TRIALS SACS_PRIM counter_trial TRIAL
+        clearvars -except counter_file SESSION_PARAMS ...
+            TRIALS_DATA_ALL SACS_PRIM_DATA_ALL SACS_CORR_DATA_ALL ...
+            TRIALS SACS_PRIM SACS_CORR data counter_trial TRIAL
         
         trial_eye_velocity_trace = TRIAL.eye_r_vm_filt;
-        ind_search_begin = TRIAL.ind_state_cue_present;
-        ind_search_end    = TRIAL.ind_state_iti;
+        ind_search_begin_sac_prim         = TRIAL.ind_state_cue_present;
+        ind_search_end_sac_prim           = TRIAL.ind_state_end_fixation;
         
-        output_ = ESN_Sac_Finder(trial_eye_velocity_trace, ind_search_begin, ind_search_end);
+        params_prim.MinPeakHeight       = 150.0; % deg/s
+        params_prim.MinPeakProminence   = 100; % data points
+        params_prim.rough_threshold     = 50.0; % deg/s
+        params_prim.fine_threshold      = 20.0; % deg/s
+        params_prim.sampling_freq       = 1000.0; % Hz
+        params_prim.cutoff_freq         = 50.0; % Hz
+        params_prim.window_half_length  = 4; % data points
+        params_prim.prominence_or_first = 'prominent'; % which peak to select, 'prominent' or 'first'
         
-        sac_validity   = output_.validity;
-        inds_sac       = output_.inds;
-        ind_sac_start  = output_.ind_start;
-        ind_sac_vmax   = output_.ind_vmax;
-        ind_sac_finish = output_.ind_finish;
+        output_ = ESN_Sac_Finder(trial_eye_velocity_trace, ...
+                                 ind_search_begin_sac_prim, ind_search_end_sac_prim, params_prim);
+        
+        validity_sac_prim   = output_.validity;
+        inds_sac_prim       = output_.inds;
+        ind_sac_prim_start  = output_.ind_start;
+        ind_sac_prim_vmax   = output_.ind_vmax;
+        ind_sac_prim_finish = output_.ind_finish;
         
         %% Save Primary Sac data to SAC_PRIM
-        SAC_PRIM.validity    = sac_validity;
-        SAC_PRIM.inds        = inds_sac;
-        SAC_PRIM.ind_start   = ind_sac_start;
-        SAC_PRIM.ind_vmax    = ind_sac_vmax;
-        SAC_PRIM.ind_finish  = ind_sac_finish;
+        SAC_PRIM.validity    = validity_sac_prim;
+        SAC_PRIM.inds        = inds_sac_prim;
+        SAC_PRIM.ind_start   = ind_sac_prim_start;
+        SAC_PRIM.ind_vmax    = ind_sac_prim_vmax;
+        SAC_PRIM.ind_finish  = ind_sac_prim_finish;
         
-        SAC_PRIM.time                  = TRIAL.time_1K( inds_sac);
-        SAC_PRIM.eye_r_px              = TRIAL.eye_r_px(inds_sac);
-        SAC_PRIM.eye_r_py              = TRIAL.eye_r_py(inds_sac);
-        SAC_PRIM.eye_r_vx              = TRIAL.eye_r_vx(inds_sac);
-        SAC_PRIM.eye_r_vy              = TRIAL.eye_r_vy(inds_sac);
-        SAC_PRIM.eye_r_vm              = TRIAL.eye_r_vm(inds_sac);
-        SAC_PRIM.eye_r_vm_max          = TRIAL.eye_r_vm(ind_sac_vmax);
+        SAC_PRIM.time                  = TRIAL.time_1K( SAC_PRIM.inds);
+        SAC_PRIM.eye_r_px              = TRIAL.eye_r_px(SAC_PRIM.inds);
+        SAC_PRIM.eye_r_py              = TRIAL.eye_r_py(SAC_PRIM.inds);
+        SAC_PRIM.eye_r_vx              = TRIAL.eye_r_vx(SAC_PRIM.inds);
+        SAC_PRIM.eye_r_vy              = TRIAL.eye_r_vy(SAC_PRIM.inds);
+        SAC_PRIM.eye_r_vm              = TRIAL.eye_r_vm(SAC_PRIM.inds);
+        SAC_PRIM.eye_r_vm_max          = TRIAL.eye_r_vm(SAC_PRIM.ind_vmax);
         SAC_PRIM.eye_r_px_centered     = SAC_PRIM.eye_r_px - TRIAL.start_x;
         SAC_PRIM.eye_r_py_centered     = SAC_PRIM.eye_r_py - TRIAL.start_y;
         
-        SAC_PRIM.eye_r_px_start            = TRIAL.eye_r_px(ind_sac_start);
-        SAC_PRIM.eye_r_px_finish           = TRIAL.eye_r_px(ind_sac_finish);
-        SAC_PRIM.eye_r_py_start            = TRIAL.eye_r_py(ind_sac_start);
-        SAC_PRIM.eye_r_py_finish           = TRIAL.eye_r_py(ind_sac_finish);
+        SAC_PRIM.eye_r_px_start            = TRIAL.eye_r_px(SAC_PRIM.ind_start);
+        SAC_PRIM.eye_r_px_finish           = TRIAL.eye_r_px(SAC_PRIM.ind_finish);
+        SAC_PRIM.eye_r_py_start            = TRIAL.eye_r_py(SAC_PRIM.ind_start);
+        SAC_PRIM.eye_r_py_finish           = TRIAL.eye_r_py(SAC_PRIM.ind_finish);
         SAC_PRIM.eye_r_px_start_centered   = SAC_PRIM.eye_r_px_start  - TRIAL.start_x;
         SAC_PRIM.eye_r_px_finish_centered  = SAC_PRIM.eye_r_px_finish - TRIAL.start_x;
         SAC_PRIM.eye_r_py_start_centered   = SAC_PRIM.eye_r_py_start  - TRIAL.start_y;
@@ -212,6 +224,63 @@ for counter_file = 1 : 1 : length(SESSION_PARAMS.filenames)
         SAC_PRIM.eye_r_amp_y               = (SAC_PRIM.eye_r_py_finish - SAC_PRIM.eye_r_py_start);
         SAC_PRIM.eye_r_amp_m               = (sqrt(SAC_PRIM.eye_r_amp_x^2+SAC_PRIM.eye_r_amp_y^2));
         SAC_PRIM.reaction                  = SAC_PRIM.ind_start - TRIAL.ind_state_cue_present;
+        
+        %% Extract Corrective Sac
+        clearvars -except counter_file SESSION_PARAMS ...
+            TRIALS_DATA_ALL SACS_PRIM_DATA_ALL SACS_CORR_DATA_ALL ...
+            TRIALS SACS_PRIM SACS_CORR data counter_trial TRIAL
+        
+        trial_eye_velocity_trace = TRIAL.eye_r_vm_filt;
+        ind_search_begin_sac_corr  = SAC_PRIM.ind_finish + 20;
+        ind_search_end_sac_corr    = TRIAL.ind_state_iti;
+        
+        params_corr.MinPeakHeight      = 110.0; % deg/s
+        params_corr.MinPeakProminence  = 80; % data points
+        params_corr.rough_threshold    = 50.0; % deg/s
+        params_corr.fine_threshold     = 20.0; % deg/s
+        params_corr.sampling_freq      = 1000.0; % Hz
+        params_corr.cutoff_freq        = 75.0; % Hz
+        params_corr.window_half_length = 4; % data points
+        params_corr.prominence_or_first = 'first'; % which peak to select, 'prominent' or 'first'
+        
+        output_ = ESN_Sac_Finder(trial_eye_velocity_trace, ...
+                                 ind_search_begin_sac_corr, ind_search_end_sac_corr, params_corr);
+        
+        validity_sac_corr   = output_.validity;
+        inds_sac_corr       = output_.inds;
+        ind_sac_corr_start  = output_.ind_start;
+        ind_sac_corr_vmax   = output_.ind_vmax;
+        ind_sac_corr_finish = output_.ind_finish;
+        
+        %% Save Corrective Sac data to SAC_CORR
+        SAC_CORR.validity    = validity_sac_corr;
+        SAC_CORR.inds        = inds_sac_corr;
+        SAC_CORR.ind_start   = ind_sac_corr_start;
+        SAC_CORR.ind_vmax    = ind_sac_corr_vmax;
+        SAC_CORR.ind_finish  = ind_sac_corr_finish;
+        
+        SAC_CORR.time                  = TRIAL.time_1K( inds_sac);
+        SAC_CORR.eye_r_px              = TRIAL.eye_r_px(inds_sac);
+        SAC_CORR.eye_r_py              = TRIAL.eye_r_py(inds_sac);
+        SAC_CORR.eye_r_vx              = TRIAL.eye_r_vx(inds_sac);
+        SAC_CORR.eye_r_vy              = TRIAL.eye_r_vy(inds_sac);
+        SAC_CORR.eye_r_vm              = TRIAL.eye_r_vm(inds_sac);
+        SAC_CORR.eye_r_vm_max          = TRIAL.eye_r_vm(ind_sac_vmax);
+        SAC_CORR.eye_r_px_centered     = SAC_CORR.eye_r_px - TRIAL.start_x;
+        SAC_CORR.eye_r_py_centered     = SAC_CORR.eye_r_py - TRIAL.start_y;
+        
+        SAC_CORR.eye_r_px_start            = TRIAL.eye_r_px(ind_sac_start);
+        SAC_CORR.eye_r_px_finish           = TRIAL.eye_r_px(ind_sac_finish);
+        SAC_CORR.eye_r_py_start            = TRIAL.eye_r_py(ind_sac_start);
+        SAC_CORR.eye_r_py_finish           = TRIAL.eye_r_py(ind_sac_finish);
+        SAC_CORR.eye_r_px_start_centered   = SAC_CORR.eye_r_px_start  - TRIAL.start_x;
+        SAC_CORR.eye_r_px_finish_centered  = SAC_CORR.eye_r_px_finish - TRIAL.start_x;
+        SAC_CORR.eye_r_py_start_centered   = SAC_CORR.eye_r_py_start  - TRIAL.start_y;
+        SAC_CORR.eye_r_py_finish_centered  = SAC_CORR.eye_r_py_finish - TRIAL.start_y;
+        SAC_CORR.eye_r_amp_x               = (SAC_CORR.eye_r_px_finish - SAC_CORR.eye_r_px_start);
+        SAC_CORR.eye_r_amp_y               = (SAC_CORR.eye_r_py_finish - SAC_CORR.eye_r_py_start);
+        SAC_CORR.eye_r_amp_m               = (sqrt(SAC_CORR.eye_r_amp_x^2+SAC_CORR.eye_r_amp_y^2));
+        SAC_CORR.reaction                  = SAC_CORR.ind_start - SAC_PRIM.ind_finish;
         
         %% Compute the start position Bias
         inds_start_fixation = TRIAL.ind_state_cue_present - round(TRIAL.time_fixation * 1000) : 1 : TRIAL.ind_state_cue_present;
@@ -224,16 +293,19 @@ for counter_file = 1 : 1 : length(SESSION_PARAMS.filenames)
         TRIAL.start_x_bias = start_x_bias;
         TRIAL.start_y_bias = start_y_bias;
         
-        %% Build TRIAL and SAC_PRIM
+        %% Build TRIALS, SACS_PRIM, SACS_CORR
         TRIALS(counter_trial) = TRIAL;
         SACS_PRIM(counter_trial) = SAC_PRIM;
+        SACS_CORR(counter_trial) = SAC_CORR;
         
     end
     fprintf(' --> Completed. \n')
     
     %% Arrange 'TRIALS_DATA'
-    clearvars -except counter_file SESSION_PARAMS  TRIALS_DATA_ALL SACS_PRIM_DATA_ALL ...
-        TRIALS SACS_PRIM TRIALS_DATA SACS_PRIM_DATA
+    clearvars -except counter_file SESSION_PARAMS ...
+        TRIALS_DATA_ALL SACS_PRIM_DATA_ALL SACS_CORR_DATA_ALL ...
+        TRIALS SACS_PRIM SACS_CORR ...
+        TRIALS_DATA SACS_PRIM_DATA SACS_CORR_DATA
     fprintf([SESSION_PARAMS.filename{counter_file} ': Arranging TRIALS_DATA ...'])
     clearvars('TRIALS_DATA'); TRIALS_DATA = struct;
     field_names_TRIALS = fieldnames(TRIALS);
@@ -288,8 +360,10 @@ for counter_file = 1 : 1 : length(SESSION_PARAMS.filenames)
     fprintf(' --> Completed. \n')
     
     %% Arrange 'SACS_PRIM_DATA'
-    clearvars -except counter_file SESSION_PARAMS  TRIALS_DATA_ALL SACS_PRIM_DATA_ALL ...
-        TRIALS SACS_PRIM TRIALS_DATA SACS_PRIM_DATA
+    clearvars -except counter_file SESSION_PARAMS ...
+        TRIALS_DATA_ALL SACS_PRIM_DATA_ALL SACS_CORR_DATA_ALL ...
+        TRIALS SACS_PRIM SACS_CORR ...
+        TRIALS_DATA SACS_PRIM_DATA SACS_CORR_DATA
     fprintf([SESSION_PARAMS.filename{counter_file} ': Arranging SACS_PRIM_DATA ...'])
     clearvars('SACS_PRIM_DATA'); SACS_PRIM_DATA = struct;
     field_names_SACS_PRIM_DATA = fieldnames(SACS_PRIM);
@@ -304,17 +378,37 @@ for counter_file = 1 : 1 : length(SESSION_PARAMS.filenames)
     SACS_PRIM_DATA.validity  = logical(SACS_PRIM_DATA.validity);
     fprintf(' --> Completed. \n')
     
-    %% Build TRIALS_DATA_ALL and SACS_PRIM_DATA_ALL
+    %% Arrange 'SACS_CORR_DATA'
+    clearvars -except counter_file SESSION_PARAMS ...
+        TRIALS_DATA_ALL SACS_PRIM_DATA_ALL SACS_CORR_DATA_ALL ...
+        TRIALS SACS_PRIM SACS_CORR ...
+        TRIALS_DATA SACS_PRIM_DATA SACS_CORR_DATA
+    fprintf([SESSION_PARAMS.filename{counter_file} ': Arranging SACS_CORR_DATA ...'])
+    clearvars('SACS_CORR_DATA'); SACS_CORR_DATA = struct;
+    field_names_SACS_CORR_DATA = fieldnames(SACS_CORR);
+    SACS_CORR_DATA_cell = struct2cell(SACS_CORR);
+    for counter_fields = 1 : 1 : length(field_names_SACS_CORR_DATA)
+        SACS_CORR_DATA_field_cell = SACS_CORR_DATA_cell(counter_fields,:,:);
+        SACS_CORR_DATA_field_cell = reshape(SACS_CORR_DATA_field_cell, 1, []);
+        nz = max(cellfun(@numel,SACS_CORR_DATA_field_cell));
+        SACS_CORR_DATA_field_mat = cell2mat(cellfun(@(x) vertcat(double(x(:)),NaN(nz-numel(x), 1)),SACS_CORR_DATA_field_cell,'uni',false));
+        SACS_CORR_DATA.(field_names_SACS_CORR_DATA{counter_fields}) = SACS_CORR_DATA_field_mat;
+    end
+    SACS_CORR_DATA.validity  = logical(SACS_CORR_DATA.validity);
+    fprintf(' --> Completed. \n')
+    
+    %% Build TRIALS_DATA_ALL, SACS_PRIM_DATA_ALL, SACS_CORR_DATA_ALL
     TRIALS_DATA_ALL(counter_file) = TRIALS_DATA;
     SACS_PRIM_DATA_ALL(counter_file) = SACS_PRIM_DATA;
+    SACS_CORR_DATA_ALL(counter_file) = SACS_CORR_DATA;
     fprintf('#######################################\n')
-    
     
 end
 
 %% Arrange 'TRIALS_SESSION'
-clearvars -except SESSION_PARAMS  TRIALS_DATA_ALL SACS_PRIM_DATA_ALL ...
-    TRIALS_SESSION SACS_PRIM_SESSION
+clearvars -except SESSION_PARAMS ...
+    TRIALS_DATA_ALL SACS_PRIM_DATA_ALL SACS_CORR_DATA_ALL ...
+    TRIALS_SESSION SACS_PRIM_SESSION SACS_CORR_SESSION
 fprintf('Arranging TRIALS_SESSION ...')
 clearvars('TRIALS_SESSION'); TRIALS_SESSION = struct;
 field_names_TRIALS_DATA_ALL = fieldnames(TRIALS_DATA_ALL);
@@ -334,8 +428,9 @@ end
 fprintf(' --> Completed. \n')
 
 %% Arrange 'SACS_PRIM_SESSION'
-clearvars -except SESSION_PARAMS  TRIALS_DATA_ALL SACS_PRIM_DATA_ALL ...
-    TRIALS_SESSION SACS_PRIM_SESSION
+clearvars -except SESSION_PARAMS ...
+    TRIALS_DATA_ALL SACS_PRIM_DATA_ALL SACS_CORR_DATA_ALL ...
+    TRIALS_SESSION SACS_PRIM_SESSION SACS_CORR_SESSION
 fprintf('Arranging SACS_PRIM_SESSION ...')
 clearvars('SACS_PRIM_SESSION'); SACS_PRIM_SESSION = struct;
 field_names_SACS_PRIM_DATA_ALL = fieldnames(SACS_PRIM_DATA_ALL);
@@ -355,8 +450,31 @@ end
 SACS_PRIM_SESSION.validity  = logical(SACS_PRIM_SESSION.validity);
 fprintf(' --> Completed. \n')
 
+%% Arrange 'SACS_CORR_SESSION'
+clearvars -except SESSION_PARAMS ...
+    TRIALS_DATA_ALL SACS_PRIM_DATA_ALL SACS_CORR_DATA_ALL ...
+    TRIALS_SESSION SACS_PRIM_SESSION SACS_CORR_SESSION
+fprintf('Arranging SACS_CORR_SESSION ...')
+clearvars('SACS_CORR_SESSION'); SACS_CORR_SESSION = struct;
+field_names_SACS_CORR_DATA_ALL = fieldnames(SACS_CORR_DATA_ALL);
+for counter_fields = 1 : 1 : length(field_names_SACS_CORR_DATA_ALL)
+    for counter_files = 1 : 1 : length(SACS_CORR_DATA_ALL)
+        variable_SACS_CORR_DATA_ALL_ = SACS_CORR_DATA_ALL(counter_files).(field_names_SACS_CORR_DATA_ALL{counter_fields});
+        % the field does not exist in SACS_CORR_SESSION
+        if ~isfield(SACS_CORR_SESSION, field_names_SACS_CORR_DATA_ALL{counter_fields})
+            SACS_CORR_SESSION.(field_names_SACS_CORR_DATA_ALL{counter_fields}) = [];
+        end
+        variable_SACS_CORR_SESSION_ = SACS_CORR_SESSION.(field_names_SACS_CORR_DATA_ALL{counter_fields});
+        variable_SACS_CORR_SESSION_ = horzcat(variable_SACS_CORR_SESSION_, variable_SACS_CORR_DATA_ALL_);
+        SACS_CORR_SESSION.(field_names_SACS_CORR_DATA_ALL{counter_fields}) = variable_SACS_CORR_SESSION_;
+    end
+    fprintf('.');
+end
+SACS_CORR_SESSION.validity  = logical(SACS_CORR_SESSION.validity);
+fprintf(' --> Completed. \n')
+
 %% Finding different sections of the experiment
-clearvars -except SESSION_PARAMS TRIALS_SESSION SACS_PRIM_SESSION
+clearvars -except SESSION_PARAMS TRIALS_SESSION SACS_PRIM_SESSION SACS_CORR_SESSION
 iss_m = sqrt(TRIALS_SESSION.iss_x.^2 + TRIALS_SESSION.iss_y.^2);
 inds_no_perturb = iss_m == 0;
 inds_perturb = iss_m ~= 0;
@@ -478,20 +596,20 @@ TRIALS_SESSION.trials_num_washout_2 = trials_num_washout_2;
 TRIALS_SESSION.trials_num_adapt_3   = trials_num_adapt_3;
 TRIALS_SESSION.trials_num_washout_3 = trials_num_washout_3;
 
-%% save: TRIALS_SESSION and SACS_PRIM_SESSION to disk
-clearvars -except SESSION_PARAMS TRIALS_SESSION SACS_PRIM_SESSION
+%% save: TRIALS_SESSION, SACS_PRIM_SESSION SACS_CORR_SESSION to disk
+clearvars -except SESSION_PARAMS TRIALS_SESSION SACS_PRIM_SESSION SACS_CORR_SESSION
 filename = 'SESSION_DATA';
 pathname = SESSION_PARAMS.pathname{end};
 foldername = SESSION_PARAMS.foldername{end};
 fprintf(['Saving ' filename '_' foldername ' file ...'])
-save([pathname filename '_' foldername '.mat'], 'SESSION_PARAMS', 'TRIALS_SESSION', 'SACS_PRIM_SESSION', '-v7.3');
+save([pathname filename '_' foldername '.mat'], 'SESSION_PARAMS', 'TRIALS_SESSION', 'SACS_PRIM_SESSION', 'SACS_CORR_SESSION', '-v7.3');
 fprintf(' --> Completed. \n')
 
 %% plot-02: Reaction time histogram
 h_fig_ = figure(2);
 clf(h_fig_)
 trials_reaction_time_edges = 0:10:400;
-histogram(SACS_PRIM_SESSION.reaction, trials_reaction_time_edges)
+histogram(SACS_PRIM_SESSION.reaction(SACS_PRIM_SESSION.validity), trials_reaction_time_edges)
 xlabel('Reaction Time (ms)')
 ylabel('Frequency')
 ESN_Beautify_Plot

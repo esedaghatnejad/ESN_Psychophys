@@ -614,13 +614,70 @@ TRIALS_SESSION.trials_num_washout_2 = trials_num_washout_2;
 TRIALS_SESSION.trials_num_adapt_3   = trials_num_adapt_3;
 TRIALS_SESSION.trials_num_washout_3 = trials_num_washout_3;
 
-%% save: TRIALS_SESSION, SACS_PRIM_SESSION SACS_CORR_SESSION to disk
+%% LEARNING
+clearvars -except SESSION_PARAMS TRIALS_SESSION SACS_PRIM_SESSION SACS_CORR_SESSION
+bin_size_ = 10;
+trial_num_edges = 1 : bin_size_ : 1101;
+inds_validity = SACS_PRIM_SESSION.validity;
+inds_r_dir = (TRIALS_SESSION.cue_x - TRIALS_SESSION.start_x) > 0;
+inds_l_dir = (TRIALS_SESSION.cue_x - TRIALS_SESSION.start_x) < 0;
+iss_y = TRIALS_SESSION.iss_y;
+inds_iss_y_negative = iss_y < 0;
+if sum(inds_iss_y_negative(inds_r_dir)) > sum(inds_iss_y_negative(inds_l_dir))
+    inds_u_dir = inds_l_dir;
+    inds_d_dir = inds_r_dir;
+else
+    inds_u_dir = inds_r_dir;
+    inds_d_dir = inds_l_dir;
+end
+sac_prim_py   = SACS_PRIM_SESSION.eye_r_py_finish_centered;
+sac_prim_py(~inds_validity) = nan;
+sac_prim_py_ = align_trials(TRIALS_SESSION, sac_prim_py);
+inds_r_dir_  = align_trials(TRIALS_SESSION, inds_r_dir) == 1;
+inds_l_dir_  = align_trials(TRIALS_SESSION, inds_l_dir) == 1;
+inds_u_dir_  = align_trials(TRIALS_SESSION, inds_u_dir) == 1;
+inds_d_dir_  = align_trials(TRIALS_SESSION, inds_d_dir) == 1;
+[sac_prim_py_r_dir_, trials_num_r_dir_] = directional_data(sac_prim_py_, inds_r_dir_);
+[sac_prim_py_l_dir_, trials_num_l_dir_] = directional_data(sac_prim_py_, inds_l_dir_);
+[sac_prim_py_u_dir_, trials_num_u_dir_] = directional_data(sac_prim_py_, inds_u_dir_);
+[sac_prim_py_d_dir_, trials_num_d_dir_] = directional_data(sac_prim_py_, inds_d_dir_);
+sac_prim_py_ = nanmean([sac_prim_py_r_dir_; sac_prim_py_l_dir_; sac_prim_py_u_dir_; sac_prim_py_d_dir_]);
+trials_num_  = nanmean([trials_num_r_dir_;  trials_num_l_dir_;  trials_num_u_dir_;  trials_num_d_dir_ ]);
+[trials_num_r_dir_binned_, sac_prim_py_r_dir_binned_, ~, ~] = ESN_Bin(trials_num_r_dir_, sac_prim_py_r_dir_, trial_num_edges);
+[trials_num_l_dir_binned_, sac_prim_py_l_dir_binned_, ~, ~] = ESN_Bin(trials_num_l_dir_, sac_prim_py_l_dir_, trial_num_edges);
+[trials_num_u_dir_binned_, sac_prim_py_u_dir_binned_, ~, ~] = ESN_Bin(trials_num_u_dir_, sac_prim_py_u_dir_, trial_num_edges);
+[trials_num_d_dir_binned_, sac_prim_py_d_dir_binned_, ~, ~] = ESN_Bin(trials_num_d_dir_, sac_prim_py_d_dir_, trial_num_edges);
+
+LEARNING.sac_prim_py_ = sac_prim_py_;
+LEARNING.trials_num_  = trials_num_;
+LEARNING.inds_r_dir_  = inds_r_dir_;
+LEARNING.inds_l_dir_  = inds_l_dir_;
+LEARNING.inds_u_dir_  = inds_u_dir_;
+LEARNING.inds_d_dir_  = inds_d_dir_;
+LEARNING.sac_prim_py_r_dir_ = sac_prim_py_r_dir_;
+LEARNING.sac_prim_py_l_dir_ = sac_prim_py_l_dir_;
+LEARNING.sac_prim_py_u_dir_ = sac_prim_py_u_dir_;
+LEARNING.sac_prim_py_d_dir_ = sac_prim_py_d_dir_;
+LEARNING.trials_num_r_dir_  = trials_num_r_dir_;
+LEARNING.trials_num_l_dir_  = trials_num_l_dir_;
+LEARNING.trials_num_u_dir_  = trials_num_u_dir_;
+LEARNING.trials_num_d_dir_  = trials_num_d_dir_;
+LEARNING.sac_prim_py_r_dir_binned_  = sac_prim_py_r_dir_binned_';
+LEARNING.sac_prim_py_l_dir_binned_  = sac_prim_py_l_dir_binned_';
+LEARNING.sac_prim_py_u_dir_binned_  = sac_prim_py_u_dir_binned_';
+LEARNING.sac_prim_py_d_dir_binned_  = sac_prim_py_d_dir_binned_';
+LEARNING.trials_num_r_dir_binned_   = trials_num_r_dir_binned_';
+LEARNING.trials_num_l_dir_binned_   = trials_num_l_dir_binned_';
+LEARNING.trials_num_u_dir_binned_   = trials_num_u_dir_binned_';
+LEARNING.trials_num_d_dir_binned_   = trials_num_d_dir_binned_';
+
+%% save: TRIALS_SESSION, SACS_PRIM_SESSION, SACS_CORR_SESSION, LEARNING to disk
 clearvars -except SESSION_PARAMS TRIALS_SESSION SACS_PRIM_SESSION SACS_CORR_SESSION
 filename = 'SESSION_DATA';
 pathname = SESSION_PARAMS.pathname{end};
 foldername = SESSION_PARAMS.foldername{end};
 fprintf(['Saving ' filename '_' foldername ' file ...'])
-save([pathname filename '_' foldername '.mat'], 'SESSION_PARAMS', 'TRIALS_SESSION', 'SACS_PRIM_SESSION', 'SACS_CORR_SESSION', '-v7.3');
+save([pathname filename '_' foldername '.mat'], 'SESSION_PARAMS', 'TRIALS_SESSION', 'SACS_PRIM_SESSION', 'SACS_CORR_SESSION', 'LEARNING', '-v7.3');
 fprintf(' --> Completed. \n')
 
 %% Terminate the program if running in shell mode
@@ -631,10 +688,32 @@ end
 %% plot-02: Reaction time histogram
 h_fig_ = figure(2);
 clf(h_fig_)
-trials_reaction_time_edges = 0:10:400;
-histogram(SACS_PRIM_SESSION.reaction(SACS_PRIM_SESSION.validity), trials_reaction_time_edges)
+hold on
+cmap_lines_ = lines(7);
+hist_edges_reaction_time = 0:5:300;
+ylim([0 0.15])
+xlim([min(hist_edges_reaction_time) max(hist_edges_reaction_time)])
+
+hist_X_PRIM = SACS_PRIM_SESSION.reaction(SACS_PRIM_SESSION.validity);
+hist_X_CORR = SACS_CORR_SESSION.reaction(SACS_CORR_SESSION.validity);
+[hist_N_PRIM,hist_edges_PRIM] = histcounts(hist_X_PRIM,hist_edges_reaction_time, 'Normalization', 'probability');
+[hist_N_CORR,hist_edges_CORR] = histcounts(hist_X_CORR,hist_edges_reaction_time, 'Normalization', 'probability');
+[~, ind_mode_PRIM] = max(hist_N_PRIM);
+[~, ind_mode_CORR] = max(hist_N_CORR);
+react_time_mode_PRIM = mean([hist_edges_PRIM(ind_mode_PRIM) hist_edges_PRIM(ind_mode_PRIM+1)]);
+react_time_mode_CORR = mean([hist_edges_CORR(ind_mode_CORR) hist_edges_CORR(ind_mode_CORR+1)]);
+
+plot(repmat(react_time_mode_CORR,1,2), ylim, '-', 'linewidth', 2, 'color', cmap_lines_(2,:));
+plot(repmat(react_time_mode_PRIM,1,2), ylim, '-', 'linewidth', 2, 'color', cmap_lines_(1,:));
+h_hist_CORR_ = histogram(hist_X_CORR, hist_edges_reaction_time, ...
+    'Normalization', 'probability', 'FaceColor', cmap_lines_(2,:));
+h_hist_PRIM_ = histogram(hist_X_PRIM, hist_edges_reaction_time, ...
+    'Normalization', 'probability', 'FaceColor', cmap_lines_(1,:));
+
 xlabel('Reaction Time (ms)')
-ylabel('Frequency')
+ylabel('Probability')
+legend([h_hist_PRIM_ h_hist_CORR_], {'Primary', 'Corrective'})
+
 ESN_Beautify_Plot
 
 %% save: Reaction time histogram
@@ -772,3 +851,35 @@ plot(     sac_prim_vy_l_dir(:, inds_validity_l_dir&inds_trials_of_interest_l_dir
 plot(mean(sac_prim_vy_l_dir(:, inds_validity_l_dir&inds_trials_of_interest_l_dir), 2), 'k', 'linewidth', 2);
 
 end
+
+function output_ = align_trials(TRIALS_SESSION, input_)
+% this function will align trials so that
+% trials 001-100:  baseline  (100 trials)
+% trials 101-800:  adapt_1   (700 trials)
+% trials 801-1100: washout_1 (300 trials)
+trials_num           = TRIALS_SESSION.trials_num;
+trials_num_baseline  = trials_num(TRIALS_SESSION.trials_num_baseline);
+trials_num_adapt_1   = trials_num(TRIALS_SESSION.trials_num_adapt_1);
+trials_num_washout_1 = trials_num(TRIALS_SESSION.trials_num_washout_1);
+input_baseline       = input_(trials_num_baseline);
+input_adapt_1        = input_(trials_num_adapt_1);
+input_washout_1      = input_(trials_num_washout_1);
+output_              = nan(1, 1100);
+output_(1+000:min([length(input_baseline),  100])+000) = input_baseline( 1:min([length(input_baseline),  100]));
+output_(1+100:min([length(input_adapt_1),   700])+100) = input_adapt_1(  1:min([length(input_adapt_1),   700]));
+output_(1+800:min([length(input_washout_1), 300])+800) = input_washout_1(1:min([length(input_washout_1), 300]));
+end
+
+function [output_, trials_] = directional_data(input_, inds_direction_)
+% input data should be in aligned format so trials 101-200 be the first 100 trials of the adaptation
+% phase
+output_ = input_;
+output_(~inds_direction_) = nan;
+output_ = ESN_Outlier(output_, 25);
+bias_ = nanmean(output_(101:200));
+output_ = output_ - bias_;
+trials_ = 1:1:1100; 
+trials_(isnan(output_)) = nan;
+end
+
+

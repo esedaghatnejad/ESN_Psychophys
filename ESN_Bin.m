@@ -1,8 +1,8 @@
-function [x_data_BIN_mean, y_data_BIN_mean, x_data_BIN_stdv, y_data_BIN_stdv] = ESN_BINNING(x_data_, y_data_, edges_, func1_, func2_)
+function [x_data_BIN_mean, y_data_BIN_mean, x_data_BIN_stdv, y_data_BIN_stdv] = ESN_Bin(x_data_, y_data_, edges_, func1_, func2_)
 
 if nargin < 4
-    func1_ = @mean;
-    func2_ = @std;
+    func1_ = @nanmean;
+    func2_ = @nanstd;
 elseif nargin == 4
     func2_ = @std;
 end

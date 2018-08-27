@@ -1,19 +1,4 @@
 function sac_analyze_monkey_x_axis(pathnames)
-%% Commits
-% 20180620: change the variable names to make the code compatible with the
-% new version of the experiment
-% 20180801: start changing the code to analyze saccade_adaptation, cross_axis_adaptation experiment
-% 20180805: for arranging the TRIALS_DATA started using cell arrays instead of putting nans and
-%           making the sizes the same. This approach resulted in saving space during saving to disc.
-% 20180808: adding new cell "Finding different sections of the experiment"
-% 20180809: fix an issue for sac_prim detection, instead of
-%           length(TRIAL.inds_trial) use length(TRIAL.time_1K)
-% 20180810: make the code compatible with the previous versions to analyze
-%           random corrective task
-
-%% CLEAR
-% clc; clear;close all;
-
 %% Get list of files
 % if there is no inputs, then set pathnames to pwd
 if nargin < 1
@@ -671,13 +656,31 @@ LEARNING.trials_num_l_dir_binned_   = trials_num_l_dir_binned_';
 LEARNING.trials_num_u_dir_binned_   = trials_num_u_dir_binned_';
 LEARNING.trials_num_d_dir_binned_   = trials_num_d_dir_binned_';
 
+%% Build Reduced_sized_struct
+rmfields_list = {'eye_l_vm_filt', 'eye_l_vy_filt', 'eye_l_vx_filt', 'eye_l_py_filt', 'eye_l_px_filt', ...
+        'eye_r_vm_filt', 'eye_r_vy_filt', 'eye_r_vx_filt', 'eye_r_py_filt', 'eye_r_px_filt', ...
+        'time', 'time_1K', 'target_visible', 'reward', 'tgt_py', 'tgt_px', 'time_tgt', ...
+        'eye_l_vm', 'eye_r_vm', 'eye_l_vy', 'eye_l_vx', 'eye_r_vy', 'eye_r_vx', ...
+        'eye_l_py', 'eye_l_px', 'eye_r_py', 'eye_r_px', 'time_eyelink', 'inds_invalid', 'inds_trial'};
+
+Reduced_size_struct = struct;
+Reduced_size_struct.TRIALS_SESSION    = TRIALS_SESSION;
+Reduced_size_struct.SACS_PRIM_SESSION = SACS_PRIM_SESSION;
+Reduced_size_struct.SACS_CORR_SESSION = SACS_CORR_SESSION;
+Reduced_size_struct.LEARNING          = LEARNING;
+Reduced_size_struct.SESSION_PARAMS    = SESSION_PARAMS;
+
+Reduced_size_struct.TRIALS_SESSION = rmfield(Reduced_size_struct.TRIALS_SESSION,rmfields_list);
+
 %% save: TRIALS_SESSION, SACS_PRIM_SESSION, SACS_CORR_SESSION, LEARNING to disk
-clearvars -except SESSION_PARAMS TRIALS_SESSION SACS_PRIM_SESSION SACS_CORR_SESSION
+clearvars -except SESSION_PARAMS TRIALS_SESSION SACS_PRIM_SESSION SACS_CORR_SESSION LEARNING Reduced_size_struct
 filename = 'SESSION_DATA';
 pathname = SESSION_PARAMS.pathname{end};
 foldername = SESSION_PARAMS.foldername{end};
 fprintf(['Saving ' filename '_' foldername ' file ...'])
-save([pathname filename '_' foldername '.mat'], 'SESSION_PARAMS', 'TRIALS_SESSION', 'SACS_PRIM_SESSION', 'SACS_CORR_SESSION', 'LEARNING', '-v7.3');
+save([pathname filename '_' foldername '.mat'], 'SESSION_PARAMS', 'TRIALS_SESSION', ...
+    'SACS_PRIM_SESSION', 'SACS_CORR_SESSION', 'LEARNING', ...
+    'Reduced_size_struct', '-v7.3');
 fprintf(' --> Completed. \n')
 
 %% Terminate the program if running in shell mode

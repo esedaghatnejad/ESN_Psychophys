@@ -1,8 +1,5 @@
 function EXPERIMENT = ESN_Sac_Review(EXPERIMENT, trial_ind)
-DEBUG = false;
-if DEBUG
-    trial_ind = invalid_trial_ind;
-end
+
 
 counter_main        = EXPERIMENT.all.block_num(:,trial_ind);
 trial_number        = EXPERIMENT.all.trial_num(:,trial_ind);
@@ -31,14 +28,6 @@ perturbation_jump   = 3;
 % %% Plot datacursors
 
 inds_sac_1_2          = min([ind_stateSacBegin, ind_sac_start]-5):1:max([(ind_stateFixateEnd) (ind_sac2_finish) (ind_sac_finish)]);
-%             sac_1_2_time        = double(EXPERIMENT.all.time_blk(inds_sac_1_2,trial_ind));
-%             sac_1_2_px          = double(EXPERIMENT.all.eye_px(inds_sac_1_2,trial_ind));
-%             sac_1_2_py          = double(EXPERIMENT.all.eye_py(inds_sac_1_2,trial_ind));
-%             sac_1_2_px_filt     = filtfilt(b_butter,a_butter,sac_1_2_px);
-%             sac_1_2_py_filt     = filtfilt(b_butter,a_butter,sac_1_2_py);
-%             sac_1_2_vx_filt     = diff(sac_1_2_px_filt)./diff(sac_1_2_time); sac_1_2_vx_filt=[sac_1_2_vx_filt(1) ; sac_1_2_vx_filt];
-%             sac_1_2_vy_filt     = diff(sac_1_2_py_filt)./diff(sac_1_2_time); sac_1_2_vy_filt=[sac_1_2_vy_filt(1) ; sac_1_2_vy_filt];
-%             sac_1_2_vm_filt     = sqrt(sac_1_2_vx_filt.^2 + sac_1_2_vy_filt.^2);
 sac_1_2_vm          = double(eye_vm(inds_sac_1_2));
 sac_1_2_vm_filt = sac_1_2_vm; % filtfilt(b_butter,a_butter,sac_1_2_vm); % sgolayfilt(sac_vm, 3, 25);
 
@@ -63,10 +52,6 @@ area(((ind_sac2_start:ind_sac2_finish)), sac_1_2_vm_filt(((ind_sac2_start:ind_sa
 plot([inds_sac_1_2(1); inds_sac_1_2(end)], [20; 20],   'r')
 plot([inds_sac_1_2(1); inds_sac_1_2(end)], [150; 150], '--r')
 plot([inds_sac_1_2(1); inds_sac_1_2(end)], [50; 50],   'r')
-%             plot([ind_stateSacBegin;    ind_stateSacBegin],   [min(sac_1_2_vm_heavy_filt); max(sac_1_2_vm_heavy_filt)], 'r')
-%             plot([ind_stateSacEnd;      ind_stateSacEnd],     [min(sac_1_2_vm_heavy_filt); max(sac_1_2_vm_heavy_filt)], 'r')
-%             plot([ind_stateFixateBegin; ind_stateFixateBegin],[min(sac_1_2_vm_heavy_filt); max(sac_1_2_vm_heavy_filt)], 'r')
-%             plot([ind_stateFixateEnd;   ind_stateFixateEnd],  [min(sac_1_2_vm_heavy_filt); max(sac_1_2_vm_heavy_filt)], 'r')
 y_lims_ = get(gca, 'YLim');
 plot([ind_stateSacBegin;    ind_stateSacBegin],   y_lims_(:), 'r')
 plot([ind_stateSacEnd;      ind_stateSacEnd],     y_lims_(:), 'r')
@@ -92,11 +77,6 @@ plot([inds_sac_1_2(1); inds_sac_1_2(end)], repmat((tgt_cue_x - tgt_str_x),2,1), 
 plot([inds_sac_1_2(1); inds_sac_1_2(end)], repmat((tgt_end_x - tgt_str_x),2,1), 'r')
 plot([inds_sac_1_2(1); inds_sac_1_2(end)], repmat((tgt_cue_x - tgt_str_x),2,1)+perturbation_jump, '--r')
 plot([inds_sac_1_2(1); inds_sac_1_2(end)], repmat((tgt_cue_x - tgt_str_x),2,1)-perturbation_jump, '--r')
-%             plot([ind_stateSacBegin;    ind_stateSacBegin],   [min(sac_1_2_px); max(sac_1_2_px)], 'r')
-%             plot([ind_stateSacEnd;      ind_stateSacEnd],     [min(sac_1_2_px); max(sac_1_2_px)], 'r')
-%             plot([ind_stateFixateBegin; ind_stateFixateBegin],[min(sac_1_2_px); max(sac_1_2_px)], 'r')
-%             plot([ind_stateFixateEnd;   ind_stateFixateEnd],  [min(sac_1_2_px); max(sac_1_2_px)], 'r')
-
 
 y_lims_ = get(gca, 'YLim');
 plot([ind_stateSacBegin;    ind_stateSacBegin],   y_lims_(:), 'r')
@@ -163,10 +143,10 @@ inds_sac2(inds_sac2>length_inds_trial) = length_inds_trial;
 
 % %% Save sac & sac2
 EXPERIMENT.all.sac_validity(:,trial_ind)        = sac_validity;
-EXPERIMENT.all.sac_inds(:,trial_ind)            = uint32(inds_sac);
-EXPERIMENT.all.sac_ind_start_trl(:,trial_ind)   = uint32(ind_sac_start);
-EXPERIMENT.all.sac_ind_vmax_trl(:,trial_ind)    = uint32(ind_sac_vmax);
-EXPERIMENT.all.sac_ind_finish_trl(:,trial_ind)  = uint32(ind_sac_finish);
+EXPERIMENT.all.sac_inds(:,trial_ind)            = double(inds_sac);
+EXPERIMENT.all.sac_ind_start_trl(:,trial_ind)   = double(ind_sac_start);
+EXPERIMENT.all.sac_ind_vmax_trl(:,trial_ind)    = double(ind_sac_vmax);
+EXPERIMENT.all.sac_ind_finish_trl(:,trial_ind)  = double(ind_sac_finish);
 
 EXPERIMENT.all.sac_px(:,trial_ind)              = double(EXPERIMENT.all.eye_px(inds_sac,trial_ind));
 EXPERIMENT.all.sac_py(:,trial_ind)              = double(EXPERIMENT.all.eye_py(inds_sac,trial_ind));
@@ -191,10 +171,10 @@ EXPERIMENT.all.sac_amp_m(:,trial_ind)           = double(sqrt(EXPERIMENT.all.sac
 EXPERIMENT.all.sac_reaction(:,trial_ind)        = EXPERIMENT.all.sac_ind_start_trl(:,trial_ind) - EXPERIMENT.all.ind_stateSacBegin_trl(:,trial_ind);
 
 EXPERIMENT.all.sac2_validity(:,trial_ind)       = sac2_validity;
-EXPERIMENT.all.sac2_inds(:,trial_ind)           = uint32(inds_sac2);
-EXPERIMENT.all.sac2_ind_start_trl(:,trial_ind)  = uint32(ind_sac2_start);
-EXPERIMENT.all.sac2_ind_vmax_trl(:,trial_ind)   = uint32(ind_sac2_vmax);
-EXPERIMENT.all.sac2_ind_finish_trl(:,trial_ind) = uint32(ind_sac2_finish);
+EXPERIMENT.all.sac2_inds(:,trial_ind)           = double(inds_sac2);
+EXPERIMENT.all.sac2_ind_start_trl(:,trial_ind)  = double(ind_sac2_start);
+EXPERIMENT.all.sac2_ind_vmax_trl(:,trial_ind)   = double(ind_sac2_vmax);
+EXPERIMENT.all.sac2_ind_finish_trl(:,trial_ind) = double(ind_sac2_finish);
 
 EXPERIMENT.all.sac2_px(:,trial_ind)             = double(EXPERIMENT.all.eye_px(inds_sac2,trial_ind));
 EXPERIMENT.all.sac2_py(:,trial_ind)             = double(EXPERIMENT.all.eye_py(inds_sac2,trial_ind));

@@ -1,13 +1,21 @@
 function fhd_to_mat(folder_path)
-% get the folder path and convert all the h5 files in that folder to mat files
-% in addition, it adds a ALL_DATA.mat in the folder which include all the data of that folder
+% get the folder path and convert all the fhd files in that folder to mat files
 
-FILES_FHD = dir([folder_path '/*.fhd']);
+% if there is no inputs, then set folder_path to pwd
+if nargin < 1
+    folder_path = pwd;
+end
+% add '/' to the end of folder_path
+if ~strcmp(folder_path(end), '/')
+    folder_path = [folder_path '/'];
+end
+% get the list of fhd files to analyze
+FILES_FHD = dir([folder_path '*.fhd']);
 
 for counter_h5Files = 1 : length(FILES_FHD)
     file_fhd = FILES_FHD(counter_h5Files);
     [~,file_name,~] = fileparts(file_fhd.name);
-    file_path_name = [folder_path '/' file_fhd.name];
+    file_path_name = [folder_path file_fhd.name];
     
     fprintf([num2str(counter_h5Files) '. Loading: ' file_name ' ... '])
     

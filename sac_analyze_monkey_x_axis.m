@@ -1,5 +1,6 @@
 function sac_analyze_monkey_x_axis(pathnames)
 %% Get list of files
+
 % if there is no inputs, then set pathnames to pwd
 if nargin < 1
     pathnames = pwd;

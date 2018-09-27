@@ -19,11 +19,11 @@ direction_structured_moving = ones(num_structured_moving, 1) .* movement_directi
 direction_random_moving = randi(360, num_random_moving, 1);
 x_increment_unity_structured = cosd(direction_structured_moving);
 y_increment_unity_structured = sind(direction_structured_moving);
-x_increment_unity_random = cosd(direction_random_moving);
-y_increment_unity_random = sind(direction_random_moving);
+x_increment_unity_random     = cosd(direction_random_moving);
+y_increment_unity_random     = sind(direction_random_moving);
 
-x_values_random_moving     = (rand(num_random_moving, 1).*size)-(half_size);
-y_values_random_moving     = (rand(num_random_moving, 1).*size)-(half_size);
+x_values_random_moving     = (rand(num_random_moving,     1).*size)-(half_size);
+y_values_random_moving     = (rand(num_random_moving,     1).*size)-(half_size);
 x_values_structured_moving = (rand(num_structured_moving, 1).*size)-(half_size);
 y_values_structured_moving = (rand(num_structured_moving, 1).*size)-(half_size);
 

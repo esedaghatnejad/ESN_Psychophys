@@ -34,34 +34,41 @@ if nargin < 4
     Color_Vec = lines(7);
 end
 if nargin < 5
+    params.line_width = 2;
+    params.line_alpha = 0.8;
     params.marker_on_off = 1;
+    params.marker_size = 4;
+    params.std_fill_on_off = 1;
+    params.std_fill_alpha = 0.35;
     params.std_boundry_on_off = 1;
-    params.linewidth = 2;
-    params.MarkerSize = 4;
-    params.Std_Alpha = 0.35;
-    params.Line_Alpha = 0.8;
 end
 if nargin > 3
     line_color_index = 0;
 else
     line_color_index = line_color_index + 1;
 end
-%% Check the params structure
+%% LIST OF PARAMS and Check the params structure
 % check if the params stucture have all the necessary fields
+if ~isfield(params, 'line_width')
+    params.line_width = 2;
+end
+if ~isfield(params, 'line_alpha')
+    params.line_alpha = 0.8;
+end
 if ~isfield(params, 'marker_on_off')
     params.marker_on_off = 1;
 end
-if ~isfield(params, 'linewidth')
-    params.linewidth = 2;
+if ~isfield(params, 'marker_size')
+    params.marker_size = 4;
 end
-if ~isfield(params, 'MarkerSize')
-    params.MarkerSize = 4;
+if ~isfield(params, 'std_fill_on_off')
+    params.std_fill_on_off = 1;
 end
-if ~isfield(params, 'Std_Alpha')
-    params.Std_Alpha = 0.35;
+if ~isfield(params, 'std_fill_alpha')
+    params.std_fill_alpha = 0.35;
 end
-if ~isfield(params, 'Line_Alpha')
-    params.Line_Alpha = 0.8;
+if ~isfield(params, 'std_boundry_on_off')
+    params.std_boundry_on_off = 1;
 end
 %% Check vector dimensions
 % use the index number as x-values 
@@ -105,30 +112,32 @@ for counter = 1 : size(Y_Mean, 2)
     x_fill = [X_Values_; X_Values_(end:-1:1)];
     y_fill = [y_max; y_min(end:-1:1)];
     % plotting std shades using fill function
-    fill(x_fill, y_fill, 'c',...
+    if params.std_fill_on_off
+        fill(x_fill, y_fill, 'c',...
         'FaceColor', Color_Vec(color_index, :),...
-        'FaceAlpha', params.Std_Alpha,...
+        'FaceAlpha', params.std_fill_alpha,...
         'LineStyle','none');
+    end
     % Plotting the line using patch function which accepts transparency
     patch([X_Values_;NaN],[Y_Mean_;NaN],'w',...
-        'linewidth',params.linewidth,...
-        'EdgeAlpha',params.Line_Alpha,...
+        'linewidth',params.line_width,...
+        'EdgeAlpha',params.line_alpha,...
         'EdgeColor',Color_Vec(color_index, :));
     if params.std_boundry_on_off
         patch([X_Values_;NaN],[y_min;NaN],'w',...
         'linewidth',1,...
-        'EdgeAlpha',params.Line_Alpha,...
+        'EdgeAlpha',params.line_alpha,...
         'EdgeColor',Color_Vec(color_index, :));
         patch([X_Values_;NaN],[y_max;NaN],'w',...
         'linewidth',1,...
-        'EdgeAlpha',params.Line_Alpha,...
+        'EdgeAlpha',params.line_alpha,...
         'EdgeColor',Color_Vec(color_index, :));
     end
     % plotting markers
     if params.marker_on_off
         % plotting markers
         plot(X_Values_, Y_Mean_,'o',...
-            'MarkerSize',params.MarkerSize, ...
+            'MarkerSize',params.marker_size, ...
             'MarkerFaceColor', Color_Vec(color_index, :), ...
             'MarkerEdgeColor', 'k');
     end
@@ -136,7 +145,7 @@ for counter = 1 : size(Y_Mean, 2)
     % add any visualization to the figure
     ax_handles(counter, 1) = plot(nan, nan,'-',...
         'Color', Color_Vec(color_index, :),...
-        'linewidth',params.linewidth);
+        'linewidth',params.line_width);
 end
 % hold off
 hold off

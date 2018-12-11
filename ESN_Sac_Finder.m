@@ -72,6 +72,7 @@ end
 
 % make sure that the beginning of the search is not less than 1 and is also an integer
 ind_search_begin = round(max([ind_search_begin, 1]));
+ind_search_begin = round(min([ind_search_begin, length_input_trace-200]));
 % make sure that the ending of the search is not more than length of data and is also an integer
 ind_search_end    = round(min([length_input_trace, ind_search_end]));
 % search slot for primary saccade

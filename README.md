@@ -1,2 +1,2 @@
-# human_psychophys
-All the codes for analysing saccade tasks in human psychophysics project
+# ESN_Psychophys
+Matlab codes for analysing saccade tasks in psychophysics projects

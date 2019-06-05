@@ -10,7 +10,7 @@ if ~strcmp(pathnames(end), '/')
     pathnames = [pathnames '/'];
 end
 % get the list of MAT files to analyze
-x_axis_files = dir([pathnames 'cross_axis_adaptation_*.mat']);
+x_axis_files = dir([pathnames 'random_corrective_saccades_*.mat']);
 x_axis_files_cell = struct2cell(x_axis_files);
 filenames = x_axis_files_cell(1,:);
 % if there is no cross_axis_adaptation file, then terminate the function

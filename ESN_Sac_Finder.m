@@ -84,10 +84,10 @@ sac_vm            = trial_eye_velocity_trace(sac_inds_search_slot);
 sac_vm_filt_heavy = filtfilt(b_butter,a_butter,sac_vm);
 [sac_vmax_, ind_sac_vmax_] = findpeaks(sac_vm_filt_heavy, 'MinPeakProminence',MinPeakProminence_, ...
                                                  'MinPeakHeight', MinPeakHeight_);
-% peaks happen very close to each other
-if(sum(diff(ind_sac_vmax_)<80))
-    sac_validity         = false;
-end
+% % peaks happen very close to each other
+% if(sum(diff(ind_sac_vmax_)<80))
+%     sac_validity         = false;
+% end
 % select the peak based on prominent or first
 if strcmp(prominence_or_first_, 'prominent')
     [sac_vmax, ind_sac_vmax] = findpeaks(sac_vm_filt_heavy, 'MinPeakProminence',MinPeakProminence_, ...

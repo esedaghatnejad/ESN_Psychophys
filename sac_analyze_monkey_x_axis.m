@@ -6,8 +6,8 @@ if nargin < 1
     pathnames = pwd;
 end
 % add '/' to the end of pathnames
-if ~strcmp(pathnames(end), filesep)
-    pathnames = [pathnames filesep];
+if ~strcmp(pathnames(end), '/')
+    pathnames = [pathnames '/'];
 end
 % get the list of MAT files to analyze
 x_axis_files = dir([pathnames 'random_corrective_saccades_*.mat']);
@@ -92,7 +92,7 @@ for counter_file = 1 : 1 : length(SESSION_PARAMS.filenames)
         time_array = double(data.t(1: length_data));
         TRIAL.ind_trial_str   = find(time_array>TRIAL.time_start, 1, 'first');
         TRIAL.ind_trial_end   = find(time_array<TRIAL.time_end, 1, 'last');
-        TRIAL.inds_trial          = TRIAL.ind_trial_str : TRIAL.ind_trial_end;
+        TRIAL.inds_trial          = TRIAL.ind_trial_str:TRIAL.ind_trial_end;
         % trial timeseries
         TRIAL.inds_invalid   = false(1, length(TRIAL.inds_trial));
         TRIAL.time_eyelink   = double(data.eyelink_time(1, TRIAL.inds_trial));                           TRIAL.inds_invalid = isnan(TRIAL.time_eyelink) | TRIAL.inds_invalid;

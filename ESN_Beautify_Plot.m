@@ -24,7 +24,7 @@ set(hFig, 'PaperOrientation', 'portrait');
 
 AxesChildren = findall(hFig, 'type', 'axes');
 for counter = 1 : 1 : length(AxesChildren)
-    AxesChildren(counter).FontName      = 'Arial';
+    AxesChildren(counter).FontName      = 'Helvetica Neue';
     AxesChildren(counter).FontUnits     = 'points';
     AxesChildren(counter).FontSize      = 12;
     AxesChildren(counter).Box           = 'off';
@@ -39,13 +39,13 @@ for counter = 1 : 1 : length(AxesChildren)
     AxesChildren(counter).YColor        = [0 0 0];
     AxesChildren(counter).LineWidth     = 1;
     
-    AxesChildren(counter).XLabel.FontName  = 'Arial';
+    AxesChildren(counter).XLabel.FontName  = 'Helvetica Neue';
     AxesChildren(counter).XLabel.FontUnits = 'points';
     AxesChildren(counter).XLabel.FontSize  = 12;
-    AxesChildren(counter).YLabel.FontName  = 'Arial';
+    AxesChildren(counter).YLabel.FontName  = 'Helvetica Neue';
     AxesChildren(counter).YLabel.FontUnits = 'points';
     AxesChildren(counter).YLabel.FontSize  = 12;
-    AxesChildren(counter).Title.FontName   = 'Arial';
+    AxesChildren(counter).Title.FontName   = 'Helvetica Neue';
     AxesChildren(counter).Title.FontUnits  = 'points';
     AxesChildren(counter).Title.FontSize   = 14;
     AxesChildren(counter).Title.FontWeight = 'bold';
@@ -55,14 +55,14 @@ end
 
 LegendChildren = findall(hFig, 'tag', 'legend');
 for counter = 1 : 1 : length(LegendChildren)
-    LegendChildren(counter).FontName  = 'Arial';
+    LegendChildren(counter).FontName  = 'Helvetica Neue';
     LegendChildren(counter).FontUnits = 'points';
     LegendChildren(counter).FontSize  = 12;
 end
 
 TextChildren = findall(hFig, 'type', 'text');
 for counter = 1 : 1 : length(TextChildren)
-    TextChildren(counter).FontName  = 'Arial';
+    TextChildren(counter).FontName  = 'Helvetica Neue';
     TextChildren(counter).FontUnits = 'points';
     TextChildren(counter).FontSize  = 12;
 end

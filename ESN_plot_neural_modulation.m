@@ -1,3 +1,4 @@
+%% function ESN_plot_neural_modulation
 function ESN_plot_neural_modulation(num_data_set)
 if nargin < 1
     num_data_set = 1;
@@ -1058,7 +1059,7 @@ close(fig_handle_(5))
 fprintf(' --> Completed. \n')
 
 end
-%%
+%% function ESN_raster_plot_axes
 function [x_axis, y_axis] = ESN_raster_plot_axes(train_data_logic, x_axis_values, line_half_len)
 if nargin < 2
     x_axis_values = 1 : 1 : size(train_data_logic, 2);
@@ -1078,7 +1079,7 @@ y_axis = [(train_data_row_number(:)-line_half_len)'; (train_data_row_number(:)+l
 x_axis = x_axis(:);
 y_axis = y_axis(:);
 end
-%%
+%% function ESN_smooth
 function smooth_data_ = ESN_smooth(data_)
 % method = 'moving';  % Moving average. A lowpass filter with filter coefficients equal to the reciprocal of the span.
 % method = 'lowess';  % Local regression using weighted linear least squares and a 1st degree polynomial model.
@@ -1089,7 +1090,7 @@ function smooth_data_ = ESN_smooth(data_)
 % smooth_data_ = smooth(data_, method);
 smooth_data_ = smooth(data_, 21, 'sgolay', 2);
 end
-%%
+%% function build_EPHYS_BEHAVE_single_dataset
 function [EPHYS, BEHAVE] = build_EPHYS_BEHAVE_single_dataset
 %% load EPHYS EVENT DATA
 [file_name,file_path] = uigetfile([pwd filesep '*_aligned.mat'], 'Select EVENT DATA file');
@@ -1320,7 +1321,7 @@ end
 EPHYS.CH_EVE.BEHAVE_eye_r_vm_filt = BEHAVE_eye_r_vm_filt;
 fprintf(' --> Completed. \n')
 end
-%%
+%% function concatenate_dataset
 function upper_field_struct = concatenate_dataset(dataset_, upper_field_name, horz_OR_vert)
 if ~isempty(upper_field_name)
 dataset = struct(upper_field_name,struct());
@@ -1356,7 +1357,7 @@ end
 upper_field_struct = dataset;
 end
 end
-%%
+%% function plot_rasters_data
 function fig_handle_ = plot_rasters_data(raster_data, plot_data)
 fig_num_               = plot_data.fig_num_;
 xlabel_text_raster_    = plot_data.xlabel_text_raster_;
@@ -1580,7 +1581,7 @@ set(hFig, 'PaperPosition', [paper_margin figure_size]);
 set(hFig, 'Position', [[1 1] figure_size]);
 set(hFig, 'PaperOrientation', 'portrait');
 end
-%%
+%% function single_dataset_raster
 function raster_data = single_dataset_raster(EPHYS, BEHAVE, inds_event, prim_OR_corr)
 % inds of interest
 % inds_event           = EPHYS.CH_EVE.BEHAVE_inds_cue_present;

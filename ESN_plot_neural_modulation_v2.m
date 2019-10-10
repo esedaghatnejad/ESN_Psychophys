@@ -1,4 +1,4 @@
-%% function ESN_plot_neural_modulation
+%% function ESN_plot_neural_modulation_v2(num_data_set)
 function ESN_plot_neural_modulation_v2(num_data_set)
 if nargin < 1
     num_data_set = 1;
@@ -27,6 +27,9 @@ plot_data.xlabel_text_CS_probab_ = {'CS probability based on [0 +200]ms'};
 plot_data.inds_span = EPHYS_(1).CH_EVE.inds_span_cue_present;
 fig_handle_(plot_data.fig_num_)  = plot_rasters_data(raster_data, plot_data);
 
+[~, file_name, ~]  = fileparts(EPHYS_(1).CH_sorted_file_name);
+sgtitle(fig_handle_(plot_data.fig_num_), file_name, 'Interpreter', 'none');
+
 %% Plot-2 SS & CS train primSac_onset 
 clearvars raster_data_
 for counter_dataset = 1 : 1 : num_data_set
@@ -44,6 +47,9 @@ plot_data.xlabel_text_raster_    = {'Time relative to prim sac onset (ms)', 'Dir
 plot_data.xlabel_text_CS_probab_ = {'CS probability based on [-200 0]ms'};
 plot_data.inds_span = EPHYS_(1).CH_EVE.inds_span_primSac_onset;
 fig_handle_(plot_data.fig_num_)  = plot_rasters_data(raster_data, plot_data);
+
+[~, file_name, ~]  = fileparts(EPHYS_(1).CH_sorted_file_name);
+sgtitle(fig_handle_(plot_data.fig_num_), file_name, 'Interpreter', 'none');
 
 %% Plot-3 SS & CS train primSac_offset 
 clearvars raster_data_
@@ -63,6 +69,9 @@ plot_data.xlabel_text_CS_probab_ = {'CS probability based on [0 +200]ms'};
 plot_data.inds_span = EPHYS_(1).CH_EVE.inds_span_primSac_offset;
 fig_handle_(plot_data.fig_num_)  = plot_rasters_data(raster_data, plot_data);
 
+[~, file_name, ~]  = fileparts(EPHYS_(1).CH_sorted_file_name);
+sgtitle(fig_handle_(plot_data.fig_num_), file_name, 'Interpreter', 'none');
+
 %% Plot-4 SS & CS train corrSac_onset 
 clearvars raster_data_
 for counter_dataset = 1 : 1 : num_data_set
@@ -81,12 +90,14 @@ plot_data.xlabel_text_CS_probab_ = {'CS probability based on [-200 0]ms'};
 plot_data.inds_span = EPHYS_(1).CH_EVE.inds_span_corrSac_onset;
 fig_handle_(plot_data.fig_num_)  = plot_rasters_data(raster_data, plot_data);
 
+[~, file_name, ~]  = fileparts(EPHYS_(1).CH_sorted_file_name);
+sgtitle(fig_handle_(plot_data.fig_num_), file_name, 'Interpreter', 'none');
+
 %% Plot-5 Neural Properties
 CH_sorted_ = concatenate_dataset(EPHYS_, 'CH_sorted', @horzcat);
-EPHYS.CH_sorted.SS_data = concatenate_dataset(CH_sorted_.SS_data, [], @vertcat);
-EPHYS.CH_sorted.CS_data = concatenate_dataset(CH_sorted_.CS_data, [], @vertcat);
-EPHYS.CH_sorted.bin_size_time = CH_sorted_.bin_size_time(1);
-EPHYS.CH_sorted.inds_span = CH_sorted_.inds_span(:,1);
+EPHYS.CH_sorted.SS_data   = concatenate_dataset(CH_sorted_.SS_data, [], @vertcat);
+EPHYS.CH_sorted.CS_data   = concatenate_dataset(CH_sorted_.CS_data, [], @vertcat);
+EPHYS.CH_sorted.Corr_data = concatenate_dataset(CH_sorted_.Corr_data, [], @vertcat);
 
 if isfield(EPHYS.CH_sorted.SS_data, 'SS_waveform_hipass')
     EPHYS.CH_sorted.SS_data.SS_waveform = EPHYS.CH_sorted.SS_data.SS_waveform_hipass;
@@ -94,9 +105,9 @@ if isfield(EPHYS.CH_sorted.SS_data, 'SS_waveform_hipass')
 end
 
 % figure
-fig_num_ = 5;
-fig_handle_(fig_num_) = figure(fig_num_);
-clf(fig_handle_(fig_num_))
+plot_data.fig_num_ = 5;
+fig_handle_(plot_data.fig_num_) = figure(plot_data.fig_num_);
+clf(fig_handle_(plot_data.fig_num_))
 
 % subplot(2,2,1) Waveform
 plot_handle_(1) = subplot(2,2,1);
@@ -123,19 +134,55 @@ ylabel('Voltage (uv)')
 plot_handle_(2) = subplot(2,2,2);
 hold on
 
-x_axis_ = linspace((-50+(EPHYS.CH_sorted.bin_size_time*1000)), 50, length(EPHYS.CH_sorted.inds_span))';
-
-prob_value_ = mean(EPHYS.CH_sorted.SS_data.SSxSS_AUTO);
-prob_value_(round(length(EPHYS.CH_sorted.inds_span)/2)) = 0;
-y_axis_mean_ = prob_value_;
-y_axis_stdv_ = sqrt(size(EPHYS.CH_sorted.SS_data.SSxSS_AUTO, 1) .* ( prob_value_ .* (1 - prob_value_) ) ) ./ size(EPHYS.CH_sorted.SS_data.SSxSS_AUTO, 1);
+SSxSS_AUTO = EPHYS.CH_sorted.Corr_data.SS_SSxSS_AUTO;
+if size(SSxSS_AUTO, 1) > 1
+    inds_span = mean(EPHYS.CH_sorted.Corr_data.SS_inds_span);
+else
+    inds_span =      EPHYS.CH_sorted.Corr_data.SS_inds_span;
+end
+bin_size_time = mean(EPHYS.CH_sorted.Corr_data.SS_bin_size_time);
+if (~isempty(SSxSS_AUTO))
+    x_axis_ = (inds_span * bin_size_time * 1000)';
+    if size(SSxSS_AUTO, 1) > 1
+        prob_value_ = mean(SSxSS_AUTO);
+    else
+        prob_value_ =      SSxSS_AUTO;
+    end
+    prob_value_(round(length(inds_span)/2)) = 0;
+    y_axis_mean_ = prob_value_;
+    y_axis_stdv_ = sqrt(size(SSxSS_AUTO, 1) .* ( prob_value_ .* (1 - prob_value_) ) ) ./ size(SSxSS_AUTO, 1);
+    xlim([x_axis_(1) x_axis_(end)]);
+else
+    x_axis_      = nan(size(SSxSS_AUTO));
+    y_axis_mean_ = nan(size(SSxSS_AUTO));
+    y_axis_stdv_ = nan(size(SSxSS_AUTO));
+end
 plot(x_axis_, y_axis_mean_+y_axis_stdv_, 'LineWidth', 1, 'Color', [0.5 0.5 0.9])
 plot(x_axis_, y_axis_mean_-y_axis_stdv_, 'LineWidth', 1, 'Color', [0.5 0.5 0.9])
 plot(x_axis_, y_axis_mean_,              'LineWidth', 2, 'Color', [0.1 0.1 0.9])
 
-prob_value_ = mean(EPHYS.CH_sorted.SS_data.CSxSS_AUTO);
-y_axis_mean_ = prob_value_;
-y_axis_stdv_ = sqrt(size(EPHYS.CH_sorted.SS_data.CSxSS_AUTO, 1) .* ( prob_value_ .* (1 - prob_value_) ) ) ./ size(EPHYS.CH_sorted.SS_data.CSxSS_AUTO, 1);
+CSxSS_AUTO    = EPHYS.CH_sorted.Corr_data.CS_CSxSS_AUTO;
+if size(CSxSS_AUTO, 1) > 1
+    inds_span = mean(EPHYS.CH_sorted.Corr_data.CS_inds_span);
+else
+    inds_span      = EPHYS.CH_sorted.Corr_data.CS_inds_span;
+end
+bin_size_time = mean(EPHYS.CH_sorted.Corr_data.CS_bin_size_time);
+if (~isempty(CSxSS_AUTO))
+    x_axis_ = (inds_span * bin_size_time * 1000)';
+    if size(CSxSS_AUTO, 1) > 1
+        prob_value_ = mean(CSxSS_AUTO);
+    else
+        prob_value_ =      CSxSS_AUTO;
+    end
+    y_axis_mean_ = prob_value_;
+    y_axis_stdv_ = sqrt(size(CSxSS_AUTO, 1) .* ( prob_value_ .* (1 - prob_value_) ) ) ./ size(CSxSS_AUTO, 1);
+    xlim([x_axis_(1) x_axis_(end)]);
+else
+    x_axis_      = nan(size(CSxSS_AUTO));
+    y_axis_mean_ = nan(size(CSxSS_AUTO));
+    y_axis_stdv_ = nan(size(CSxSS_AUTO));
+end
 plot(x_axis_, y_axis_mean_+y_axis_stdv_, 'LineWidth', 1, 'Color', [0.9 0.5 0.5])
 plot(x_axis_, y_axis_mean_-y_axis_stdv_, 'LineWidth', 1, 'Color', [0.9 0.5 0.5])
 plot(x_axis_, y_axis_mean_,              'LineWidth', 2, 'Color', [0.9 0.1 0.1])
@@ -166,7 +213,7 @@ xlabel('Time (s)')
 ylabel('Probability')
 
 ESN_Beautify_Plot
-hFig = fig_handle_(fig_num_);
+hFig = fig_handle_(plot_data.fig_num_);
 figure_size  = [8.0 8.0];
 paper_margin = [0.1 0.1];
 paper_size = figure_size + 2 * paper_margin;
@@ -175,6 +222,9 @@ set(hFig, 'PaperPositionMode', 'manual');
 set(hFig, 'PaperPosition', [paper_margin figure_size]);
 set(hFig, 'Position', [[1 1] figure_size]);
 set(hFig, 'PaperOrientation', 'portrait');
+
+[~, file_name, ~]  = fileparts(EPHYS_(1).CH_sorted_file_name);
+sgtitle(fig_handle_(plot_data.fig_num_), file_name, 'Interpreter', 'none');
 
 %% Save Fig
 EPHYS.CH_sorted_file_name = EPHYS_(1).CH_sorted_file_name;
@@ -202,7 +252,24 @@ close(fig_handle_(4))
 close(fig_handle_(5))
 fprintf(' --> Completed. \n')
 
+%% Report Properties
+for counter_dataset = 1 : 1 : num_data_set
+    [~, file_name, ~]  = fileparts(EPHYS_(counter_dataset).CH_sorted_file_name);
+    duration = (EPHYS_(counter_dataset).CH_EVE.EPHYS_time_15K(end)-EPHYS_(counter_dataset).CH_EVE.EPHYS_time_15K(1));
+    numCS = length(EPHYS_(counter_dataset).CH_sorted.CS_data.CS_ind);
+    freqCS = numCS/duration;
+    numSS = length(EPHYS_(counter_dataset).CH_sorted.SS_data.SS_ind);
+    freqSS = numSS/duration;
+    numTrial = length(BEHAVE_(counter_dataset).TRIALS_DATA.time_end);
+    
+    fprintf(['*******************************************' '\n'])
+    fprintf([file_name '\n'])
+    fprintf([       'dur'   '\t'        'numCS'   '\t'        'freqCS'   '\t'        'numSS'   '\t'        'freqSS'   '\t'        'numTrial'   '\n'])
+    fprintf([num2str(duration,'%.0f') '\t'  num2str(numCS,'%.0f') '\t' num2str(freqCS,'%.2f') '\t' num2str(numSS,'%.0f') '\t' num2str(freqSS,'%.2f') '\t' num2str(numTrial,'%.0f') '\n'])
 end
+
+end
+
 %% function ESN_raster_plot_axes
 function [x_axis, y_axis] = ESN_raster_plot_axes(train_data_logic, x_axis_values, line_half_len)
 if nargin < 2
@@ -223,6 +290,7 @@ y_axis = [(train_data_row_number(:)-line_half_len)'; (train_data_row_number(:)+l
 x_axis = x_axis(:);
 y_axis = y_axis(:);
 end
+
 %% function ESN_smooth
 function smooth_data_ = ESN_smooth(data_)
 % method = 'moving';  % Moving average. A lowpass filter with filter coefficients equal to the reciprocal of the span.
@@ -234,6 +302,7 @@ function smooth_data_ = ESN_smooth(data_)
 % smooth_data_ = smooth(data_, method);
 smooth_data_ = smooth(data_, 21, 'sgolay', 2);
 end
+
 %% function build_EPHYS_BEHAVE_single_dataset
 function [EPHYS, BEHAVE] = build_EPHYS_BEHAVE_single_dataset
 %% load EPHYS EVENT DATA
@@ -263,54 +332,16 @@ fprintf(' --> Completed. \n')
 %% build SSxSS AUTO PROBABILITY
 clearvars -except EPHYS BEHAVE
 fprintf(['Building SSxSS_AUTO & CSxSS_AUTO PROBABILITY ' ' ...'])
+SS_time   = EPHYS.CH_sorted.SS_data.SS_time;
+CS_time   = EPHYS.CH_sorted.CS_data.CS_time;
+Corr_data = ESN_correlogram(SS_time, CS_time);
+EPHYS.CH_sorted.Corr_data.CS_inds_span     = Corr_data.CS_inds_span;
+EPHYS.CH_sorted.Corr_data.CS_bin_size_time = Corr_data.CS_bin_size_time;
+EPHYS.CH_sorted.Corr_data.SS_inds_span     = Corr_data.SS_inds_span;
+EPHYS.CH_sorted.Corr_data.SS_bin_size_time = Corr_data.SS_bin_size_time;
+EPHYS.CH_sorted.Corr_data.SS_SSxSS_AUTO    = Corr_data.SS_SSxSS_AUTO;
+EPHYS.CH_sorted.Corr_data.CS_CSxSS_AUTO    = Corr_data.CS_CSxSS_AUTO;
 
-bin_size_time = 1e-3; % seconds
-span_window_size = (1 / bin_size_time) * (100 / 1000);
-span_window_size_half = round(span_window_size / 2);
-inds_span = ((-span_window_size_half+1) : 1 : (span_window_size_half))';
-
-ch_time_min = min([EPHYS.CH_sorted.SS_data.SS_time(1) EPHYS.CH_sorted.CS_data.CS_time(1)]);
-ch_time_min = max([(ch_time_min-2.0) 0]);
-ch_time_max = max([EPHYS.CH_sorted.SS_data.SS_time(end) EPHYS.CH_sorted.CS_data.CS_time(end)]) + 2.0;
-
-CH__.SS_data.SS_time =  EPHYS.CH_sorted.SS_data.SS_time - ch_time_min;
-CH__.CS_data.CS_time =  EPHYS.CH_sorted.CS_data.CS_time - ch_time_min;
-CH__.SS_data.SS_time = ESN_Round(CH__.SS_data.SS_time, bin_size_time);
-CH__.CS_data.CS_time = ESN_Round(CH__.CS_data.CS_time, bin_size_time);
-CH__.SS_data.SS_ind  = round(CH__.SS_data.SS_time .* (1/bin_size_time));
-CH__.SS_data.SS_ind( CH__.SS_data.SS_ind < 1 ) = 1;
-CH__.CS_data.CS_ind  = round(CH__.CS_data.CS_time .* (1/bin_size_time));
-CH__.CS_data.CS_ind( CH__.CS_data.CS_ind < 1 ) = 1;
-CH__.CH_data.ch_time_reconstruct = ch_time_min : bin_size_time : ch_time_max;
-
-% SSxSS_AUTO
-CH__.SS_data.SS_inds_reconstruct = repmat( CH__.SS_data.SS_ind(:), 1, length(inds_span)) + repmat(inds_span(:)', length(CH__.SS_data.SS_ind), 1);
-CH__.SS_data.SS_inds_reconstruct( CH__.SS_data.SS_inds_reconstruct < 1 ) = 1;
-CH__.SS_data.SS_inds_reconstruct( CH__.SS_data.SS_inds_reconstruct > length( CH__.CH_data.ch_time_reconstruct ) ) = length( CH__.CH_data.ch_time_reconstruct );
-
-CH__.SS_data.SS_event_trace = false( size(CH__.CH_data.ch_time_reconstruct) );
-CH__.SS_data.SS_event_trace( CH__.SS_data.SS_ind ) = true ;
-CH__.SS_data.SS_event_trace( 1   ) = false;
-CH__.SS_data.SS_event_trace( end ) = false;
-
-CH__.SS_data.SS_event_reconstruct = CH__.SS_data.SS_event_trace( CH__.SS_data.SS_inds_reconstruct );
-EPHYS.CH_sorted.SS_data.SSxSS_AUTO = CH__.SS_data.SS_event_reconstruct;
-
-% CSxSS_WITHIN
-CH__.CS_data.CS_inds_reconstruct = repmat( CH__.CS_data.CS_ind(:), 1, length(inds_span)) + repmat(inds_span(:)', length(CH__.CS_data.CS_ind), 1);
-CH__.CS_data.CS_inds_reconstruct( CH__.CS_data.CS_inds_reconstruct < 1 ) = 1;
-CH__.CS_data.CS_inds_reconstruct( CH__.CS_data.CS_inds_reconstruct > length( CH__.CH_data.ch_time_reconstruct ) ) = length( CH__.CH_data.ch_time_reconstruct );
-
-CH__.SS_data.SS_event_trace = false( size(CH__.CH_data.ch_time_reconstruct) );
-CH__.SS_data.SS_event_trace( CH__.SS_data.SS_ind ) = true ;
-CH__.SS_data.SS_event_trace( 1   ) = false;
-CH__.SS_data.SS_event_trace( end ) = false;
-
-CH__.SS_data.SS_event_reconstruct = CH__.SS_data.SS_event_trace( CH__.CS_data.CS_inds_reconstruct );
-EPHYS.CH_sorted.SS_data.CSxSS_AUTO = CH__.SS_data.SS_event_reconstruct;
-
-EPHYS.CH_sorted.inds_span = inds_span;
-EPHYS.CH_sorted.bin_size_time = bin_size_time;
 fprintf(' --> Completed. \n')
 
 %% SS & CS train_aligned
@@ -319,8 +350,14 @@ fprintf(['Building CS & SS train_aligned', ' ... ']);
 EPHYS_time_1K     = EPHYS.CH_EVE.EPHYS_time_1K;
 length_time_ = length(EPHYS_time_1K);
 CS_time = EPHYS.CH_sorted.CS_data.CS_time;
+if isempty(CS_time)
+    CS_time = EPHYS_time_1K(1);
+end
 CS_time(end+1) = max([EPHYS_time_1K(end), CS_time(end)])+1;
 SS_time = EPHYS.CH_sorted.SS_data.SS_time;
+if isempty(SS_time)
+    SS_time = EPHYS_time_1K(1);
+end
 SS_time(end+1) = max([EPHYS_time_1K(end), SS_time(end)])+1;
 EPHYS_CS_train_1K = false(size(EPHYS_time_1K));
 EPHYS_SS_train_1K = false(size(EPHYS_time_1K));
@@ -509,6 +546,7 @@ EPHYS.CH_EVE.inds_span_corrSac_onset    = inds_span_corrSac_onset(:)';
 fprintf(' --> Completed. \n')
 
 end
+
 %% function concatenate_dataset
 function upper_field_struct = concatenate_dataset(dataset_, upper_field_name, horz_OR_vert)
 if ~isempty(upper_field_name)
@@ -545,6 +583,7 @@ end
 upper_field_struct = dataset;
 end
 end
+
 %% function plot_rasters_data
 function fig_handle_ = plot_rasters_data(raster_data, plot_data)
 fig_num_               = plot_data.fig_num_;
@@ -769,6 +808,7 @@ set(hFig, 'PaperPosition', [paper_margin figure_size]);
 set(hFig, 'Position', [[1 1] figure_size]);
 set(hFig, 'PaperOrientation', 'portrait');
 end
+
 %% function single_dataset_raster
 function raster_data = single_dataset_raster(EPHYS, BEHAVE, EPHYS_inds_event, BEHAVE_inds_event, prim_OR_corr)
 % inds of interest
@@ -878,4 +918,98 @@ end
 
 end
 
+%% function ESN_correlogram
+function Corr_data = ESN_correlogram(SS_time, CS_time)
+bin_size_time = 1e-3; % seconds
+span_window_size = (1 / bin_size_time) * (100 / 1000);
+span_window_size_half = round(span_window_size / 2);
+inds_span = ((-span_window_size_half+1) : 1 : (span_window_size_half))';
 
+if (~isempty(CS_time)) && (~isempty(SS_time))
+    ch_time_min = min([SS_time(1) CS_time(1)]);
+    ch_time_min = max([(ch_time_min-2.0) 0]);
+    ch_time_max = max([SS_time(end) CS_time(end)]) + 2.0;
+    
+    CH__.SS_data.SS_time =  SS_time - ch_time_min;
+    CH__.CS_data.CS_time =  CS_time - ch_time_min;
+    CH__.SS_data.SS_time = ESN_Round(CH__.SS_data.SS_time, bin_size_time);
+    CH__.CS_data.CS_time = ESN_Round(CH__.CS_data.CS_time, bin_size_time);
+    CH__.SS_data.SS_ind  = round(CH__.SS_data.SS_time .* (1/bin_size_time));
+    CH__.SS_data.SS_ind( CH__.SS_data.SS_ind < 1 ) = 1;
+    CH__.CS_data.CS_ind  = round(CH__.CS_data.CS_time .* (1/bin_size_time));
+    CH__.CS_data.CS_ind( CH__.CS_data.CS_ind < 1 ) = 1;
+    CH__.CH_data.ch_time_reconstruct = ch_time_min : bin_size_time : ch_time_max;
+elseif (~isempty(CS_time))
+    ch_time_min = min(  CS_time(1) );
+    ch_time_min = max([(ch_time_min-2.0) 0]);
+    ch_time_max = max(  CS_time(end) ) + 2.0;
+    
+    CH__.CS_data.CS_time =  CS_time - ch_time_min;
+    CH__.CS_data.CS_time = ESN_Round(CH__.CS_data.CS_time, bin_size_time);
+    CH__.CS_data.CS_ind  = round(CH__.CS_data.CS_time .* (1/bin_size_time));
+    CH__.CS_data.CS_ind( CH__.CS_data.CS_ind < 1 ) = 1;
+    CH__.CH_data.ch_time_reconstruct = ch_time_min : bin_size_time : ch_time_max;
+elseif (~isempty(SS_time))
+    ch_time_min = min( SS_time(1)  );
+    ch_time_min = max([(ch_time_min-2.0) 0]);
+    ch_time_max = max( SS_time(end)  ) + 2.0;
+    
+    CH__.SS_data.SS_time =  SS_time - ch_time_min;
+    CH__.SS_data.SS_time = ESN_Round(CH__.SS_data.SS_time, bin_size_time);
+    CH__.SS_data.SS_ind  = round(CH__.SS_data.SS_time .* (1/bin_size_time));
+    CH__.SS_data.SS_ind( CH__.SS_data.SS_ind < 1 ) = 1;
+    CH__.CH_data.ch_time_reconstruct = ch_time_min : bin_size_time : ch_time_max;
+end
+
+% SSxSS_AUTO
+if (~isempty(SS_time))
+    CH__.SS_data.SS_inds_reconstruct = repmat( CH__.SS_data.SS_ind(:), 1, length(inds_span)) + repmat(inds_span(:)', length(CH__.SS_data.SS_ind), 1);
+    CH__.SS_data.SS_inds_reconstruct( CH__.SS_data.SS_inds_reconstruct < 1 ) = 1;
+    CH__.SS_data.SS_inds_reconstruct( CH__.SS_data.SS_inds_reconstruct > length( CH__.CH_data.ch_time_reconstruct ) ) = length( CH__.CH_data.ch_time_reconstruct );
+    
+    CH__.SS_data.SS_event_trace = false( size(CH__.CH_data.ch_time_reconstruct) );
+    CH__.SS_data.SS_event_trace( CH__.SS_data.SS_ind ) = true ;
+    CH__.SS_data.SS_event_trace( 1   ) = false;
+    CH__.SS_data.SS_event_trace( end ) = false;
+    
+    CH__.SS_data.SS_event_reconstruct = CH__.SS_data.SS_event_trace( CH__.SS_data.SS_inds_reconstruct );
+    % SSxSS correlogram
+    SSxSS_AUTO       = CH__.SS_data.SS_event_reconstruct;
+    ss_inds_span     = repmat(inds_span(:)',     size(SS_time(:),1), 1);
+    ss_bin_size_time = repmat(bin_size_time(:)', size(SS_time(:),1), 1);
+else
+    SSxSS_AUTO       = false(0, length(inds_span(:)'));
+    ss_inds_span     = nan(0, length(inds_span(:)'));
+    ss_bin_size_time = nan(0, 1);
+end
+
+% CSxSS_WITHIN
+if (~isempty(CS_time)) && (~isempty(SS_time))
+    CH__.CS_data.CS_inds_reconstruct = repmat( CH__.CS_data.CS_ind(:), 1, length(inds_span)) + repmat(inds_span(:)', length(CH__.CS_data.CS_ind), 1);
+    CH__.CS_data.CS_inds_reconstruct( CH__.CS_data.CS_inds_reconstruct < 1 ) = 1;
+    CH__.CS_data.CS_inds_reconstruct( CH__.CS_data.CS_inds_reconstruct > length( CH__.CH_data.ch_time_reconstruct ) ) = length( CH__.CH_data.ch_time_reconstruct );
+    
+    CH__.SS_data.SS_event_trace = false( size(CH__.CH_data.ch_time_reconstruct) );
+    CH__.SS_data.SS_event_trace( CH__.SS_data.SS_ind ) = true ;
+    CH__.SS_data.SS_event_trace( 1   ) = false;
+    CH__.SS_data.SS_event_trace( end ) = false;
+    
+    CH__.SS_data.SS_event_reconstruct = CH__.SS_data.SS_event_trace( CH__.CS_data.CS_inds_reconstruct );
+    % CSxSS correlogram
+    CSxSS_AUTO       = CH__.SS_data.SS_event_reconstruct;
+    cs_inds_span     = repmat(inds_span(:)',     size(CS_time(:),1), 1);
+    cs_bin_size_time = repmat(bin_size_time(:)', size(CS_time(:),1), 1);
+else
+    CSxSS_AUTO       = false(0, length(inds_span(:)'));
+    cs_inds_span     = nan(0, length(inds_span(:)'));
+    cs_bin_size_time = nan(0, 1);
+end
+
+Corr_data = struct;
+Corr_data.CS_inds_span     = cs_inds_span;
+Corr_data.CS_bin_size_time = cs_bin_size_time;
+Corr_data.SS_inds_span     = ss_inds_span;
+Corr_data.SS_bin_size_time = ss_bin_size_time;
+Corr_data.SS_SSxSS_AUTO    = SSxSS_AUTO;
+Corr_data.CS_CSxSS_AUTO    = CSxSS_AUTO;
+end

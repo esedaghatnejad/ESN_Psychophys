@@ -1,4 +1,4 @@
-%%
+%% function ESN_continuous_to_mat
 function ESN_continuous_to_mat(folder_path)
 % get the folder path and convert all the *.continuous files in that folder to mat files
 
@@ -68,7 +68,7 @@ save([folder_path filesep 'mat_files' filesep file_name '.mat'], 'CH_DATA', '-v7
 
 end
 
-%%
+%% function load_open_ephys_data
 function [data, timestamps, info] = load_open_ephys_data(filename)
 %
 % [data, timestamps, info] = load_open_ephys_data(filename)
@@ -535,7 +535,7 @@ end
 
 end
 
-%%
+%% function getfilesize
 function filesize = getfilesize(fid)
 
 fseek(fid,0,'eof');
@@ -544,7 +544,7 @@ fseek(fid,0,'bof');
 
 end
 
-%%
+%% function get_session_info
 function info = get_session_info(directory)
 
 % STEP 1: GET FULL PATH FOR DIRECTORY
@@ -717,7 +717,7 @@ for s = numSessions:-1:1 % iterate backwards to preallocate
 end
 end
 
-%%
+%% function get_full_path
 function output_path = get_full_path(input_path)
 % 
 % If a truncated path is given (e.g., ~/Folder/file), this function

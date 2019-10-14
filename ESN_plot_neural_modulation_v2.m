@@ -261,11 +261,10 @@ for counter_dataset = 1 : 1 : num_data_set
     numSS = length(EPHYS_(counter_dataset).CH_sorted.SS_data.SS_ind);
     freqSS = numSS/duration;
     numTrial = length(BEHAVE_(counter_dataset).TRIALS_DATA.time_end);
-    
     fprintf(['*******************************************' '\n'])
     fprintf([file_name '\n'])
     fprintf([       'dur'   '\t'        'numCS'   '\t'        'freqCS'   '\t'        'numSS'   '\t'        'freqSS'   '\t'        'numTrial'   '\n'])
-    fprintf([num2str(duration,'%.0f') '\t'  num2str(numCS,'%.0f') '\t' num2str(freqCS,'%.2f') '\t' num2str(numSS,'%.0f') '\t' num2str(freqSS,'%.2f') '\t' num2str(numTrial,'%.0f') '\n'])
+    fprintf([num2str(duration/60,'%.1f') '\t'  num2str(numCS,'%.0f') '\t' num2str(freqCS,'%.2f') '\t' num2str(numSS,'%.0f') '\t' num2str(freqSS,'%.2f') '\t' num2str(numTrial,'%.0f') '\n'])
 end
 
 end

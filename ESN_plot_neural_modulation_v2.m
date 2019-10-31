@@ -624,7 +624,7 @@ prob_down  = sum( sum(train_data_logic_CS_down( :,range_inds_probability) ,2) > 
 prob_amplitude = [prob_right prob_top prob_left prob_down prob_right];
 % % plot xlim and ylim
 range_SS_Firing = [0 200];
-range_vm        = [-50 600];
+range_vm        = [0 600];
 % % xlabel text
 % xlabel_text_raster_ = {'Time relative to cue presentation (ms)', 'Directions based on primary sac'};
 % xlabel_text_CS_probab_ = {'CS probability based on [0 +200]ms'};
@@ -666,9 +666,11 @@ firing_SS_top = mean(train_data_logic_SS_top) * 1000;
 plot(inds_span, ESN_smooth(firing_SS_top), 'LineWidth', 1, 'Color', [0.1 0.1 0.9])
 ylabel('SS Firing (spk/s)')
 ylim(range_SS_Firing)
+set(gca, 'YColor', [0.1 0.1 0.9])
 yyaxis left;
 xlim([min(inds_span)-1 max(inds_span)+1])
 title('Top')
+set(gca, 'YColor', [0.1 0.9 0.1])
 
 % % Left Plot Raster
 subplot(3,3,4)
@@ -703,9 +705,11 @@ firing_SS_left = mean(train_data_logic_SS_left) * 1000;
 plot(inds_span, ESN_smooth(firing_SS_left), 'LineWidth', 1, 'Color', [0.1 0.1 0.9])
 ylabel('SS Firing (spk/s)')
 ylim(range_SS_Firing)
+set(gca, 'YColor', [0.1 0.1 0.9])
 yyaxis left;
 xlim([min(inds_span)-1 max(inds_span)+1])
 title('Left')
+set(gca, 'YColor', [0.1 0.9 0.1])
 
 % % Right Plot Raster
 subplot(3,3,6)
@@ -740,9 +744,11 @@ firing_SS_right = mean(train_data_logic_SS_right) * 1000;
 plot(inds_span, ESN_smooth(firing_SS_right), 'LineWidth', 1, 'Color', [0.1 0.1 0.9])
 ylabel('SS Firing (spk/s)')
 ylim(range_SS_Firing)
+set(gca, 'YColor', [0.1 0.1 0.9])
 yyaxis left;
 xlim([min(inds_span)-1 max(inds_span)+1])
 title('Right')
+set(gca, 'YColor', [0.1 0.9 0.1])
 
 % % Down Plot Raster
 subplot(3,3,8)
@@ -778,9 +784,11 @@ firing_SS_down = mean(train_data_logic_SS_down) * 1000;
 plot(inds_span, ESN_smooth(firing_SS_down), 'LineWidth', 1, 'Color', [0.1 0.1 0.9])
 ylabel('SS Firing (spk/s)')
 ylim(range_SS_Firing)
+set(gca, 'YColor', [0.1 0.1 0.9])
 yyaxis left;
 xlim([min(inds_span)-1 max(inds_span)+1])
 title('Down')
+set(gca, 'YColor', [0.1 0.9 0.1])
 
 % % Probability
 subplot(3,3,5)
@@ -795,6 +803,8 @@ y_axis = [sind(0) sind(90) sind(180) sind(270) sind(0)] .* prob_amplitude;
 plot(x_axis(:), y_axis(:), 'LineWidth', 3, 'Color', [0.9 0.1 0.1])
 axis equal
 xlabel(xlabel_text_CS_probab_);
+set(gca, 'YColor', [0.9 0.1 0.1])
+set(gca, 'XColor', [0.9 0.1 0.1])
 
 ESN_Beautify_Plot
 hFig = fig_handle_;

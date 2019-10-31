@@ -35,8 +35,8 @@ for counter = 1 : 1 : length(AxesChildren)
     AxesChildren(counter).XGrid         = 'off';
     AxesChildren(counter).YGrid         = 'off';
     AxesChildren(counter).GridLineStyle = '--';
-    AxesChildren(counter).XColor        = [0 0 0];
-    AxesChildren(counter).YColor        = [0 0 0];
+%     AxesChildren(counter).XColor        = [0 0 0];
+%     AxesChildren(counter).YColor        = [0 0 0];
     AxesChildren(counter).LineWidth     = 1;
     
     AxesChildren(counter).XLabel.FontName  = 'Helvetica Neue';

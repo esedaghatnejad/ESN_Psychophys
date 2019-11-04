@@ -1,4 +1,4 @@
-function ESN_session_to_mat(session_folder_path)
+function ESN_session_to_mat(session_folder_path, session_type)
 % get the session folder path and convert all the *.continuous files for that session to mat files
 
 % if there is no inputs, then set folder_path to pwd
@@ -25,7 +25,11 @@ for counter_list = 3 : length(session_folder_list)
         try
             disp(data_folder_path);
             ESN_continuous_to_mat(data_folder_path);
-            ESN_heptode_combine([data_folder_path filesep 'mat_files']);
+            if contains(session_type, 'Heptode') || contains(session_type, 'heptode')
+                ESN_heptode_combine([data_folder_path filesep 'mat_files']);
+            elseif contains(session_type, 'Tetrode') || contains(session_type, 'tetrode')
+                % TODO: Combine Tetrode
+            end
         catch err_msg
             %open file
             fid = fopen([data_folder_path filesep 'errorLog.txt'],'a+');

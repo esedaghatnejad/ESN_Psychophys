@@ -4,6 +4,7 @@ function ESN_session_to_mat(session_folder_path, session_type)
 % if there is no inputs, then set folder_path to pwd
 if nargin < 1
     session_folder_path = pwd;
+    session_type = 'Heptode';
 end
 % add filesep ('/' or '\') to the end of folder_path
 if ~strcmp(session_folder_path(end), filesep)

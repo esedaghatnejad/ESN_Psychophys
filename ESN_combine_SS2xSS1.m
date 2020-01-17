@@ -1,5 +1,5 @@
 function ESN_combine_SS2xSS1
-%% Load SS dataset
+%% Load CH1 dataset
 [file_name,file_path] = uigetfile([pwd filesep '*_sorted*.mat'], 'Select SS-1 file');
 fprintf(['Loading ', file_name, ' as CH1 ... ']);
 EPHYS.CH_1_sorted = load([file_path filesep file_name], 'CH_data', 'SS_data', 'CS_data', 'Corr_data');
@@ -7,7 +7,7 @@ EPHYS.CH_1_sorted_file_name = file_name;
 EPHYS.CH_1_sorted_file_path = file_path;
 fprintf(' --> Completed. \n')
 
-%% Load CS dataset
+%% Load CH2 dataset
 [file_name,file_path] = uigetfile([file_path filesep '*_sorted*.mat'], 'Select SS-2 file');
 fprintf(['Loading ', file_name, ' as CH2 ... ']);
 EPHYS.CH_2_sorted = load([file_path filesep file_name], 'CH_data', 'SS_data', 'CS_data', 'Corr_data');
@@ -746,7 +746,6 @@ set(hFig, 'PaperOrientation', 'portrait');
 
 sgtitle(fig_handle_(plot_data.fig_num_), [EPHYS.file_name_base '_CSxCS'], 'Interpreter', 'none');
 
-
 %% Save combined file
 file_name = EPHYS.file_name_base;
 [save_file_name,save_file_path] = uiputfile([EPHYS.CH_1_sorted_file_path filesep file_name], 'Select where to save the _sorted mat-file.');
@@ -776,6 +775,7 @@ CH_2.file_path = EPHYS.CH_2_sorted_file_path;
 save([save_file_path filesep save_file_name], 'CH_1','CH_2','-v7.3');
 
 fprintf(' --> Completed. \n');
+
 end
 
 %% function ESN_correlogram

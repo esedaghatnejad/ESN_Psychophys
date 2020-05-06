@@ -1,4 +1,4 @@
-function ESN_Beautify_Plot(hFig)
+function ESN_Beautify_Plot(hFig, figure_size)
 
 if nargin == 0
     if	isempty(get(0,'currentfigure'))
@@ -6,12 +6,16 @@ if nargin == 0
         return;
     end
     hFig = gcf;
+    figure_size  = [6.0 4.0];
+end
+
+if nargin == 1
+    figure_size  = [6.0 4.0];
 end
 
 set(hFig, 'Color', [1 1 1]);
 set(hFig, 'Units', 'inches');
 set(hFig, 'PaperUnits', 'inches');
-figure_size  = [6.0 4.0];
 paper_margin = [0.1 0.1];
 paper_size = figure_size + 2 * paper_margin;
 set(hFig, 'PaperSize', paper_size);

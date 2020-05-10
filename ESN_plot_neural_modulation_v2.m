@@ -8,6 +8,15 @@ clearvars EPHYS BEHAVE
 for counter_dataset = 1 : 1 : num_data_set
     [EPHYS_(counter_dataset), BEHAVE_(counter_dataset)] = build_EPHYS_BEHAVE_single_dataset;
 end
+EPHYS.CH_sorted_file_name = EPHYS_(1).CH_sorted_file_name;
+EPHYS.CH_sorted_file_path = EPHYS_(1).CH_sorted_file_path;
+
+[~, file_name, ~]  = fileparts(EPHYS.CH_sorted_file_name);
+if num_data_set > 1
+    file_name = [file_name '_combine_' num2str(num_data_set)];
+end
+Neural_Properties_data.file_name = file_name;
+Neural_Properties_data.file_path = EPHYS.CH_sorted_file_path;
 
 %% Plot-1 SS & CS train cue_present 
 clearvars raster_data_
@@ -19,16 +28,15 @@ for counter_dataset = 1 : 1 : num_data_set
         EPHYS_inds_event, BEHAVE_inds_event, 'prim');
 end
 
-raster_data = concatenate_dataset(raster_data_, 'data', @vertcat);
+raster_data_cue_present = concatenate_dataset(raster_data_, 'data', @vertcat);
 
-plot_data.fig_num_               = 1;
-plot_data.xlabel_text_raster_    = {'Time relative to cue presentation (ms)', 'Directions based on primary sac'};
-plot_data.xlabel_text_CS_probab_ = {'CS probability based on [0 +200]ms'};
-plot_data.inds_span = EPHYS_(1).CH_EVE.inds_span_cue_present;
-fig_handle_(plot_data.fig_num_)  = plot_rasters_data(raster_data, plot_data);
+plot_data_cue_present.fig_num_               = 1;
+plot_data_cue_present.xlabel_text_raster_    = {'Time relative to cue presentation (ms)', 'Directions based on primary sac'};
+plot_data_cue_present.xlabel_text_CS_probab_ = {'CS probability based on [0 +200]ms'};
+plot_data_cue_present.inds_span = EPHYS_(1).CH_EVE.inds_span_cue_present;
+fig_handle_(plot_data_cue_present.fig_num_)  = plot_rasters_data(raster_data_cue_present, plot_data_cue_present);
 
-[~, file_name, ~]  = fileparts(EPHYS_(1).CH_sorted_file_name);
-sgtitle(fig_handle_(plot_data.fig_num_), file_name, 'Interpreter', 'none');
+sgtitle(fig_handle_(plot_data_cue_present.fig_num_), Neural_Properties_data.file_name, 'Interpreter', 'none');
 
 %% Plot-2 SS & CS train primSac_onset 
 clearvars raster_data_
@@ -40,16 +48,15 @@ for counter_dataset = 1 : 1 : num_data_set
         EPHYS_inds_event, BEHAVE_inds_event, 'prim');
 end
 
-raster_data = concatenate_dataset(raster_data_, 'data', @vertcat);
+raster_data_primSac_onset  = concatenate_dataset(raster_data_, 'data', @vertcat);
 
-plot_data.fig_num_               = 2;
-plot_data.xlabel_text_raster_    = {'Time relative to prim sac onset (ms)', 'Directions based on primary sac'};
-plot_data.xlabel_text_CS_probab_ = {'CS probability based on [-200 0]ms'};
-plot_data.inds_span = EPHYS_(1).CH_EVE.inds_span_primSac_onset;
-fig_handle_(plot_data.fig_num_)  = plot_rasters_data(raster_data, plot_data);
+plot_data_primSac_onset.fig_num_               = 2;
+plot_data_primSac_onset.xlabel_text_raster_    = {'Time relative to prim sac onset (ms)', 'Directions based on primary sac'};
+plot_data_primSac_onset.xlabel_text_CS_probab_ = {'CS probability based on [-200 0]ms'};
+plot_data_primSac_onset.inds_span = EPHYS_(1).CH_EVE.inds_span_primSac_onset;
+fig_handle_(plot_data_primSac_onset.fig_num_)  = plot_rasters_data(raster_data_primSac_onset , plot_data_primSac_onset);
 
-[~, file_name, ~]  = fileparts(EPHYS_(1).CH_sorted_file_name);
-sgtitle(fig_handle_(plot_data.fig_num_), file_name, 'Interpreter', 'none');
+sgtitle(fig_handle_(plot_data_primSac_onset.fig_num_), Neural_Properties_data.file_name, 'Interpreter', 'none');
 
 %% Plot-3 SS & CS train primSac_offset 
 clearvars raster_data_
@@ -61,16 +68,15 @@ for counter_dataset = 1 : 1 : num_data_set
         EPHYS_inds_event, BEHAVE_inds_event, 'corr');
 end
 
-raster_data = concatenate_dataset(raster_data_, 'data', @vertcat);
+raster_data_primSac_offset = concatenate_dataset(raster_data_, 'data', @vertcat);
 
-plot_data.fig_num_               = 3;
-plot_data.xlabel_text_raster_    = {'Time relative to prim sac offset (ms)', 'Directions based on secondary sac'};
-plot_data.xlabel_text_CS_probab_ = {'CS probability based on [0 +200]ms'};
-plot_data.inds_span = EPHYS_(1).CH_EVE.inds_span_primSac_offset;
-fig_handle_(plot_data.fig_num_)  = plot_rasters_data(raster_data, plot_data);
+plot_data_primSac_offset.fig_num_               = 3;
+plot_data_primSac_offset.xlabel_text_raster_    = {'Time relative to prim sac offset (ms)', 'Directions based on secondary sac'};
+plot_data_primSac_offset.xlabel_text_CS_probab_ = {'CS probability based on [0 +200]ms'};
+plot_data_primSac_offset.inds_span = EPHYS_(1).CH_EVE.inds_span_primSac_offset;
+fig_handle_(plot_data_primSac_offset.fig_num_)  = plot_rasters_data(raster_data_primSac_offset, plot_data_primSac_offset);
 
-[~, file_name, ~]  = fileparts(EPHYS_(1).CH_sorted_file_name);
-sgtitle(fig_handle_(plot_data.fig_num_), file_name, 'Interpreter', 'none');
+sgtitle(fig_handle_(plot_data_primSac_offset.fig_num_), Neural_Properties_data.file_name, 'Interpreter', 'none');
 
 %% Plot-4 SS & CS train corrSac_onset 
 clearvars raster_data_
@@ -82,16 +88,15 @@ for counter_dataset = 1 : 1 : num_data_set
         EPHYS_inds_event, BEHAVE_inds_event, 'corr');
 end
 
-raster_data = concatenate_dataset(raster_data_, 'data', @vertcat);
+raster_data_corrSac_onset = concatenate_dataset(raster_data_, 'data', @vertcat);
 
-plot_data.fig_num_               = 4;
-plot_data.xlabel_text_raster_    = {'Time relative to corr sac onset (ms)', 'Directions based on secondary sac'};
-plot_data.xlabel_text_CS_probab_ = {'CS probability based on [-200 0]ms'};
-plot_data.inds_span = EPHYS_(1).CH_EVE.inds_span_corrSac_onset;
-fig_handle_(plot_data.fig_num_)  = plot_rasters_data(raster_data, plot_data);
+plot_data_corrSac_onset.fig_num_               = 4;
+plot_data_corrSac_onset.xlabel_text_raster_    = {'Time relative to corr sac onset (ms)', 'Directions based on secondary sac'};
+plot_data_corrSac_onset.xlabel_text_CS_probab_ = {'CS probability based on [-200 0]ms'};
+plot_data_corrSac_onset.inds_span = EPHYS_(1).CH_EVE.inds_span_corrSac_onset;
+fig_handle_(plot_data_corrSac_onset.fig_num_)  = plot_rasters_data(raster_data_corrSac_onset, plot_data_corrSac_onset);
 
-[~, file_name, ~]  = fileparts(EPHYS_(1).CH_sorted_file_name);
-sgtitle(fig_handle_(plot_data.fig_num_), file_name, 'Interpreter', 'none');
+sgtitle(fig_handle_(plot_data_corrSac_onset.fig_num_), Neural_Properties_data.file_name, 'Interpreter', 'none');
 
 %% Plot-5 Neural Properties
 CH_sorted_ = concatenate_dataset(EPHYS_, 'CH_sorted', @horzcat);
@@ -104,6 +109,10 @@ if isfield(EPHYS.CH_sorted.SS_data, 'SS_waveform_hipass')
     EPHYS.CH_sorted.CS_data.CS_waveform = EPHYS.CH_sorted.CS_data.CS_waveform_hipass;
 end
 
+Neural_Properties_data.CH_sorted.SS_data   = EPHYS.CH_sorted.SS_data;
+Neural_Properties_data.CH_sorted.CS_data   = EPHYS.CH_sorted.CS_data;
+Neural_Properties_data.CH_sorted.Corr_data = EPHYS.CH_sorted.Corr_data;
+
 % figure
 plot_data.fig_num_ = 5;
 fig_handle_(plot_data.fig_num_) = figure(plot_data.fig_num_);
@@ -113,18 +122,18 @@ clf(fig_handle_(plot_data.fig_num_))
 plot_handle_(1) = subplot(2,2,1);
 hold on
 
-plot((1:180)/30-2, mean(EPHYS.CH_sorted.SS_data.SS_waveform)+std(EPHYS.CH_sorted.SS_data.SS_waveform), ...
+plot((1:180)/30-2, mean(Neural_Properties_data.CH_sorted.SS_data.SS_waveform)+std(Neural_Properties_data.CH_sorted.SS_data.SS_waveform), ...
     'LineWidth', 1, 'Color', [0.5 0.5 0.9])
-plot((1:180)/30-2, mean(EPHYS.CH_sorted.SS_data.SS_waveform)-std(EPHYS.CH_sorted.SS_data.SS_waveform), ...
+plot((1:180)/30-2, mean(Neural_Properties_data.CH_sorted.SS_data.SS_waveform)-std(Neural_Properties_data.CH_sorted.SS_data.SS_waveform), ...
     'LineWidth', 1, 'Color', [0.5 0.5 0.9])
-plot((1:180)/30-2, mean(EPHYS.CH_sorted.SS_data.SS_waveform), ...
+plot((1:180)/30-2, mean(Neural_Properties_data.CH_sorted.SS_data.SS_waveform), ...
     'LineWidth', 2, 'Color', [0.1 0.1 0.9])
 
-plot((1:180)/30-2, mean(EPHYS.CH_sorted.CS_data.CS_waveform)+std(EPHYS.CH_sorted.CS_data.CS_waveform), ...
+plot((1:180)/30-2, mean(Neural_Properties_data.CH_sorted.CS_data.CS_waveform)+std(Neural_Properties_data.CH_sorted.CS_data.CS_waveform), ...
     'LineWidth', 1, 'Color', [0.9 0.5 0.5])
-plot((1:180)/30-2, mean(EPHYS.CH_sorted.CS_data.CS_waveform)-std(EPHYS.CH_sorted.CS_data.CS_waveform), ...
+plot((1:180)/30-2, mean(Neural_Properties_data.CH_sorted.CS_data.CS_waveform)-std(Neural_Properties_data.CH_sorted.CS_data.CS_waveform), ...
     'LineWidth', 1, 'Color', [0.9 0.5 0.5])
-plot((1:180)/30-2, mean(EPHYS.CH_sorted.CS_data.CS_waveform), ...
+plot((1:180)/30-2, mean(Neural_Properties_data.CH_sorted.CS_data.CS_waveform), ...
     'LineWidth', 2, 'Color', [0.9 0.1 0.1])
 
 xlabel('Time (ms)')
@@ -134,13 +143,13 @@ ylabel('Voltage (uv)')
 plot_handle_(2) = subplot(2,2,2);
 hold on
 
-SSxSS_AUTO = EPHYS.CH_sorted.Corr_data.SS_SSxSS_AUTO;
+SSxSS_AUTO = Neural_Properties_data.CH_sorted.Corr_data.SS_SSxSS_AUTO;
 if size(SSxSS_AUTO, 1) > 1
-    inds_span = mean(EPHYS.CH_sorted.Corr_data.SS_inds_span);
+    inds_span = mean(Neural_Properties_data.CH_sorted.Corr_data.SS_inds_span);
 else
-    inds_span =      EPHYS.CH_sorted.Corr_data.SS_inds_span;
+    inds_span =      Neural_Properties_data.CH_sorted.Corr_data.SS_inds_span;
 end
-bin_size_time = mean(EPHYS.CH_sorted.Corr_data.SS_bin_size_time);
+bin_size_time = mean(Neural_Properties_data.CH_sorted.Corr_data.SS_bin_size_time);
 if (~isempty(SSxSS_AUTO))
     x_axis_ = (inds_span * bin_size_time * 1000)';
     if size(SSxSS_AUTO, 1) > 1
@@ -161,13 +170,13 @@ plot(x_axis_, y_axis_mean_+y_axis_stdv_, 'LineWidth', 1, 'Color', [0.5 0.5 0.9])
 plot(x_axis_, y_axis_mean_-y_axis_stdv_, 'LineWidth', 1, 'Color', [0.5 0.5 0.9])
 plot(x_axis_, y_axis_mean_,              'LineWidth', 2, 'Color', [0.1 0.1 0.9])
 
-CSxSS_AUTO    = EPHYS.CH_sorted.Corr_data.CS_CSxSS_AUTO;
+CSxSS_AUTO    = Neural_Properties_data.CH_sorted.Corr_data.CS_CSxSS_AUTO;
 if size(CSxSS_AUTO, 1) > 1
-    inds_span = mean(EPHYS.CH_sorted.Corr_data.CS_inds_span);
+    inds_span = mean(Neural_Properties_data.CH_sorted.Corr_data.CS_inds_span);
 else
-    inds_span      = EPHYS.CH_sorted.Corr_data.CS_inds_span;
+    inds_span      = Neural_Properties_data.CH_sorted.Corr_data.CS_inds_span;
 end
-bin_size_time = mean(EPHYS.CH_sorted.Corr_data.CS_bin_size_time);
+bin_size_time = mean(Neural_Properties_data.CH_sorted.Corr_data.CS_bin_size_time);
 if (~isempty(CSxSS_AUTO))
     x_axis_ = (inds_span * bin_size_time * 1000)';
     if size(CSxSS_AUTO, 1) > 1
@@ -196,7 +205,7 @@ plot_handle_(3) = subplot(2,2,3);
 hold on
 
 edges_SS = (0 : 0.002 : 0.050) *1000;
-ISI_SS = diff(EPHYS.CH_sorted.SS_data.SS_time) * 1000;
+ISI_SS = diff(Neural_Properties_data.CH_sorted.SS_data.SS_time) * 1000;
 histogram(ISI_SS,edges_SS, 'DisplayStyle', 'stairs', 'Normalization', 'probability', 'LineWidth', 2, 'EdgeColor', [0.1 0.1 0.9]);
 set(plot_handle_(3), 'XTick', [0 0.025 0.050]*1000)
 xlabel('Time (ms)')
@@ -206,7 +215,7 @@ ylabel('Probability')
 plot_handle_(4) = subplot(2,2,4);
 hold on
 edges_CS = 0 : 0.200 : 5.000;
-ISI_CS = diff(EPHYS.CH_sorted.CS_data.CS_time);
+ISI_CS = diff(Neural_Properties_data.CH_sorted.CS_data.CS_time);
 histogram(ISI_CS,edges_CS, 'DisplayStyle', 'stairs', 'Normalization', 'probability', 'LineWidth', 2, 'EdgeColor', [0.9 0.1 0.1]);
 set(plot_handle_(4), 'XTick', [0 2.5 5.0])
 xlabel('Time (s)')
@@ -223,17 +232,12 @@ set(hFig, 'PaperPosition', [paper_margin figure_size]);
 set(hFig, 'Position', [[1 1] figure_size]);
 set(hFig, 'PaperOrientation', 'portrait');
 
-[~, file_name, ~]  = fileparts(EPHYS_(1).CH_sorted_file_name);
-sgtitle(fig_handle_(plot_data.fig_num_), file_name, 'Interpreter', 'none');
+sgtitle(fig_handle_(plot_data.fig_num_), Neural_Properties_data.file_name, 'Interpreter', 'none');
 
 %% Save Fig
-EPHYS.CH_sorted_file_name = EPHYS_(1).CH_sorted_file_name;
-EPHYS.CH_sorted_file_path = EPHYS_(1).CH_sorted_file_path;
-[~, file_name, ~]  = fileparts(EPHYS.CH_sorted_file_name);
-if num_data_set > 1
-    file_name = [file_name '_combine_' num2str(num_data_set)];
-end
-
+response_save_fig = questdlg('Do you want to save the figures?',...
+    'Question Dialog','Yes','No','Yes');
+if contains(response_save_fig, 'Yes')
 fprintf(['Saving plots', ' ...'])
 saveas(fig_handle_(1),[EPHYS.CH_sorted_file_path file_name '_modulation_cue_present'], 'pdf');
 saveas(fig_handle_(1),[EPHYS.CH_sorted_file_path file_name '_modulation_cue_present'], 'png');
@@ -251,6 +255,7 @@ close(fig_handle_(3))
 close(fig_handle_(4))
 close(fig_handle_(5))
 fprintf(' --> Completed. \n')
+end % if contains(response_save_fig, 'Yes')
 
 %% Report Properties
 for counter_dataset = 1 : 1 : num_data_set
@@ -267,7 +272,31 @@ for counter_dataset = 1 : 1 : num_data_set
     fprintf([num2str(duration/60,'%.1f') '\t'  num2str(numCS,'%.0f') '\t' num2str(freqCS,'%.2f') '\t' num2str(numSS,'%.0f') '\t' num2str(freqSS,'%.2f') '\t' num2str(numTrial,'%.0f') '\n'])
 end
 
+%% Save plot data
+response_save_data = questdlg('Do you want to save the plot_data?',...
+    'Question Dialog','Yes','No','Yes');
+if contains(response_save_data, 'Yes')
+file_name = [Neural_Properties_data.file_name '_plot_data.mat'];
+file_path = Neural_Properties_data.file_path;
+[save_file_name,save_file_path] = uiputfile([file_path filesep file_name], 'Select where to save the plot data.');
+fprintf(['Saving ' save_file_name ' ... ']);
+if isequal(save_file_name,0)
+    fprintf(' --> Cancelled. \n');
+    return;
 end
+
+save([save_file_path filesep save_file_name], 'Neural_Properties_data', ...
+    'raster_data_cue_present',    'plot_data_cue_present',...
+    'raster_data_primSac_onset',  'plot_data_primSac_onset', ...
+    'raster_data_primSac_offset', 'plot_data_primSac_offset' , ...
+    'raster_data_corrSac_onset',  'plot_data_corrSac_onset', ...
+    '-v7.3');
+
+fprintf(' --> Completed. \n');
+end % if contains(response_save_data, 'Yes')
+
+end
+
 
 %% function ESN_raster_plot_axes
 function [x_axis, y_axis] = ESN_raster_plot_axes(train_data_logic, x_axis_values, line_half_len)

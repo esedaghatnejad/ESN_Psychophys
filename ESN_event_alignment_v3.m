@@ -82,6 +82,23 @@ for counter_variable = 1 : 1 : length(variable_list)
 end
 for counter_time_point = 1 : length_time
     time_ponit_     = time_reference(counter_time_point);
+    %{
+    % Do not use 'eval', it is very slow, instead use the actual variables
+    for counter_variable = 1 : 1 : length(variable_list)
+        variable_name = variable_list{counter_variable};
+        eval([ ...
+            'if ( time_ponit_ >= time_' variable_name '(  counter_' variable_name ') );', ...
+                'event_' variable_name '(    counter_time_point) = true;', ...
+                'counter_' variable_name '   = counter_' variable_name '   + 1;', ...
+            'end;', ...
+        ]);
+    end
+    % Here is the template for actual variables
+    if time_ponit_ >= time_VARIABLE(  counter_VARIABLE)
+        event_VARIABLE(    counter_time_point) = true;
+        counter_VARIABLE   = counter_VARIABLE   + 1;
+    end
+    %}
     if time_ponit_ >= time_state_str_fixation(  counter_state_str_fixation)
         event_state_str_fixation(    counter_time_point) = true;
         counter_state_str_fixation   = counter_state_str_fixation   + 1;

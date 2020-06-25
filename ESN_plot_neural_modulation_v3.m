@@ -1,4 +1,4 @@
-%% function ESN_plot_neural_modulation_v3(num_data_set)
+    %% function ESN_plot_neural_modulation_v3(num_data_set)
 function ESN_plot_neural_modulation_v3(num_data_set)
 if nargin < 1
     num_data_set = 1;
@@ -239,21 +239,24 @@ response_save_fig = questdlg('Do you want to save the figures?',...
     'Question Dialog','Yes','No','Yes');
 if contains(response_save_fig, 'Yes')
 fprintf(['Saving plots', ' ...'])
-saveas(fig_handle_(1),[EPHYS.CH_sorted_file_path file_name '_modulation_cue_present'], 'pdf');
-saveas(fig_handle_(1),[EPHYS.CH_sorted_file_path file_name '_modulation_cue_present'], 'png');
-saveas(fig_handle_(2),[EPHYS.CH_sorted_file_path file_name '_modulation_primSac_onset'], 'pdf');
-saveas(fig_handle_(2),[EPHYS.CH_sorted_file_path file_name '_modulation_primSac_onset'], 'png');
-saveas(fig_handle_(3),[EPHYS.CH_sorted_file_path file_name '_modulation_primSac_offset'], 'pdf');
-saveas(fig_handle_(3),[EPHYS.CH_sorted_file_path file_name '_modulation_primSac_offset'], 'png');
-saveas(fig_handle_(4),[EPHYS.CH_sorted_file_path file_name '_modulation_corrSac_onset'], 'pdf');
-saveas(fig_handle_(4),[EPHYS.CH_sorted_file_path file_name '_modulation_corrSac_onset'], 'png');
-saveas(fig_handle_(5),[EPHYS.CH_sorted_file_path file_name '_properties'], 'pdf');
-saveas(fig_handle_(5),[EPHYS.CH_sorted_file_path file_name '_properties'], 'png');
+save_file_path = uigetdir(EPHYS.CH_sorted_file_path, 'Select where to save the figures.');
+if ~isequal(save_file_path,0)
+saveas(fig_handle_(1),[save_file_path filesep file_name '_modulation_cue_present'], 'pdf');
+saveas(fig_handle_(1),[save_file_path filesep file_name '_modulation_cue_present'], 'png');
+saveas(fig_handle_(2),[save_file_path filesep file_name '_modulation_primSac_onset'], 'pdf');
+saveas(fig_handle_(2),[save_file_path filesep file_name '_modulation_primSac_onset'], 'png');
+saveas(fig_handle_(3),[save_file_path filesep file_name '_modulation_primSac_offset'], 'pdf');
+saveas(fig_handle_(3),[save_file_path filesep file_name '_modulation_primSac_offset'], 'png');
+saveas(fig_handle_(4),[save_file_path filesep file_name '_modulation_corrSac_onset'], 'pdf');
+saveas(fig_handle_(4),[save_file_path filesep file_name '_modulation_corrSac_onset'], 'png');
+saveas(fig_handle_(5),[save_file_path filesep file_name '_properties'], 'pdf');
+saveas(fig_handle_(5),[save_file_path filesep file_name '_properties'], 'png');
 close(fig_handle_(1))
 close(fig_handle_(2))
 close(fig_handle_(3))
 close(fig_handle_(4))
 close(fig_handle_(5))
+end
 fprintf(' --> Completed. \n')
 end % if contains(response_save_fig, 'Yes')
 
@@ -280,18 +283,14 @@ file_name = [Neural_Properties_data.file_name '_plot_data.mat'];
 file_path = Neural_Properties_data.file_path;
 [save_file_name,save_file_path] = uiputfile([file_path filesep file_name], 'Select where to save the plot data.');
 fprintf(['Saving ' save_file_name ' ... ']);
-if isequal(save_file_name,0)
-    fprintf(' --> Cancelled. \n');
-    return;
-end
-
+if ~isequal(save_file_name,0)
 save([save_file_path filesep save_file_name], 'Neural_Properties_data', ...
     'raster_data_cue_present',    'plot_data_cue_present',...
     'raster_data_primSac_onset',  'plot_data_primSac_onset', ...
     'raster_data_primSac_offset', 'plot_data_primSac_offset' , ...
     'raster_data_corrSac_onset',  'plot_data_corrSac_onset', ...
     '-v7.3');
-
+end
 fprintf(' --> Completed. \n');
 end % if contains(response_save_data, 'Yes')
 
@@ -332,8 +331,19 @@ end
 
 %% function build_EPHYS_BEHAVE_single_dataset
 function [EPHYS, BEHAVE] = build_EPHYS_BEHAVE_single_dataset
+
+%% load EPHYS sorted DATA
+file_path = pwd;
+[file_name, file_path] = uigetfile([file_path filesep '*.psort'], 'Select psort file');
+fprintf(['Loading ', file_name, ' ... ']);
+% EPHYS.CH_sorted = load([file_path filesep file_name], 'CS_data', 'SS_data');
+DATA_PSORT = Psort_read_psort([file_path filesep file_name]);
+EPHYS.CH_sorted_file_name = file_name;
+EPHYS.CH_sorted_file_path = file_path;
+fprintf(' --> Completed. \n')
+
 %% load EPHYS EVENT DATA
-[file_name,file_path] = uigetfile([pwd filesep '*_aligned.mat'], 'Select EVENT DATA file');
+[file_name,file_path] = uigetfile([file_path filesep '*_aligned.mat'], 'Select EVENT DATA file');
 fprintf(['Loading ', file_name, ' ... ']);
 EPHYS.CH_EVE = load([file_path filesep file_name]);
 if isfield(EPHYS.CH_EVE, 'EPHYS_time_15K')
@@ -350,15 +360,6 @@ fprintf(' --> Completed. \n')
 [file_name,file_path] = uigetfile([file_path filesep '*_ANALYZED.mat'], 'Select _ANALYZED file');
 fprintf(['Loading ', file_name, ' ... ']);
 BEHAVE = load([file_path filesep file_name]);
-fprintf(' --> Completed. \n')
-
-%% load EPHYS sorted DATA
-[file_name, file_path] = uigetfile([file_path filesep '*.psort'], 'Select psort file');
-fprintf(['Loading ', file_name, ' ... ']);
-% EPHYS.CH_sorted = load([file_path filesep file_name], 'CS_data', 'SS_data');
-DATA_PSORT = Psort_read_psort([file_path filesep file_name]);
-EPHYS.CH_sorted_file_name = file_name;
-EPHYS.CH_sorted_file_path = file_path;
 fprintf(' --> Completed. \n')
 
 %% build EPHYS.CH_sorted from DATA_PSORT

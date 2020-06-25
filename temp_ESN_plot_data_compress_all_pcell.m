@@ -3,7 +3,7 @@ function temp_ESN_plot_data_compress_all_pcell
 %% load ALL_PCELL_COMPRESSED_DATA
 clearvars ALL_PCELL_COMPRESSED_DATA RASTER_DATA_ALL_PCELL RASTER_DATA_ALL_PCELL_TUNED bundle_inds
 ALL_PCELL_COMPRESSED_DATA_file_name = 'ALL_PCELL_COMPRESSED_DATA.mat';
-ALL_PCELL_COMPRESSED_DATA_file_path = '/home/kkarbasi/data/125d_data_sorted/ALL_PCELL_COMPRESSED_DATA';
+ALL_PCELL_COMPRESSED_DATA_file_path = './compress_pCells';
 load([ALL_PCELL_COMPRESSED_DATA_file_path filesep ALL_PCELL_COMPRESSED_DATA_file_name]);
 
 %% Build RASTER_DATA_ALL_PCELL
@@ -1740,8 +1740,8 @@ sgtitle(hFig, 'CS Tuning', 'Interpreter', 'none');
 %% Save combined file
 
 fprintf(['Saving plots ' ' ... ']);
-save_file_path = '/home/kkarbasi/data/125d_data_sorted/ALL_PCELL_COMPRESSED_DATA/ALL_PCELL_34_figs';
-save_file_name = 'ALL_PCELL_34';
+save_file_path = './compress_pCells/ALL_PCELL_46_figs';
+save_file_name = 'ALL_PCELL_46';
 saveas(figure(1), [save_file_path filesep save_file_name '_SS_all'], 'pdf');
 saveas(figure(1), [save_file_path filesep save_file_name '_SS_all'], 'png');
 saveas(figure(2), [save_file_path filesep save_file_name '_CS_all'], 'pdf');

@@ -1,3 +1,11 @@
+%% INSTRUCTION
+% set the Matlab pwd to inside 'data_125d_sorted' where the program can see
+% 'compress_pCells', 'single_pCells', and 'double_pCells'
+% Add data to the ALL_PCELL_COMPRESSED_DATA using examples in ESN_rebuild_ALL_PCELL_COMPRESSED_DATA
+% after adding data, update the bundle_inds in ESN_change_overall_prob_tuning_for_bundles
+% run ESN_change_overall_prob_tuning_for_bundles, and save the updates ALL_PCELL_COMPRESSED_DATA
+
+
 %% function temp_ESN_plot_data_compress
 function temp_ESN_plot_data_compress(file_name, file_path, description_pCell)
 %% Load plot_data
@@ -183,15 +191,15 @@ raster_data_corrSac_onset  = plot_data_raw.raster_data_corrSac_onset;
 
 save([plot_data_raw.file_path, filesep, plot_data_raw.file_name], 'Neural_Properties_data',...
       'plot_data_cue_present',  'plot_data_primSac_onset',  'plot_data_primSac_offset',  'plot_data_corrSac_onset',...
-    'raster_data_cue_present','raster_data_primSac_onset','raster_data_primSac_offset','raster_data_corrSac_onset',...
-    'plot_data_compress',...
-    '-v7.3')
+      'raster_data_cue_present','raster_data_primSac_onset','raster_data_primSac_offset','raster_data_corrSac_onset',...
+      'plot_data_compress',...
+      '-v7.3')
 fprintf(' --> Completed. \n')
 
 %% Save plot_data_compress in ALL_PCELL_COMPRESSED_DATA
 clearvars -except plot_data_compress;
 ALL_PCELL_COMPRESSED_DATA_file_name = 'ALL_PCELL_COMPRESSED_DATA.mat';
-ALL_PCELL_COMPRESSED_DATA_file_path = '/home/kkarbasi/data/125d_data_sorted/ALL_PCELL_COMPRESSED_DATA';
+ALL_PCELL_COMPRESSED_DATA_file_path = './compress_pCells';
 fprintf(['Saving ', ALL_PCELL_COMPRESSED_DATA_file_name, ' ... ']);
 if isfile([ALL_PCELL_COMPRESSED_DATA_file_path filesep ALL_PCELL_COMPRESSED_DATA_file_name])
     load([ALL_PCELL_COMPRESSED_DATA_file_path filesep ALL_PCELL_COMPRESSED_DATA_file_name]);
@@ -222,47 +230,80 @@ for counter_row = 1 : 66
     temp_ESN_plot_data_compress(file_name, file_path, description_pCell);
 end
 
+
+%% Manually add one file to the ALL_PCELL_COMPRESSED_DATA
+file_name = '190423_142023_01_sorted_ESN_plot_data';
+file_path = './single_pCells/single_pCell_22';
+description_pCell = 'single-pCell-22, num-03, pair-01';
+% file_name = '190516_150909_07_sorted_RSh_plot_data';
+% file_path = './double_pCells/double_pCell_12';
+% description_pCell = 'double-pCell-12, num-02, pair-02';
+disp('##################################################################')
+disp(file_name)
+disp(description_pCell)
+temp_ESN_plot_data_compress(file_name, file_path, description_pCell);
+
 end
 
 %% function ESN_change_overall_prob_tuning_for_bundles
 function ESN_change_overall_prob_tuning_for_bundles
-%% change_overall_prob_tuning_for_bundles
+% change_overall_prob_tuning_for_bundles
+%% Load ALL_PCELL_COMPRESSED_DATA
+ALL_PCELL_COMPRESSED_DATA_file_name = 'ALL_PCELL_COMPRESSED_DATA.mat';
+ALL_PCELL_COMPRESSED_DATA_file_path = './compress_pCells';
+load([ALL_PCELL_COMPRESSED_DATA_file_path filesep ALL_PCELL_COMPRESSED_DATA_file_name]);
+
 %% bundle_inds
 bundle_inds = { ...
-    [01 02], ...
-    [03], ...
-    [04 05], ...
-    [06 07 08], ...
-    [09], ...
-    [10], ...
-    [11 12 13], ...
-    [14 15 16], ...
-    [17 18], ...
-    [19 20], ...
-    [21 22 23], ...
-    [24], ...
-    [25], ...
-    [26], ...
-    [27], ...
-    [28], ...
-    [29 31 33], ...
-    [30 32 34], ...
-    [35], ...
-    [36], ...
-    [37], ...
-    [38], ...
-    [39], ...
-    [40], ...
-    [41], ...
-    [42], ...
-    [43 45 47 49 51], ...
-    [44 46 48 50 52], ...
-    [53 55], ...
-    [54 56], ...
-    [57 59 61], ...
-    [58 60 62], ...
-    [63 65], ...
-    [64 66], ...
+    01, ... % 190326_174047_06_sorted_plot_data, d00
+    02, ... % 190326_174047_07_sorted_plot_data, d00
+    03, ... % 190326_182755_03_sorted_plot_data, d01
+    04, ... % 190326_182755_04_sorted_plot_data, d01
+    [05, 07, 09], ... % 190327_135803_05_sorted_plot_data, d02
+    [06, 08, 10], ... % 190327_135803_06_sorted_plot_data, d02
+    11, ... % 190329_133538_03_sorted_plot_data, d03
+    12, ... % 190329_133538_05_sorted_plot_data, d03
+    13, ... % 190329_150427_03_sorted_plot_data, d04
+    14, ... % 190329_150427_07_sorted_plot_data, d04
+    15, ... % 190409_150223_03_sorted_ESN_plot_data, d05
+    16, ... % 190409_150223_07_sorted_ESN_plot_data, d05
+    17, ... % 190411_130256_03_sorted_plot_data, d06
+    18, ... % 190411_130256_07_sorted_plot_data, d06
+    [19, 21, 23, 25, 27], ... % 190412_115230_01_sorted_plot_data, d07
+    [20, 22, 24, 26, 28], ... % 190412_115230_05_sorted_plot_data, d07
+    [29, 31], ... % 190426_120355_05_sorted_plot_data, d08
+    [30, 32], ... % 190426_120355_06_sorted_plot_data, d08
+    [33, 35, 37], ... % 190426_125234_01_sorted_plot_data, d09
+    [34, 36, 38], ... % 190426_125234_07_sorted_plot_data, d09
+    [39, 41], ... % 190429_135343_05_sorted_plot_data, d10
+    [40, 42], ... % 190429_135343_06_sorted_plot_data, d10
+    [43, 45, 47], ... % 190429_142903_03_sorted_ESN_plot_data, d11
+    [44, 46, 48], ... % 190429_142903_07_sorted_ESN_plot_data, d11
+    [49, 51], ... % 190516_144904_02_sorted_RSh_plot_data, d12
+    [50, 52], ... % 190516_144904_07_sorted_RSh_plot_data, d12
+    [53, 54], ... % 190327_152414_03_sorted_plot_data, s01
+    55, ... % 190402_150756_05_sorted_plot_data, s02
+    [56, 57], ... % 190403_141313_04_sorted_plot_data, s03
+    [58, 59, 60], ... % 190403_151506_03_sorted_plot_data, s04
+    61, ... % 190404_110707_07_sorted_plot_data, s05
+    62, ... % 190409_143035_04_sorted_plot_data, s06
+    [63, 64, 65], ... % 190410_140235_04_sorted_plot_data, s07
+    [66, 67, 68, 69], ... % 190415_135953_04_sorted_plot_data, s08
+    [70, 71], ... % 190415_153818_07_sorted_plot_data, s09
+    [72, 73], ... % 190416_142432_02_sorted_plot_data, s10
+    [74, 75, 76], ... % 190424_151111_04_sorted_plot_data, s11
+    77, ... % 190411_124025_04_sorted_plot_data, s12
+    [78, 79, 80, 81], ... % 190430_132054_05_sorted_ESN_plot_data, s13
+    82, ... % 190501_141616_03_sorted_RSh_plot_data, s14
+    83, ... % 190515_135233_04_sorted_ESN_plot_data, s15
+    [84, 85], ... % 190517_121917_05_sorted_RSh_plot_data, s16
+    [86, 87, 88], ... % 190408_130716_04_sorted_ESN_plot_data, s17
+    [89 90], ... % 190409_151632_03_sorted_ESN_plot_data, s18
+    [91, 92, 93], ... % 190409_152524_07_sorted_ESN_plot_data, s19
+    94, ... % 190411_133808_03_sorted_ESN_plot_data, s20
+    [95, 96], ... % 190422_143306_04_sorted_plot_data, s21
+    [97, 98, 99], ... % 190423_132324_01_sorted_ESN_plot_data, s22
+    ...
     };
 
 %% loop over bundle_inds
@@ -317,6 +358,13 @@ for counter_index = 1 : length(index_nums)
 end
 
 end % for counter_bundle_inds = 1 : length(bundle_inds)
+
+%% save ALL_PCELL_COMPRESSED_DATA
+fprintf(['Saving ', ALL_PCELL_COMPRESSED_DATA_file_name, ' ... ']);
+save([ALL_PCELL_COMPRESSED_DATA_file_path, filesep, ALL_PCELL_COMPRESSED_DATA_file_name],...
+    'ALL_PCELL_COMPRESSED_DATA', 'bundle_inds', ...
+    '-v7.3')
+fprintf(' --> Completed. \n')
 
 end
 

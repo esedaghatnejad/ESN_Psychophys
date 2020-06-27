@@ -43,12 +43,19 @@ fprintf(' --> Completed. \n')
 %% Filter BEHAVE Eye Data
 clearvars -except EPHYS BEHAVE
 fprintf(['Filter BEHAVE Eye Data', ' ... ']);
+
+min_length = min([ ...
+    length(BEHAVE.eyelink_time),...
+    length(BEHAVE.right_horizontal_eye),...
+    length(BEHAVE.right_vertical_eye),...
+    length(BEHAVE.t),...
+    ]);
 % timeseries
-inds_invalid   = false(length(BEHAVE.eyelink_time'), 1);
-time_eyelink   = double(BEHAVE.eyelink_time');          inds_invalid = isnan(time_eyelink) | inds_invalid;
-eye_r_px       = double(BEHAVE.right_horizontal_eye');  inds_invalid = isnan(eye_r_px)     | inds_invalid;
-eye_r_py       = double(BEHAVE.right_vertical_eye');    inds_invalid = isnan(eye_r_py)     | inds_invalid;
-time_tgt       = double(BEHAVE.t');                     inds_invalid = isnan(time_tgt)     | inds_invalid;
+inds_invalid   = false(min_length, 1);
+time_eyelink   = double(BEHAVE.eyelink_time(1:min_length)');          inds_invalid = isnan(time_eyelink) | inds_invalid;
+eye_r_px       = double(BEHAVE.right_horizontal_eye(1:min_length)');  inds_invalid = isnan(eye_r_px)     | inds_invalid;
+eye_r_py       = double(BEHAVE.right_vertical_eye(1:min_length)');    inds_invalid = isnan(eye_r_py)     | inds_invalid;
+time_tgt       = double(BEHAVE.t(1:min_length)');                     inds_invalid = isnan(time_tgt)     | inds_invalid;
 % correct for the bias between time_eyelink and time_tgt
 time_eyelink   = time_eyelink .* (time_tgt(end)-time_tgt(1)) ./ (time_eyelink(end)-time_eyelink(1));
 time_eyelink   = time_eyelink - time_eyelink(1) + time_tgt(1);
@@ -143,6 +150,119 @@ fprintf(['Building EPHYS Event Data', ' ... ']);
 EPHYS.CH_EVE.data = [EPHYS.CH_EVE.ch_time(:) EPHYS.CH_EVE.ch_data(:) EPHYS.CH_EVE.ch_info.eventId(:)];
 fprintf(' --> Completed. \n')
 
+%% Build BEHAVE Alignment events
+clearvars -except EPHYS BEHAVE
+fprintf(['Building BEHAVE Alignment events', ' ... ']);
+
+time_reference      = BEHAVE.time_1K;
+length_time         = length(time_reference);
+time_state_str_fixation = [];
+time_state_sac_detect_on = [];
+time_state_sac_detect_off = [];
+time_state_end_fixation = [];
+time_state_iti = [];
+for counter_trial = 1 : length(BEHAVE.trials)-1
+    time_state_str_fixation = [time_state_str_fixation; BEHAVE.trials{counter_trial}.state_start_time_str_target_fixation(:)];
+    time_state_sac_detect_on = [time_state_sac_detect_on; BEHAVE.trials{counter_trial}.state_start_time_detect_sac_start(:)];
+    time_state_sac_detect_off = [time_state_sac_detect_off; BEHAVE.trials{counter_trial}.state_start_time_detect_sac_end(:)];
+    time_state_end_fixation = [time_state_end_fixation; BEHAVE.trials{counter_trial}.state_start_time_end_target_fixation(:)];
+    time_state_iti = [time_state_iti; BEHAVE.trials{counter_trial}.state_start_time_iti(:)];
+end
+
+variable_list = {'_state_str_fixation','_state_sac_detect_on','_state_sac_detect_off','_state_end_fixation','_state_iti'};
+
+BEHAVE.Alignment.time_1K = time_reference;
+for counter_variable = 1 : 1 : length(variable_list)
+    variable_name = variable_list{counter_variable};
+    eval([ 'BEHAVE.Alignment.time' variable_name ' = ' 'time' variable_name ';']);
+end
+
+for counter_variable = 1 : 1 : length(variable_list)
+    variable_name = variable_list{counter_variable};
+    eval([ 'time_temp_' ' = ' 'time' variable_name ';']);
+    time_temp_(end+1) = max([time_reference(end), time_temp_(end)])+1;
+    event_temp_       = false(length_time, 1);
+    counter_temp_     = find(time_temp_ >= time_reference(1), 1, 'first');
+    eval([ 'time'    variable_name ' = ' 'time_temp_'    ';']);
+    eval([ 'event'   variable_name ' = ' 'event_temp_'   ';']);
+    eval([ 'counter' variable_name ' = ' 'counter_temp_' ';']);
+end
+for counter_time_point = 1 : length_time
+    time_ponit_     = time_reference(counter_time_point);
+    if time_ponit_ >= time_state_str_fixation(  counter_state_str_fixation)
+        event_state_str_fixation(    counter_time_point) = true;
+        counter_state_str_fixation   = counter_state_str_fixation   + 1;
+    end
+    if time_ponit_ >= time_state_sac_detect_on( counter_state_sac_detect_on)
+        event_state_sac_detect_on(   counter_time_point) = true;
+        counter_state_sac_detect_on  = counter_state_sac_detect_on  + 1;
+    end
+    if time_ponit_ >= time_state_sac_detect_off(counter_state_sac_detect_off)
+        event_state_sac_detect_off(  counter_time_point) = true;
+        counter_state_sac_detect_off = counter_state_sac_detect_off + 1;
+    end
+    if time_ponit_ >= time_state_end_fixation(  counter_state_end_fixation)
+        event_state_end_fixation(    counter_time_point) = true;
+        counter_state_end_fixation   = counter_state_end_fixation   + 1;
+    end
+    if time_ponit_ >= time_state_iti(           counter_state_iti)
+        event_state_iti(             counter_time_point) = true;
+        counter_state_iti            = counter_state_iti            + 1;
+    end
+end
+
+for counter_variable = 1 : 1 : length(variable_list)
+    variable_name = variable_list{counter_variable};
+    eval([ 'BEHAVE.Alignment.event' variable_name ' = ' 'event' variable_name ';']);
+end
+
+for counter_variable = 1 : 1 : length(variable_list)
+    variable_name = variable_list{counter_variable};
+    eval([ 'event_temp_' ' = ' 'event' variable_name ';']);
+    length_time = length(event_temp_);
+    inds_span_ = (0) : 1 : (100);
+    ind_event_temp_  = find(event_temp_);
+    inds_event_temp_ = repmat( ind_event_temp_(:), 1, length(inds_span_)) + repmat(inds_span_(:)', length(ind_event_temp_), 1);
+    inds_event_temp_( inds_event_temp_ < 1 ) = 1;
+    inds_event_temp_( inds_event_temp_ > length_time ) = length_time;
+    event_temp_(inds_event_temp_(:)) = true;
+    eval([ 'event'   variable_name '_100' ' = ' 'event_temp_'   ';']);
+end
+
+event_state_combined = ...
+    double(event_state_str_fixation_100)   .* 1 + ...
+    double(event_state_sac_detect_on_100)  .* 2 + ...
+    double(event_state_sac_detect_off_100) .* 3;% + ...
+%     double(event_state_end_fixation_100)   .* 4 + ...
+%     double(event_state_iti_100)            .* 5 ;
+event_state_combined(event_state_combined>3) = 3;
+event_photodiode_combined = ...
+    double(event_state_str_fixation_100)   .* 1 + ...
+    double(event_state_sac_detect_off_100) .* 1 ;%+ ...
+    %double(event_state_sac_detect_on_100)  .* 2 + ...
+    %double(event_state_end_fixation_100)   .* 2 ;
+
+BEHAVE.Alignment.event_state_combined      = event_state_combined;
+BEHAVE.Alignment.event_photodiode_combined = event_photodiode_combined;
+
+state_description = [
+'state_str_fixation: 1 , ', ...
+'state_sac_detect_on: 2 , ', ...
+'state_sac_detect_off: 3 , '];%, ...
+% 'state_end_fixation: 4 , ', ...
+% 'state_iti: 5', ...
+% ];
+photodiode_description = [
+'state_str_fixation: 1 , ', ...
+'state_sac_detect_off: 1 , ', ...
+];
+BEHAVE.Alignment.state_description      = state_description;
+BEHAVE.Alignment.photodiode_description = photodiode_description;
+
+BEHAVE.Alignment.eye_r_vm_filt = interp1(BEHAVE.time_1K, BEHAVE.eye_r_vm_filt, time_reference, 'linear', 'extrap');
+
+fprintf(' --> Completed. \n');
+
 %% Build EPHYS Alignment events
 clearvars -except EPHYS BEHAVE
 fprintf(['Building EPHYS Alignment events', ' ... ']);
@@ -157,6 +277,16 @@ time_state_sac_detect_off = ESN_Round( EPHYS.CH_EVE.data( (EPHYS.CH_EVE.data(:,2
 time_photodiode_rise      = ESN_Round( EPHYS.CH_EVE.data( (EPHYS.CH_EVE.data(:,2) == 6) & ((EPHYS.CH_EVE.data(:,3) == 1)) , 1) , 0.001);
 time_photodiode_fall      = ESN_Round( EPHYS.CH_EVE.data( (EPHYS.CH_EVE.data(:,2) == 6) & ((EPHYS.CH_EVE.data(:,3) == 0)) , 1) , 0.001);
 variable_list = {'_state_str_fixation','_state_sac_detect_on','_state_sac_detect_off','_photodiode_rise','_photodiode_fall'};
+
+if isempty(time_photodiode_rise)
+    time_photodiode_rise = [time_state_str_fixation; time_state_sac_detect_off];
+    time_photodiode_rise = sort(time_photodiode_rise);
+end
+
+if isempty(time_photodiode_fall)
+    time_photodiode_fall = [time_state_str_fixation; time_state_sac_detect_off];
+    time_photodiode_fall = sort(time_photodiode_fall);
+end
 
 EPHYS.Alignment.time_1K = time_reference;
 for counter_variable = 1 : 1 : length(variable_list)
@@ -273,118 +403,6 @@ EPHYS.Alignment.eye_r_vm_filt = interp1(EPHYS.time_30K, EPHYS.eye_r_vm_filt, tim
 
 fprintf(' --> Completed. \n');
 
-%% Build BEHAVE Alignment events
-clearvars -except EPHYS BEHAVE
-fprintf(['Building BEHAVE Alignment events', ' ... ']);
-
-time_reference      = BEHAVE.time_1K;
-length_time         = length(time_reference);
-time_state_str_fixation = [];
-time_state_sac_detect_on = [];
-time_state_sac_detect_off = [];
-time_state_end_fixation = [];
-time_state_iti = [];
-for counter_trial = 1 : length(BEHAVE.trials)-1
-    time_state_str_fixation = [time_state_str_fixation; BEHAVE.trials{counter_trial}.state_start_time_str_target_fixation(:)];
-    time_state_sac_detect_on = [time_state_sac_detect_on; BEHAVE.trials{counter_trial}.state_start_time_detect_sac_start(:)];
-    time_state_sac_detect_off = [time_state_sac_detect_off; BEHAVE.trials{counter_trial}.state_start_time_detect_sac_end(:)];
-    time_state_end_fixation = [time_state_end_fixation; BEHAVE.trials{counter_trial}.state_start_time_end_target_fixation(:)];
-    time_state_iti = [time_state_iti; BEHAVE.trials{counter_trial}.state_start_time_iti(:)];
-end
-
-variable_list = {'_state_str_fixation','_state_sac_detect_on','_state_sac_detect_off','_state_end_fixation','_state_iti'};
-
-BEHAVE.Alignment.time_1K = time_reference;
-for counter_variable = 1 : 1 : length(variable_list)
-    variable_name = variable_list{counter_variable};
-    eval([ 'BEHAVE.Alignment.time' variable_name ' = ' 'time' variable_name ';']);
-end
-
-for counter_variable = 1 : 1 : length(variable_list)
-    variable_name = variable_list{counter_variable};
-    eval([ 'time_temp_' ' = ' 'time' variable_name ';']);
-    time_temp_(end+1) = max([time_reference(end), time_temp_(end)])+1;
-    event_temp_       = false(length_time, 1);
-    counter_temp_     = find(time_temp_ >= time_reference(1), 1, 'first');
-    eval([ 'time'    variable_name ' = ' 'time_temp_'    ';']);
-    eval([ 'event'   variable_name ' = ' 'event_temp_'   ';']);
-    eval([ 'counter' variable_name ' = ' 'counter_temp_' ';']);
-end
-for counter_time_point = 1 : length_time
-    time_ponit_     = time_reference(counter_time_point);
-    if time_ponit_ >= time_state_str_fixation(  counter_state_str_fixation)
-        event_state_str_fixation(    counter_time_point) = true;
-        counter_state_str_fixation   = counter_state_str_fixation   + 1;
-    end
-    if time_ponit_ >= time_state_sac_detect_on( counter_state_sac_detect_on)
-        event_state_sac_detect_on(   counter_time_point) = true;
-        counter_state_sac_detect_on  = counter_state_sac_detect_on  + 1;
-    end
-    if time_ponit_ >= time_state_sac_detect_off(counter_state_sac_detect_off)
-        event_state_sac_detect_off(  counter_time_point) = true;
-        counter_state_sac_detect_off = counter_state_sac_detect_off + 1;
-    end
-    if time_ponit_ >= time_state_end_fixation(  counter_state_end_fixation)
-        event_state_end_fixation(    counter_time_point) = true;
-        counter_state_end_fixation   = counter_state_end_fixation   + 1;
-    end
-    if time_ponit_ >= time_state_iti(           counter_state_iti)
-        event_state_iti(             counter_time_point) = true;
-        counter_state_iti            = counter_state_iti            + 1;
-    end
-end
-
-for counter_variable = 1 : 1 : length(variable_list)
-    variable_name = variable_list{counter_variable};
-    eval([ 'BEHAVE.Alignment.event' variable_name ' = ' 'event' variable_name ';']);
-end
-
-for counter_variable = 1 : 1 : length(variable_list)
-    variable_name = variable_list{counter_variable};
-    eval([ 'event_temp_' ' = ' 'event' variable_name ';']);
-    length_time = length(event_temp_);
-    inds_span_ = (0) : 1 : (100);
-    ind_event_temp_  = find(event_temp_);
-    inds_event_temp_ = repmat( ind_event_temp_(:), 1, length(inds_span_)) + repmat(inds_span_(:)', length(ind_event_temp_), 1);
-    inds_event_temp_( inds_event_temp_ < 1 ) = 1;
-    inds_event_temp_( inds_event_temp_ > length_time ) = length_time;
-    event_temp_(inds_event_temp_(:)) = true;
-    eval([ 'event'   variable_name '_100' ' = ' 'event_temp_'   ';']);
-end
-
-event_state_combined = ...
-    double(event_state_str_fixation_100)   .* 1 + ...
-    double(event_state_sac_detect_on_100)  .* 2 + ...
-    double(event_state_sac_detect_off_100) .* 3;% + ...
-%     double(event_state_end_fixation_100)   .* 4 + ...
-%     double(event_state_iti_100)            .* 5 ;
-event_state_combined(event_state_combined>3) = 3;
-event_photodiode_combined = ...
-    double(event_state_str_fixation_100)   .* 1 + ...
-    double(event_state_sac_detect_off_100) .* 1 ;%+ ...
-    %double(event_state_sac_detect_on_100)  .* 2 + ...
-    %double(event_state_end_fixation_100)   .* 2 ;
-
-BEHAVE.Alignment.event_state_combined      = event_state_combined;
-BEHAVE.Alignment.event_photodiode_combined = event_photodiode_combined;
-
-state_description = [
-'state_str_fixation: 1 , ', ...
-'state_sac_detect_on: 2 , ', ...
-'state_sac_detect_off: 3 , '];%, ...
-% 'state_end_fixation: 4 , ', ...
-% 'state_iti: 5', ...
-% ];
-photodiode_description = [
-'state_str_fixation: 1 , ', ...
-'state_sac_detect_off: 1 , ', ...
-];
-BEHAVE.Alignment.state_description      = state_description;
-BEHAVE.Alignment.photodiode_description = photodiode_description;
-
-BEHAVE.Alignment.eye_r_vm_filt = interp1(BEHAVE.time_1K, BEHAVE.eye_r_vm_filt, time_reference, 'linear', 'extrap');
-
-fprintf(' --> Completed. \n');
 
 %% ALIGN EPHYS and BEHAVE state_combined through xcorr and dtw
 clearvars -except EPHYS BEHAVE
@@ -396,7 +414,8 @@ EPHYS_eye_r_vm_filt  = EPHYS.Alignment.eye_r_vm_filt;
 BEHAVE_eye_r_vm_filt = BEHAVE.Alignment.eye_r_vm_filt;
 EPHYS_eye_r_vm_filt(EPHYS_eye_r_vm_filt < 100) = 0;
 BEHAVE_eye_r_vm_filt(BEHAVE_eye_r_vm_filt < 100) = 0;
-
+EPHYS_eye_r_vm_filt(EPHYS_eye_r_vm_filt > 1500) = 1500;
+BEHAVE_eye_r_vm_filt(BEHAVE_eye_r_vm_filt > 1500) = 1500;
 % state_combined: find the bias between 2 signals
 [xcorr_value,xcorr_lag] = xcorr(EPHYS_eye_r_vm_filt, BEHAVE_eye_r_vm_filt); % cross-correlate signals with each other
 [~,ind_max_xcross] = max(abs(xcorr_value));

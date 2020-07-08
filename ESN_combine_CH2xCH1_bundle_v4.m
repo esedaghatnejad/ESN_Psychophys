@@ -1,165 +1,46 @@
-function ESN_combine_CH2xCH1_v4
-%% Load CH1 dataset
-file_path = [pwd filesep];
-[file_name, file_path] = uigetfile([file_path '*.psort'], 'Select CH-1 file');
-fprintf(['Loading ', file_name, ' ... ']);
-DATA_PSORT_CH1 = Psort_read_psort([file_path file_name]);
-EPHYS.CH_1_sorted_file_name = file_name;
-EPHYS.CH_1_sorted_file_path = file_path;
+function ESN_combine_CH2xCH1_bundle_v4(num_data_set)
+if nargin < 1
+    num_data_set = 1;
+end
+%% Load dataset
+clearvars CH_1_ CH_2_ dataset_
+for counter_date_set = 1 : num_data_set
+    [file_name,file_path] = uigetfile([pwd filesep '*.mat'], 'Select _CH#xCH#.mat Data set file');
+    fprintf(['Loading ', file_name, ' ... ']);
+    dataset_ = load([file_path filesep file_name], 'CH_1', 'CH_2');
+    CH_1_(counter_date_set) = dataset_.CH_1;
+    CH_2_(counter_date_set) = dataset_.CH_2;
+    fprintf(' --> Completed. \n')
+end
+
+%% concatenate datasets
+fprintf(['Concatenate datasets ' ' ... ']);
+clearvars EPHYS
+temp = concatenate_dataset(CH_1_, 'CS_data', @vertcat);
+EPHYS.CH_1_sorted.CS_data = temp;
+temp = concatenate_dataset(CH_1_, 'SS_data', @vertcat);
+EPHYS.CH_1_sorted.SS_data = temp;
+temp = concatenate_dataset(CH_1_, 'Corr_data', @vertcat);
+EPHYS.CH_1_sorted.Corr_data = temp;
+temp = concatenate_dataset(CH_2_, 'CS_data', @vertcat);
+EPHYS.CH_2_sorted.CS_data = temp;
+temp = concatenate_dataset(CH_2_, 'SS_data', @vertcat);
+EPHYS.CH_2_sorted.SS_data = temp;
+temp = concatenate_dataset(CH_2_, 'Corr_data', @vertcat);
+EPHYS.CH_2_sorted.Corr_data = temp;
 fprintf(' --> Completed. \n')
-
-%% Load CH2 dataset
-[file_name, file_path] = uigetfile([file_path '*.psort'], 'Select CH-2 file');
-fprintf(['Loading ', file_name, ' ... ']);
-DATA_PSORT_CH2 = Psort_read_psort([file_path file_name]);
-EPHYS.CH_2_sorted_file_name = file_name;
-EPHYS.CH_2_sorted_file_path = file_path;
-fprintf(' --> Completed. \n')
-
-%% build EPHYS.CH_1_sorted from DATA_PSORT_CH1
-waveform_inds_span = ((-60+1) : 1 : (120));
-
-ch_data = double(DATA_PSORT_CH1.topLevel_data.ch_data);
-ch_time = double(DATA_PSORT_CH1.topLevel_data.ch_time);
-EPHYS.CH_1_sorted.CH_data.ch_data = ch_data;
-EPHYS.CH_1_sorted.CH_data.ch_time = ch_time;
-
-ch_data = double(DATA_PSORT_CH1.topLevel_data.ch_data);
-ch_time = double(DATA_PSORT_CH1.topLevel_data.ch_time);
-SS_index = find(logical(double(DATA_PSORT_CH1.topLevel_data.ss_index)));
-SS_time = ch_time(SS_index);
-SS_inds = repmat(waveform_inds_span(:)', length(SS_index), 1) + repmat(SS_index(:), 1, length(waveform_inds_span));
-SS_inds(SS_inds < 1) = 1;
-SS_inds(SS_inds > length(ch_data)) = length(ch_data);
-SS_waveform = ch_data(SS_inds);
-EPHYS.CH_1_sorted.SS_data.SS_ind  = SS_index;
-EPHYS.CH_1_sorted.SS_data.SS_inds = SS_inds;
-EPHYS.CH_1_sorted.SS_data.SS_time = SS_time;
-EPHYS.CH_1_sorted.SS_data.SS_waveform = SS_waveform;
-
-ch_data = double(DATA_PSORT_CH1.topLevel_data.ch_data);
-ch_time = double(DATA_PSORT_CH1.topLevel_data.ch_time);
-CS_index = find(logical(double(DATA_PSORT_CH1.topLevel_data.cs_index)));
-CS_time = ch_time(CS_index);
-CS_inds = repmat(waveform_inds_span(:)', length(CS_index), 1) + repmat(CS_index(:), 1, length(waveform_inds_span));
-CS_inds(CS_inds < 1) = 1;
-CS_inds(CS_inds > length(ch_data)) = length(ch_data);
-CS_waveform = ch_data(CS_inds);
-EPHYS.CH_1_sorted.CS_data.CS_ind  = CS_index;
-EPHYS.CH_1_sorted.CS_data.CS_inds = CS_inds;
-EPHYS.CH_1_sorted.CS_data.CS_time = CS_time;
-EPHYS.CH_1_sorted.CS_data.CS_waveform = CS_waveform;
-
-%% build EPHYS.CH_2_sorted from DATA_PSORT_CH2
-waveform_inds_span = ((-60+1) : 1 : (120));
-
-ch_data = double(DATA_PSORT_CH2.topLevel_data.ch_data);
-ch_time = double(DATA_PSORT_CH2.topLevel_data.ch_time);
-EPHYS.CH_2_sorted.CH_data.ch_data = ch_data;
-EPHYS.CH_2_sorted.CH_data.ch_time = ch_time;
-
-ch_data = double(DATA_PSORT_CH2.topLevel_data.ch_data);
-ch_time = double(DATA_PSORT_CH2.topLevel_data.ch_time);
-SS_index = find(logical(double(DATA_PSORT_CH2.topLevel_data.ss_index)));
-SS_time = ch_time(SS_index);
-SS_inds = repmat(waveform_inds_span(:)', length(SS_index), 1) + repmat(SS_index(:), 1, length(waveform_inds_span));
-SS_inds(SS_inds < 1) = 1;
-SS_inds(SS_inds > length(ch_data)) = length(ch_data);
-SS_waveform = ch_data(SS_inds);
-EPHYS.CH_2_sorted.SS_data.SS_ind  = SS_index;
-EPHYS.CH_2_sorted.SS_data.SS_inds = SS_inds;
-EPHYS.CH_2_sorted.SS_data.SS_time = SS_time;
-EPHYS.CH_2_sorted.SS_data.SS_waveform = SS_waveform;
-
-ch_data = double(DATA_PSORT_CH2.topLevel_data.ch_data);
-ch_time = double(DATA_PSORT_CH2.topLevel_data.ch_time);
-CS_index = find(logical(double(DATA_PSORT_CH2.topLevel_data.cs_index)));
-CS_time = ch_time(CS_index);
-CS_inds = repmat(waveform_inds_span(:)', length(CS_index), 1) + repmat(CS_index(:), 1, length(waveform_inds_span));
-CS_inds(CS_inds < 1) = 1;
-CS_inds(CS_inds > length(ch_data)) = length(ch_data);
-CS_waveform = ch_data(CS_inds);
-EPHYS.CH_2_sorted.CS_data.CS_ind  = CS_index;
-EPHYS.CH_2_sorted.CS_data.CS_inds = CS_inds;
-EPHYS.CH_2_sorted.CS_data.CS_time = CS_time;
-EPHYS.CH_2_sorted.CS_data.CS_waveform = CS_waveform;
 
 %% File Name
+EPHYS.CH_1_sorted_file_path = CH_1_(1).file_path;
+EPHYS.CH_2_sorted_file_path = CH_2_(1).file_path;
+
+EPHYS.CH_1_sorted_file_name = CH_1_(1).file_name;
+EPHYS.CH_2_sorted_file_name = CH_2_(1).file_name;
 file_name_date = EPHYS.CH_1_sorted_file_name(1:13);
 file_name_CH1  = EPHYS.CH_1_sorted_file_name(15:16);
 file_name_CH2  = EPHYS.CH_2_sorted_file_name(15:16);
-file_name_base = [file_name_date '_CH' file_name_CH1 'x' 'CH' file_name_CH2];
+file_name_base = [file_name_date '_CH' file_name_CH1 'x' 'CH' file_name_CH2 '_combine_' num2str(num_data_set)];
 EPHYS.file_name_base = file_name_base;
-
-%% SS2xSS1_waveform & SS1xSS2_waveform
-EPHYS.CH_1_sorted.SS_data.SS2xCH1_waveform = EPHYS.CH_1_sorted.CH_data.ch_data(EPHYS.CH_2_sorted.SS_data.SS_inds);
-EPHYS.CH_1_sorted.CS_data.CS2xCH1_waveform = EPHYS.CH_1_sorted.CH_data.ch_data(EPHYS.CH_2_sorted.CS_data.CS_inds);
-EPHYS.CH_2_sorted.SS_data.SS1xCH2_waveform = EPHYS.CH_2_sorted.CH_data.ch_data(EPHYS.CH_1_sorted.SS_data.SS_inds);
-EPHYS.CH_2_sorted.CS_data.CS1xCH2_waveform = EPHYS.CH_2_sorted.CH_data.ch_data(EPHYS.CH_1_sorted.CS_data.CS_inds);
-
-%% build SSxSS AUTO PROBABILITY
-clearvars -except EPHYS BEHAVE
-fprintf(['Building SSxSS_CROSS PROBABILITY ' ' ...'])
-SS_1_time   = EPHYS.CH_1_sorted.SS_data.SS_time;
-SS_2_time   = EPHYS.CH_2_sorted.SS_data.SS_time;
-CS_1_time   = EPHYS.CH_1_sorted.CS_data.CS_time;
-CS_2_time   = EPHYS.CH_2_sorted.CS_data.CS_time;
-
-Corr_data = ESN_correlogram(SS_1_time, CS_1_time);
-EPHYS.CH_1_sorted.Corr_data.Corr_CS_inds_span     = Corr_data.CS_inds_span;
-EPHYS.CH_1_sorted.Corr_data.Corr_CS_bin_size_time = Corr_data.CS_bin_size_time;
-EPHYS.CH_1_sorted.Corr_data.Corr_SS_inds_span     = Corr_data.SS_inds_span;
-EPHYS.CH_1_sorted.Corr_data.Corr_SS_bin_size_time = Corr_data.SS_bin_size_time;
-EPHYS.CH_1_sorted.Corr_data.Corr_SS_SSxSS_AUTO    = Corr_data.SS_SSxSS_AUTO;
-EPHYS.CH_1_sorted.Corr_data.Corr_CS_CSxSS_AUTO    = Corr_data.CS_CSxSS_AUTO;
-
-Corr_data = ESN_correlogram(SS_2_time, CS_2_time);
-EPHYS.CH_2_sorted.Corr_data.Corr_CS_inds_span     = Corr_data.CS_inds_span;
-EPHYS.CH_2_sorted.Corr_data.Corr_CS_bin_size_time = Corr_data.CS_bin_size_time;
-EPHYS.CH_2_sorted.Corr_data.Corr_SS_inds_span     = Corr_data.SS_inds_span;
-EPHYS.CH_2_sorted.Corr_data.Corr_SS_bin_size_time = Corr_data.SS_bin_size_time;
-EPHYS.CH_2_sorted.Corr_data.Corr_SS_SSxSS_AUTO    = Corr_data.SS_SSxSS_AUTO;
-EPHYS.CH_2_sorted.Corr_data.Corr_CS_CSxSS_AUTO    = Corr_data.CS_CSxSS_AUTO;
-
-Corr_data = ESN_correlogram(SS_1_time, SS_2_time); % ESN_correlogram(SS_time, CS_time)
-EPHYS.CH_1_sorted.Corr_data.SS2xSS1_inds_span     = Corr_data.CS_inds_span;
-EPHYS.CH_1_sorted.Corr_data.SS2xSS1_bin_size_time = Corr_data.CS_bin_size_time;
-EPHYS.CH_1_sorted.Corr_data.SS2xSS1_CROSS         = Corr_data.CS_CSxSS_AUTO;
-
-Corr_data = ESN_correlogram(SS_2_time, SS_1_time); % ESN_correlogram(SS_time, CS_time)
-EPHYS.CH_2_sorted.Corr_data.SS1xSS2_inds_span     = Corr_data.CS_inds_span;
-EPHYS.CH_2_sorted.Corr_data.SS1xSS2_bin_size_time = Corr_data.CS_bin_size_time;
-EPHYS.CH_2_sorted.Corr_data.SS1xSS2_CROSS         = Corr_data.CS_CSxSS_AUTO;
-
-Corr_data = ESN_correlogram(SS_1_time, CS_2_time); % ESN_correlogram(SS_time, CS_time)
-EPHYS.CH_1_sorted.Corr_data.CS2xSS1_inds_span     = Corr_data.CS_inds_span;
-EPHYS.CH_1_sorted.Corr_data.CS2xSS1_bin_size_time = Corr_data.CS_bin_size_time;
-EPHYS.CH_1_sorted.Corr_data.CS2xSS1_CROSS         = Corr_data.CS_CSxSS_AUTO;
-
-Corr_data = ESN_correlogram(SS_2_time, CS_1_time); % ESN_correlogram(SS_time, CS_time)
-EPHYS.CH_2_sorted.Corr_data.CS1xSS2_inds_span     = Corr_data.CS_inds_span;
-EPHYS.CH_2_sorted.Corr_data.CS1xSS2_bin_size_time = Corr_data.CS_bin_size_time;
-EPHYS.CH_2_sorted.Corr_data.CS1xSS2_CROSS         = Corr_data.CS_CSxSS_AUTO;
-
-Corr_data = ESN_correlogram(CS_1_time, CS_2_time); % ESN_correlogram(SS_time, CS_time)
-EPHYS.CH_1_sorted.Corr_data.Corr_CS_CSxCS_inds_span     = Corr_data.SS_inds_span;
-EPHYS.CH_1_sorted.Corr_data.Corr_CS_CSxCS_bin_size_time = Corr_data.SS_bin_size_time;
-EPHYS.CH_1_sorted.Corr_data.Corr_CS_CSxCS_AUTO          = Corr_data.SS_SSxSS_AUTO;
-EPHYS.CH_1_sorted.Corr_data.CS2xCS1_inds_span     = Corr_data.CS_inds_span;
-EPHYS.CH_1_sorted.Corr_data.CS2xCS1_bin_size_time = Corr_data.CS_bin_size_time;
-EPHYS.CH_1_sorted.Corr_data.CS2xCS1_CROSS         = Corr_data.CS_CSxSS_AUTO;
-
-Corr_data = ESN_correlogram(CS_2_time, CS_1_time); % ESN_correlogram(SS_time, CS_time)
-EPHYS.CH_2_sorted.Corr_data.Corr_CS_CSxCS_inds_span     = Corr_data.SS_inds_span;
-EPHYS.CH_2_sorted.Corr_data.Corr_CS_CSxCS_bin_size_time = Corr_data.SS_bin_size_time;
-EPHYS.CH_2_sorted.Corr_data.Corr_CS_CSxCS_AUTO          = Corr_data.SS_SSxSS_AUTO;
-EPHYS.CH_2_sorted.Corr_data.CS1xCS2_inds_span     = Corr_data.CS_inds_span;
-EPHYS.CH_2_sorted.Corr_data.CS1xCS2_bin_size_time = Corr_data.CS_bin_size_time;
-EPHYS.CH_2_sorted.Corr_data.CS1xCS2_CROSS         = Corr_data.CS_CSxSS_AUTO;
-
-
-
-fprintf(' --> Completed. \n')
 
 %% Plot-1 SSxSS AUTO and CROSS
 % figure
@@ -879,6 +760,19 @@ end
 fprintf(' --> Completed. \n');
 end
 
+% CH_1.CS_data   = EPHYS.CH_1_sorted.CS_data;
+% CH_1.SS_data   = EPHYS.CH_1_sorted.SS_data;
+% CH_1.Corr_data = EPHYS.CH_1_sorted.Corr_data;
+% CH_1.file_name = EPHYS.CH_1_sorted_file_name;
+% CH_1.file_path = EPHYS.CH_1_sorted_file_path;
+% CH_2.CS_data   = EPHYS.CH_2_sorted.CS_data;
+% CH_2.SS_data   = EPHYS.CH_2_sorted.SS_data;
+% CH_2.Corr_data = EPHYS.CH_2_sorted.Corr_data;
+% CH_2.file_name = EPHYS.CH_2_sorted_file_name;
+% CH_2.file_path = EPHYS.CH_2_sorted_file_path;
+% 
+% save([save_file_path filesep save_file_name], 'CH_1','CH_2','-v7.3');
+
 end
 
 %% function ESN_correlogram
@@ -975,4 +869,41 @@ Corr_data.SS_inds_span     = ss_inds_span;
 Corr_data.SS_bin_size_time = ss_bin_size_time;
 Corr_data.SS_SSxSS_AUTO    = SSxSS_AUTO;
 Corr_data.CS_CSxSS_AUTO    = CSxSS_AUTO;
+end
+
+%% function concatenate_dataset
+function upper_field_struct = concatenate_dataset(dataset_, upper_field_name, horz_OR_vert)
+if ~isempty(upper_field_name)
+dataset = struct(upper_field_name,struct());
+field_names_ = fieldnames(dataset_(1).(upper_field_name));
+for counter_fields = 1 : 1 : length(field_names_)
+    for counter_dataset = 1 : 1 : length(dataset_)
+        variable_TRIALS_DATA_ALL_ = dataset_(counter_dataset).(upper_field_name).(field_names_{counter_fields});
+        % the field does not exist in TRIALS_DATA
+        if ~isfield(dataset.(upper_field_name), field_names_{counter_fields})
+            dataset.(upper_field_name).(field_names_{counter_fields}) = [];
+        end
+        variable_TRIALS_DATA_ = dataset.(upper_field_name).(field_names_{counter_fields});
+        variable_TRIALS_DATA_ = horz_OR_vert(variable_TRIALS_DATA_, variable_TRIALS_DATA_ALL_);
+        dataset.(upper_field_name).(field_names_{counter_fields}) = variable_TRIALS_DATA_;
+    end
+end
+upper_field_struct = dataset.(upper_field_name);
+elseif isempty(upper_field_name)
+dataset = struct();
+field_names_ = fieldnames(dataset_);
+for counter_fields = 1 : 1 : length(field_names_)
+    for counter_dataset = 1 : 1 : length(dataset_)
+        variable_TRIALS_DATA_ALL_ = dataset_(counter_dataset).(field_names_{counter_fields});
+        % the field does not exist in TRIALS_DATA
+        if ~isfield(dataset, field_names_{counter_fields})
+            dataset.(field_names_{counter_fields}) = [];
+        end
+        variable_TRIALS_DATA_ = dataset.(field_names_{counter_fields});
+        variable_TRIALS_DATA_ = horz_OR_vert(variable_TRIALS_DATA_, variable_TRIALS_DATA_ALL_);
+        dataset.(field_names_{counter_fields}) = variable_TRIALS_DATA_;
+    end
+end
+upper_field_struct = dataset;
+end
 end

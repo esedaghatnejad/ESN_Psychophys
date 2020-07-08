@@ -557,10 +557,10 @@ clf(figure(2));subplot(2,1,1);plot(EPHYS_state_combined);subplot(2,1,2);plot(BEH
 clf(figure(3));subplot(2,1,1);plot(EPHYS_EB_xcorr_state_combined_1K);subplot(2,1,2);plot(BEHAVE_EB_xcorr_state_combined_1K);
 clf(figure(4));subplot(2,1,1);plot(EPHYS_EB_xcorr_state_combined_1K);subplot(2,1,2);plot(BEHAVE_EB_xcorr_state_combined_1K);
 clf(figure(5));subplot(2,1,1);plot(EPHYS_EB_xcorr_state_combined_1K);subplot(2,1,2);plot(BEHAVE_EB_xcorr_state_combined_1K(EB_ind_convert_from_BEHAVE_to_EPHYS));
-end
 disp(['length EPHYS: ' num2str( EPHYS.Alignment.time_1K(end)-EPHYS.Alignment.time_1K(1) )])
 disp(['length BEHAVE: ' num2str( BEHAVE.Alignment.time_1K(end)-BEHAVE.Alignment.time_1K(1) )])
 disp(['xcorr diff: ' num2str( sample_diff )])
+end
 
 %% ALIGN EPHYS and BEHAVE photodiode_combined through xcorr and dtw
 clearvars -except EPHYS BEHAVE

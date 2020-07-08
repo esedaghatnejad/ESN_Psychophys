@@ -206,18 +206,21 @@ set(hFig, 'PaperOrientation', 'portrait');
 sgtitle(fig_handle_(plot_data.fig_num_), file_name, 'Interpreter', 'none');
 
 %% Save combined file
+response_save_fig = questdlg('Do you want to save _sorted mat-file?',...
+    'Question Dialog','Yes','No','Yes');
+if contains(response_save_fig, 'Yes')
 [save_file_name,save_file_path] = uiputfile([EPHYS.CH_sorted_file_path filesep EPHYS.CH_sorted_file_name], 'Select where to save the _sorted mat-file.');
 fprintf(['Saving ' save_file_name ' ... ']);
-if isequal(save_file_name,0)
-    fprintf(' --> Cancelled. \n');
-    return;
-end
+if ~isequal(save_file_path,0)
 CH_data = EPHYS.CH_sorted.CH_data;
 CS_data = EPHYS.CH_sorted.CS_data;
 SS_data = EPHYS.CH_sorted.SS_data;
 Corr_data = EPHYS.CH_sorted.Corr_data;
 save([save_file_path filesep save_file_name], 'CH_data','CS_data','SS_data','Corr_data','-v7.3');
+end
 fprintf(' --> Completed. \n');
+end
+
 end
 
 %% function ESN_correlogram

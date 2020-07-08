@@ -861,13 +861,6 @@ Line_Color = lines(7);
 color_SS = Line_Color(1,:);
 color_SS_firing = [0    0.3    0.5];
 color_CS = Line_Color(7,:);
-color_cue_present = Line_Color(3,:);
-color_primSac_onset = Line_Color(4,:);
-color_primSac_vmax = Line_Color(5,:);
-color_primSac_offset = Line_Color(2,:);
-color_corrSac_onset = Line_Color(4,:);
-color_corrSac_vmax = Line_Color(5,:);
-color_corrSac_offset = Line_Color(2,:);
 
 fig_handle_ = figure(fig_num_);
 clf(fig_handle_)
@@ -921,32 +914,11 @@ subplot(3,3,3)
 hold on
 train_data_logic_SS_ = train_data_logic_SS_045;
 train_data_logic_CS_ = train_data_logic_CS_045;
-train_data_logic_cue_present_    = train_data_logic_cue_present_045;
-train_data_logic_primSac_onset_  = train_data_logic_primSac_onset_045;
-train_data_logic_primSac_vmax_   = train_data_logic_primSac_vmax_045;
-train_data_logic_primSac_offset_ = train_data_logic_primSac_offset_045;
-train_data_logic_corrSac_onset_  = train_data_logic_corrSac_onset_045;
-train_data_logic_corrSac_vmax_   = train_data_logic_corrSac_vmax_045;
-train_data_logic_corrSac_offset_ = train_data_logic_corrSac_offset_045;
 
 [x_axis_SS_, y_axis_SS_] = ESN_raster_plot_axes(train_data_logic_SS_, inds_span, 0.5);
 plot(x_axis_SS_(:), y_axis_SS_(:), 'LineWidth', 1, 'Color', color_SS)
 [x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_CS_, inds_span, 1);
 plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 3, 'Color', color_CS)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_cue_present_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_cue_present)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_primSac_onset_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_primSac_onset)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_primSac_vmax_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_primSac_vmax)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_primSac_offset_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_primSac_offset)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_corrSac_onset_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_corrSac_onset)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_corrSac_vmax_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_corrSac_vmax)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_corrSac_offset_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_corrSac_offset)
 xlim([min(inds_span)-1 max(inds_span)+1])
 ylim([(1-3) (size(train_data_logic_CS_,1)+3)])
 % ylabel('Trials')
@@ -964,32 +936,11 @@ subplot(3,3,2)
 hold on
 train_data_logic_SS_ = train_data_logic_SS_090;
 train_data_logic_CS_ = train_data_logic_CS_090;
-train_data_logic_cue_present_    = train_data_logic_cue_present_090;
-train_data_logic_primSac_onset_  = train_data_logic_primSac_onset_090;
-train_data_logic_primSac_vmax_   = train_data_logic_primSac_vmax_090;
-train_data_logic_primSac_offset_ = train_data_logic_primSac_offset_090;
-train_data_logic_corrSac_onset_  = train_data_logic_corrSac_onset_090;
-train_data_logic_corrSac_vmax_   = train_data_logic_corrSac_vmax_090;
-train_data_logic_corrSac_offset_ = train_data_logic_corrSac_offset_090;
 
 [x_axis_SS_, y_axis_SS_] = ESN_raster_plot_axes(train_data_logic_SS_, inds_span, 0.5);
 plot(x_axis_SS_(:), y_axis_SS_(:), 'LineWidth', 1, 'Color', color_SS)
 [x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_CS_, inds_span, 1);
 plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 3, 'Color', color_CS)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_cue_present_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_cue_present)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_primSac_onset_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_primSac_onset)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_primSac_vmax_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_primSac_vmax)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_primSac_offset_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_primSac_offset)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_corrSac_onset_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_corrSac_onset)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_corrSac_vmax_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_corrSac_vmax)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_corrSac_offset_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_corrSac_offset)
 xlim([min(inds_span)-1 max(inds_span)+1])
 ylim([(1-3) (size(train_data_logic_CS_,1)+3)])
 % ylabel('Trials')
@@ -1007,32 +958,11 @@ subplot(3,3,1)
 hold on
 train_data_logic_SS_ = train_data_logic_SS_135;
 train_data_logic_CS_ = train_data_logic_CS_135;
-train_data_logic_cue_present_    = train_data_logic_cue_present_135;
-train_data_logic_primSac_onset_  = train_data_logic_primSac_onset_135;
-train_data_logic_primSac_vmax_   = train_data_logic_primSac_vmax_135;
-train_data_logic_primSac_offset_ = train_data_logic_primSac_offset_135;
-train_data_logic_corrSac_onset_  = train_data_logic_corrSac_onset_135;
-train_data_logic_corrSac_vmax_   = train_data_logic_corrSac_vmax_135;
-train_data_logic_corrSac_offset_ = train_data_logic_corrSac_offset_135;
 
 [x_axis_SS_, y_axis_SS_] = ESN_raster_plot_axes(train_data_logic_SS_, inds_span, 0.5);
 plot(x_axis_SS_(:), y_axis_SS_(:), 'LineWidth', 1, 'Color', color_SS)
 [x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_CS_, inds_span, 1);
 plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 3, 'Color', color_CS)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_cue_present_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_cue_present)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_primSac_onset_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_primSac_onset)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_primSac_vmax_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_primSac_vmax)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_primSac_offset_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_primSac_offset)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_corrSac_onset_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_corrSac_onset)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_corrSac_vmax_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_corrSac_vmax)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_corrSac_offset_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_corrSac_offset)
 xlim([min(inds_span)-1 max(inds_span)+1])
 ylim([(1-3) (size(train_data_logic_CS_,1)+3)])
 ylabel('Trials')
@@ -1049,33 +979,12 @@ xlim([min(inds_span)-1 max(inds_span)+1])
 subplot(3,3,4)
 hold on
 train_data_logic_SS_ = train_data_logic_SS_180;
-train_data_logic_CS_ = train_data_logic_CS_180;
-train_data_logic_cue_present_    = train_data_logic_cue_present_180;
-train_data_logic_primSac_onset_  = train_data_logic_primSac_onset_180;
-train_data_logic_primSac_vmax_   = train_data_logic_primSac_vmax_180;
-train_data_logic_primSac_offset_ = train_data_logic_primSac_offset_180;
-train_data_logic_corrSac_onset_  = train_data_logic_corrSac_onset_180;
-train_data_logic_corrSac_vmax_   = train_data_logic_corrSac_vmax_180;
-train_data_logic_corrSac_offset_ = train_data_logic_corrSac_offset_180;
+train_data_logic_CS_ = train_data_logic_CS_135;
 
 [x_axis_SS_, y_axis_SS_] = ESN_raster_plot_axes(train_data_logic_SS_, inds_span, 0.5);
 plot(x_axis_SS_(:), y_axis_SS_(:), 'LineWidth', 1, 'Color', color_SS)
 [x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_CS_, inds_span, 1);
 plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 3, 'Color', color_CS)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_cue_present_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_cue_present)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_primSac_onset_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_primSac_onset)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_primSac_vmax_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_primSac_vmax)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_primSac_offset_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_primSac_offset)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_corrSac_onset_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_corrSac_onset)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_corrSac_vmax_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_corrSac_vmax)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_corrSac_offset_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_corrSac_offset)
 xlim([min(inds_span)-1 max(inds_span)+1])
 ylim([(1-3) (size(train_data_logic_CS_,1)+3)])
 ylabel('Trials')
@@ -1093,32 +1002,11 @@ subplot(3,3,7)
 hold on
 train_data_logic_SS_ = train_data_logic_SS_225;
 train_data_logic_CS_ = train_data_logic_CS_225;
-train_data_logic_cue_present_    = train_data_logic_cue_present_225;
-train_data_logic_primSac_onset_  = train_data_logic_primSac_onset_225;
-train_data_logic_primSac_vmax_   = train_data_logic_primSac_vmax_225;
-train_data_logic_primSac_offset_ = train_data_logic_primSac_offset_225;
-train_data_logic_corrSac_onset_  = train_data_logic_corrSac_onset_225;
-train_data_logic_corrSac_vmax_   = train_data_logic_corrSac_vmax_225;
-train_data_logic_corrSac_offset_ = train_data_logic_corrSac_offset_225;
 
 [x_axis_SS_, y_axis_SS_] = ESN_raster_plot_axes(train_data_logic_SS_, inds_span, 0.5);
 plot(x_axis_SS_(:), y_axis_SS_(:), 'LineWidth', 1, 'Color', color_SS)
 [x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_CS_, inds_span, 1);
 plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 3, 'Color', color_CS)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_cue_present_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_cue_present)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_primSac_onset_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_primSac_onset)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_primSac_vmax_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_primSac_vmax)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_primSac_offset_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_primSac_offset)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_corrSac_onset_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_corrSac_onset)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_corrSac_vmax_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_corrSac_vmax)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_corrSac_offset_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_corrSac_offset)
 xlim([min(inds_span)-1 max(inds_span)+1])
 ylim([(1-3) (size(train_data_logic_CS_,1)+3)])
 ylabel('Trials')
@@ -1136,32 +1024,11 @@ subplot(3,3,8)
 hold on
 train_data_logic_SS_ = train_data_logic_SS_270;
 train_data_logic_CS_ = train_data_logic_CS_270;
-train_data_logic_cue_present_    = train_data_logic_cue_present_270;
-train_data_logic_primSac_onset_  = train_data_logic_primSac_onset_270;
-train_data_logic_primSac_vmax_   = train_data_logic_primSac_vmax_270;
-train_data_logic_primSac_offset_ = train_data_logic_primSac_offset_270;
-train_data_logic_corrSac_onset_  = train_data_logic_corrSac_onset_270;
-train_data_logic_corrSac_vmax_   = train_data_logic_corrSac_vmax_270;
-train_data_logic_corrSac_offset_ = train_data_logic_corrSac_offset_270;
 
 [x_axis_SS_, y_axis_SS_] = ESN_raster_plot_axes(train_data_logic_SS_, inds_span, 0.5);
 plot(x_axis_SS_(:), y_axis_SS_(:), 'LineWidth', 1, 'Color', color_SS)
 [x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_CS_, inds_span, 1);
 plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 3, 'Color', color_CS)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_cue_present_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_cue_present)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_primSac_onset_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_primSac_onset)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_primSac_vmax_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_primSac_vmax)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_primSac_offset_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_primSac_offset)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_corrSac_onset_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_corrSac_onset)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_corrSac_vmax_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_corrSac_vmax)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_corrSac_offset_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_corrSac_offset)
 xlim([min(inds_span)-1 max(inds_span)+1])
 ylim([(1-3) (size(train_data_logic_CS_,1)+3)])
 % ylabel('Trials')
@@ -1179,32 +1046,11 @@ subplot(3,3,9)
 hold on
 train_data_logic_SS_ = train_data_logic_SS_315;
 train_data_logic_CS_ = train_data_logic_CS_315;
-train_data_logic_cue_present_    = train_data_logic_cue_present_315;
-train_data_logic_primSac_onset_  = train_data_logic_primSac_onset_315;
-train_data_logic_primSac_vmax_   = train_data_logic_primSac_vmax_315;
-train_data_logic_primSac_offset_ = train_data_logic_primSac_offset_315;
-train_data_logic_corrSac_onset_  = train_data_logic_corrSac_onset_315;
-train_data_logic_corrSac_vmax_   = train_data_logic_corrSac_vmax_315;
-train_data_logic_corrSac_offset_ = train_data_logic_corrSac_offset_315;
 
 [x_axis_SS_, y_axis_SS_] = ESN_raster_plot_axes(train_data_logic_SS_, inds_span, 0.5);
 plot(x_axis_SS_(:), y_axis_SS_(:), 'LineWidth', 1, 'Color', color_SS)
 [x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_CS_, inds_span, 1);
 plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 3, 'Color', color_CS)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_cue_present_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_cue_present)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_primSac_onset_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_primSac_onset)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_primSac_vmax_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_primSac_vmax)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_primSac_offset_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_primSac_offset)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_corrSac_onset_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_corrSac_onset)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_corrSac_vmax_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_corrSac_vmax)
-[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_corrSac_offset_, inds_span, 0.5);
-plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_corrSac_offset)
 xlim([min(inds_span)-1 max(inds_span)+1])
 ylim([(1-3) (size(train_data_logic_CS_,1)+3)])
 % ylabel('Trials')
@@ -1246,7 +1092,6 @@ end
 %% function single_dataset_raster
 function raster_data = single_dataset_raster(EPHYS, BEHAVE, EPHYS_inds_event, BEHAVE_inds_event, prim_OR_corr)
 % inds of interest
-
 % % CS and SS data
 SS_train_aligned     = EPHYS.CH_EVE.EPHYS_SS_train_1K;
 CS_train_aligned     = EPHYS.CH_EVE.EPHYS_CS_train_1K;
@@ -1263,9 +1108,9 @@ EPHYS_cue_present_train_aligned( EPHYS.CH_EVE.EPHYS_EB_aligned_ind_cue_present_1
 EPHYS_primSac_onset_train_aligned( EPHYS.CH_EVE.EPHYS_EB_aligned_ind_primSac_onset_1K)  = true;
 EPHYS_primSac_vmax_train_aligned(  EPHYS.CH_EVE.EPHYS_EB_aligned_ind_primSac_vmax_1K)   = true;
 EPHYS_primSac_offset_train_aligned(EPHYS.CH_EVE.EPHYS_EB_aligned_ind_primSac_offset_1K) = true;
-EPHYS_corrSac_onset_train_aligned( EPHYS.CH_EVE.EPHYS_EB_aligned_ind_corrSac_onset_1K)  = true;
-EPHYS_corrSac_vmax_train_aligned(  EPHYS.CH_EVE.EPHYS_EB_aligned_ind_corrSac_vmax_1K)   = true;
-EPHYS_corrSac_offset_train_aligned(EPHYS.CH_EVE.EPHYS_EB_aligned_ind_corrSac_offset_1K) = true;
+EPHYS_corrSac_onset_train_aligned( EPHYS.CH_EVE.EPHYS_EB_aligned_ind_primSac_onset_1K)  = true;
+EPHYS_corrSac_vmax_train_aligned(  EPHYS.CH_EVE.EPHYS_EB_aligned_ind_primSac_vmax_1K)   = true;
+EPHYS_corrSac_offset_train_aligned(EPHYS.CH_EVE.EPHYS_EB_aligned_ind_primSac_offset_1K) = true;
 
 % % eye velocity
 BEHAVE_eye_r_vm_filt = EPHYS.CH_EVE.BEHAVE_eye_r_vm_filt_1K;

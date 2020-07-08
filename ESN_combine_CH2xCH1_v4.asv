@@ -837,7 +837,8 @@ sgtitle(fig_handle_(plot_data.fig_num_), [EPHYS.file_name_base '_CSxCS'], 'Inter
 response_save_fig = questdlg('Do you want to save the figures?',...
     'Question Dialog','Yes','No','Yes');
 if contains(response_save_fig, 'Yes')
-save_file_name = EPHYS.file_name_base;
+[~, save_file_name, ~]  = fileparts(EPHYS.file_name_base);
+
 save_file_path = uigetdir(EPHYS.CH_1_sorted_file_path, 'Select where to save the figures.');
 fprintf(['Saving ' save_file_name ' ... ']);
 if ~isequal(save_file_path,0)

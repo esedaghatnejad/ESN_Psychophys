@@ -1,4 +1,4 @@
-function ESN_event_alignment_v4
+function ESN_event_alignment_v4_post201911
 %% clear
 clear;
 
@@ -145,9 +145,9 @@ fprintf(['Building EPHYS Event Data', ' ... ']);
 % ch_data
 % 2 : STR_TARGET_PURSUIT 0
 % 3 : STR_TARGET_FIXATION 1
-% 4 : DETECT_SACCADE_START 2
-% - : DETECT_SACCADE_END 3
-% 4 : END_TARGET_FIXATION 4
+% - : DETECT_SACCADE_START 2
+% 4 : DETECT_SACCADE_END 3
+% - : END_TARGET_FIXATION 4
 % 5 : 1Hz ossilation 5
 % 6 : photodiode: STR_TARGET_FIXATION+DETECT_SACCADE_END
 % eventId
@@ -155,119 +155,21 @@ fprintf(['Building EPHYS Event Data', ' ... ']);
 % 0 : falling
 EPHYS.CH_EVE.data = [EPHYS.CH_EVE.ch_time(:) EPHYS.CH_EVE.ch_data(:) EPHYS.CH_EVE.ch_info.eventId(:)];
 fprintf(' --> Completed. \n')
-
-%% Build BEHAVE Alignment events
-clearvars -except EPHYS BEHAVE
-fprintf(['Building BEHAVE Alignment events', ' ... ']);
-
-time_reference      = BEHAVE.time_1K;
-length_time         = length(time_reference);
-time_state_str_fixation = [];
-time_state_sac_detect_on = [];
-time_state_sac_detect_off = [];
-time_state_end_fixation = [];
-time_state_iti = [];
-for counter_trial = 1 : length(BEHAVE.trials)-1
-    time_state_str_fixation = [time_state_str_fixation; BEHAVE.trials{counter_trial}.state_start_time_str_target_fixation(:)];
-    time_state_sac_detect_on = [time_state_sac_detect_on; BEHAVE.trials{counter_trial}.state_start_time_detect_sac_start(:)];
-    time_state_sac_detect_off = [time_state_sac_detect_off; BEHAVE.trials{counter_trial}.state_start_time_detect_sac_end(:)];
-    time_state_end_fixation = [time_state_end_fixation; BEHAVE.trials{counter_trial}.state_start_time_end_target_fixation(:)];
-    time_state_iti = [time_state_iti; BEHAVE.trials{counter_trial}.state_start_time_iti(:)];
-end
-
-variable_list = {'_state_str_fixation','_state_sac_detect_on','_state_sac_detect_off','_state_end_fixation','_state_iti'};
-
-BEHAVE.Alignment.time_1K = time_reference;
-for counter_variable = 1 : 1 : length(variable_list)
-    variable_name = variable_list{counter_variable};
-    eval([ 'BEHAVE.Alignment.time' variable_name ' = ' 'time' variable_name ';']);
-end
-
-for counter_variable = 1 : 1 : length(variable_list)
-    variable_name = variable_list{counter_variable};
-    eval([ 'time_temp_' ' = ' 'time' variable_name ';']);
-    time_temp_(end+1) = max([time_reference(end), time_temp_(end)])+1;
-    event_temp_       = false(length_time, 1);
-    counter_temp_     = find(time_temp_ >= time_reference(1), 1, 'first');
-    eval([ 'time'    variable_name ' = ' 'time_temp_'    ';']);
-    eval([ 'event'   variable_name ' = ' 'event_temp_'   ';']);
-    eval([ 'counter' variable_name ' = ' 'counter_temp_' ';']);
-end
-for counter_time_point = 1 : length_time
-    time_ponit_     = time_reference(counter_time_point);
-    if time_ponit_ >= time_state_str_fixation(  counter_state_str_fixation)
-        event_state_str_fixation(    counter_time_point) = true;
-        counter_state_str_fixation   = counter_state_str_fixation   + 1;
-    end
-    if time_ponit_ >= time_state_sac_detect_on( counter_state_sac_detect_on)
-        event_state_sac_detect_on(   counter_time_point) = true;
-        counter_state_sac_detect_on  = counter_state_sac_detect_on  + 1;
-    end
-    if time_ponit_ >= time_state_sac_detect_off(counter_state_sac_detect_off)
-        event_state_sac_detect_off(  counter_time_point) = true;
-        counter_state_sac_detect_off = counter_state_sac_detect_off + 1;
-    end
-    if time_ponit_ >= time_state_end_fixation(  counter_state_end_fixation)
-        event_state_end_fixation(    counter_time_point) = true;
-        counter_state_end_fixation   = counter_state_end_fixation   + 1;
-    end
-    if time_ponit_ >= time_state_iti(           counter_state_iti)
-        event_state_iti(             counter_time_point) = true;
-        counter_state_iti            = counter_state_iti            + 1;
-    end
-end
-
-for counter_variable = 1 : 1 : length(variable_list)
-    variable_name = variable_list{counter_variable};
-    eval([ 'BEHAVE.Alignment.event' variable_name ' = ' 'event' variable_name ';']);
-end
-
-for counter_variable = 1 : 1 : length(variable_list)
-    variable_name = variable_list{counter_variable};
-    eval([ 'event_temp_' ' = ' 'event' variable_name ';']);
-    length_time = length(event_temp_);
-    inds_span_ = (0) : 1 : (100);
-    ind_event_temp_  = find(event_temp_);
-    inds_event_temp_ = repmat( ind_event_temp_(:), 1, length(inds_span_)) + repmat(inds_span_(:)', length(ind_event_temp_), 1);
-    inds_event_temp_( inds_event_temp_ < 1 ) = 1;
-    inds_event_temp_( inds_event_temp_ > length_time ) = length_time;
-    event_temp_(inds_event_temp_(:)) = true;
-    eval([ 'event'   variable_name '_100' ' = ' 'event_temp_'   ';']);
-end
-
-event_state_combined = ...
-    double(event_state_str_fixation_100)   .* 1 + ...
-    double(event_state_sac_detect_on_100)  .* 2 + ...
-    double(event_state_sac_detect_off_100) .* 3;% + ...
-%     double(event_state_end_fixation_100)   .* 4 + ...
-%     double(event_state_iti_100)            .* 5 ;
-event_state_combined(event_state_combined>3) = 3;
-event_photodiode_combined = ...
-    double(event_state_str_fixation_100)   .* 1 + ...
-    double(event_state_sac_detect_off_100) .* 1 ;%+ ...
-    %double(event_state_sac_detect_on_100)  .* 2 + ...
-    %double(event_state_end_fixation_100)   .* 2 ;
-
-BEHAVE.Alignment.event_state_combined      = event_state_combined;
-BEHAVE.Alignment.event_photodiode_combined = event_photodiode_combined;
-
-state_description = [
-'state_str_fixation: 1 , ', ...
-'state_sac_detect_on: 2 , ', ...
-'state_sac_detect_off: 3 , '];%, ...
-% 'state_end_fixation: 4 , ', ...
-% 'state_iti: 5', ...
-% ];
-photodiode_description = [
-'state_str_fixation: 1 , ', ...
-'state_sac_detect_off: 1 , ', ...
-];
-BEHAVE.Alignment.state_description      = state_description;
-BEHAVE.Alignment.photodiode_description = photodiode_description;
-
-BEHAVE.Alignment.eye_r_vm_filt = interp1(BEHAVE.time_1K, BEHAVE.eye_r_vm_filt, time_reference, 'linear', 'extrap');
-
-fprintf(' --> Completed. \n');
+%{
+enum state {
+0   INIT = 0,
+1	STR_TARGET_PURSUIT,
+2	STR_TARGET_PRESENT,
+3	STR_TARGET_FIXATION,
+4	CUE_TARGET_PRESENT,
+5	DETECT_SACCADE_START,
+6	SACCADE,
+7	DETECT_SACCADE_END,
+8	DELIVER_REWARD,
+9	END_TARGET_FIXATION,
+10	INCORRECT_SACCADE,
+11	ITI };
+%}
 
 %% Build EPHYS Alignment events
 clearvars -except EPHYS BEHAVE
@@ -275,27 +177,27 @@ fprintf(['Building EPHYS Alignment events', ' ... ']);
 
 time_reference      = ( ESN_Round(EPHYS.time_30K(1),0.001) : 0.001 : ESN_Round(EPHYS.time_30K(end),0.001) )';
 length_time         = length(time_reference);
-time_state_str_fixation   = ESN_Round( EPHYS.CH_EVE.data( (EPHYS.CH_EVE.data(:,2) == 3) & ((EPHYS.CH_EVE.data(:,3) == 1)) , 1) , 0.001);
-time_state_sac_detect_on  = ESN_Round( EPHYS.CH_EVE.data( (EPHYS.CH_EVE.data(:,2) == 4) & ((EPHYS.CH_EVE.data(:,3) == 1)) , 1) , 0.001);
-time_state_sac_detect_off = ESN_Round( EPHYS.CH_EVE.data( (EPHYS.CH_EVE.data(:,2) == 4) & ((EPHYS.CH_EVE.data(:,3) == 0)) , 1) , 0.001);
-% time_state_end_fixation   = ESN_Round( EPHYS.CH_EVE.data( (EPHYS.CH_EVE.data(:,2) == 4) & ((EPHYS.CH_EVE.data(:,3) == 0)) , 1) , 0.001);
-% time_state_iti            = ESN_Round( EPHYS.CH_EVE.data( (EPHYS.CH_EVE.data(:,2) == 4) & ((EPHYS.CH_EVE.data(:,3) == 0)) , 1) , 0.001);
+time_STR_TARGET_PURSUIT_rise = ESN_Round( EPHYS.CH_EVE.data( (EPHYS.CH_EVE.data(:,2) == 6) & ((EPHYS.CH_EVE.data(:,3) == 1)) , 1) , 0.001);
+time_STR_TARGET_PURSUIT_fall = ESN_Round( EPHYS.CH_EVE.data( (EPHYS.CH_EVE.data(:,2) == 6) & ((EPHYS.CH_EVE.data(:,3) == 0)) , 1) , 0.001);
+time_STR_TARGET_FIXATION_rise = ESN_Round( EPHYS.CH_EVE.data( (EPHYS.CH_EVE.data(:,2) == 6) & ((EPHYS.CH_EVE.data(:,3) == 1)) , 1) , 0.001);
+time_STR_TARGET_FIXATION_fall = ESN_Round( EPHYS.CH_EVE.data( (EPHYS.CH_EVE.data(:,2) == 6) & ((EPHYS.CH_EVE.data(:,3) == 0)) , 1) , 0.001);
+time_DETECT_SACCADE_END_rise = ESN_Round( EPHYS.CH_EVE.data( (EPHYS.CH_EVE.data(:,2) == 6) & ((EPHYS.CH_EVE.data(:,3) == 1)) , 1) , 0.001);
+time_DETECT_SACCADE_END_fall = ESN_Round( EPHYS.CH_EVE.data( (EPHYS.CH_EVE.data(:,2) == 6) & ((EPHYS.CH_EVE.data(:,3) == 0)) , 1) , 0.001);
 time_photodiode_rise      = ESN_Round( EPHYS.CH_EVE.data( (EPHYS.CH_EVE.data(:,2) == 6) & ((EPHYS.CH_EVE.data(:,3) == 1)) , 1) , 0.001);
 time_photodiode_fall      = ESN_Round( EPHYS.CH_EVE.data( (EPHYS.CH_EVE.data(:,2) == 6) & ((EPHYS.CH_EVE.data(:,3) == 0)) , 1) , 0.001);
-variable_list = {'_state_str_fixation','_state_sac_detect_on','_state_sac_detect_off','_photodiode_rise','_photodiode_fall'};
+variable_list = {...
+    '_STR_TARGET_PURSUIT_rise' ,'_STR_TARGET_PURSUIT_fall', ...
+    '_STR_TARGET_FIXATION_rise','_STR_TARGET_FIXATION_fall', ...
+    '_DETECT_SACCADE_END_rise' ,'_DETECT_SACCADE_END_fall', ...
+    '_photodiode_rise','_photodiode_fall'};
 
 if isempty(time_photodiode_rise)
-    str_fixation_rise   = ESN_Round( EPHYS.CH_EVE.data( (EPHYS.CH_EVE.data(:,2) == 3) & ((EPHYS.CH_EVE.data(:,3) == 1)) , 1) , 0.001);
-    sac_detect_off_rise = ESN_Round( EPHYS.CH_EVE.data( (EPHYS.CH_EVE.data(:,2) == 4) & ((EPHYS.CH_EVE.data(:,3) == 0)) , 1) , 0.001);
-    time_photodiode_rise = [str_fixation_rise; sac_detect_off_rise];
+    time_photodiode_rise = [time_STR_TARGET_FIXATION_rise; time_DETECT_SACCADE_END_rise];
     time_photodiode_rise = sort(time_photodiode_rise);
 end
 
 if isempty(time_photodiode_fall)
-    str_fixation_fall   = ESN_Round( EPHYS.CH_EVE.data( (EPHYS.CH_EVE.data(:,2) == 3) & ((EPHYS.CH_EVE.data(:,3) == 0)) , 1) , 0.001);
-    sac_detect_off_rise = ESN_Round( EPHYS.CH_EVE.data( (EPHYS.CH_EVE.data(:,2) == 4) & ((EPHYS.CH_EVE.data(:,3) == 0)) , 1) , 0.001);
-    sac_detect_off_fall = sac_detect_off_rise + 0.050; % assuming the primary saccade duration is 50ms
-    time_photodiode_fall = [str_fixation_fall; sac_detect_off_fall];
+    time_photodiode_fall = [time_STR_TARGET_FIXATION_fall; time_DETECT_SACCADE_END_fall];
     time_photodiode_fall = sort(time_photodiode_fall);
 end
 
@@ -334,83 +236,140 @@ for counter_time_point = 1 : length_time
         counter_VARIABLE   = counter_VARIABLE   + 1;
     end
     %}
-    if time_ponit_ >= time_state_str_fixation(  counter_state_str_fixation)
-        event_state_str_fixation(    counter_time_point) = true;
-        counter_state_str_fixation   = counter_state_str_fixation   + 1;
+    % STR_TARGET_PURSUIT_rise
+    if time_ponit_ >= time_STR_TARGET_PURSUIT_rise(  counter_STR_TARGET_PURSUIT_rise)
+        event_STR_TARGET_PURSUIT_rise(    counter_time_point) = true;
+        counter_STR_TARGET_PURSUIT_rise   = counter_STR_TARGET_PURSUIT_rise   + 1;
     end
-    if time_ponit_ >= time_state_sac_detect_on( counter_state_sac_detect_on)
-        event_state_sac_detect_on(   counter_time_point) = true;
-        counter_state_sac_detect_on  = counter_state_sac_detect_on  + 1;
+    % STR_TARGET_PURSUIT_fall
+    if time_ponit_ >= time_STR_TARGET_PURSUIT_fall(  counter_STR_TARGET_PURSUIT_fall)
+        event_STR_TARGET_PURSUIT_fall(    counter_time_point) = true;
+        counter_STR_TARGET_PURSUIT_fall   = counter_STR_TARGET_PURSUIT_fall   + 1;
     end
-    if time_ponit_ >= time_state_sac_detect_off(counter_state_sac_detect_off)
-        event_state_sac_detect_off(  counter_time_point) = true;
-        counter_state_sac_detect_off = counter_state_sac_detect_off + 1;
+    % STR_TARGET_FIXATION_rise
+    if time_ponit_ >= time_STR_TARGET_FIXATION_rise(  counter_STR_TARGET_FIXATION_rise)
+        event_STR_TARGET_FIXATION_rise(    counter_time_point) = true;
+        counter_STR_TARGET_FIXATION_rise   = counter_STR_TARGET_FIXATION_rise   + 1;
     end
-%     if time_ponit_ >= time_state_end_fixation(  counter_state_end_fixation)
-%         event_state_end_fixation(    counter_time_point) = true;
-%         counter_state_end_fixation   = counter_state_end_fixation   + 1;
-%     end
-%     if time_ponit_ >= time_state_iti(           counter_state_iti)
-%         event_state_iti(             counter_time_point) = true;
-%         counter_state_iti            = counter_state_iti            + 1;
-%     end
+    %STR_TARGET_FIXATION_fall
+    if time_ponit_ >= time_STR_TARGET_FIXATION_fall(  counter_STR_TARGET_FIXATION_fall)
+        event_STR_TARGET_FIXATION_fall(    counter_time_point) = true;
+        counter_STR_TARGET_FIXATION_fall   = counter_STR_TARGET_FIXATION_fall   + 1;
+    end
+    % DETECT_SACCADE_END_rise
+    if time_ponit_ >= time_DETECT_SACCADE_END_rise(  counter_DETECT_SACCADE_END_rise)
+        event_DETECT_SACCADE_END_rise(    counter_time_point) = true;
+        counter_DETECT_SACCADE_END_rise   = counter_DETECT_SACCADE_END_rise   + 1;
+    end
+    % DETECT_SACCADE_END_fall
+    if time_ponit_ >= time_DETECT_SACCADE_END_fall(  counter_DETECT_SACCADE_END_fall)
+        event_DETECT_SACCADE_END_fall(    counter_time_point) = true;
+        counter_DETECT_SACCADE_END_fall   = counter_DETECT_SACCADE_END_fall   + 1;
+    end
+    % photodiode_rise
     if time_ponit_ >= time_photodiode_rise(     counter_photodiode_rise)
         event_photodiode_rise(       counter_time_point) = true;
         counter_photodiode_rise      = counter_photodiode_rise      + 1;
     end
+    % photodiode_fall
     if time_ponit_ >= time_photodiode_fall(     counter_photodiode_fall)
         event_photodiode_fall(       counter_time_point) = true;
         counter_photodiode_fall      = counter_photodiode_fall      + 1;
     end
 end
 
+event_STR_TARGET_PURSUIT  = false(length_time, 1);
+event_STR_TARGET_FIXATION = false(length_time, 1);
+event_DETECT_SACCADE_END  = false(length_time, 1);
+event_photodiode          = false(length_time, 1);
+flag_STR_TARGET_PURSUIT   = false;
+flag_STR_TARGET_FIXATION  = false;
+flag_DETECT_SACCADE_END   = false;
+flag_photodiode           = false;
+for counter_time_point = 1 : length_time
+    flag_STR_TARGET_PURSUIT  = flag_STR_TARGET_PURSUIT  ||   event_STR_TARGET_PURSUIT_rise( counter_time_point);
+    flag_STR_TARGET_PURSUIT  = flag_STR_TARGET_PURSUIT  && (~event_STR_TARGET_PURSUIT_fall( counter_time_point));
+    flag_STR_TARGET_FIXATION = flag_STR_TARGET_FIXATION ||   event_STR_TARGET_FIXATION_rise(counter_time_point);
+    flag_STR_TARGET_FIXATION = flag_STR_TARGET_FIXATION && (~event_STR_TARGET_FIXATION_fall(counter_time_point));
+    flag_DETECT_SACCADE_END  = flag_DETECT_SACCADE_END  ||   event_DETECT_SACCADE_END_rise( counter_time_point);
+    flag_DETECT_SACCADE_END  = flag_DETECT_SACCADE_END  && (~event_DETECT_SACCADE_END_fall( counter_time_point));
+    flag_photodiode          = flag_photodiode          ||   event_photodiode_rise(         counter_time_point);
+    flag_photodiode          = flag_photodiode          && (~event_photodiode_fall(         counter_time_point));
+    event_STR_TARGET_PURSUIT( counter_time_point) = flag_STR_TARGET_PURSUIT;
+    event_STR_TARGET_FIXATION(counter_time_point) = flag_STR_TARGET_FIXATION;
+    event_DETECT_SACCADE_END( counter_time_point) = flag_DETECT_SACCADE_END;
+    event_photodiode(         counter_time_point) = flag_photodiode;
+end
+
+variable_list = {...
+    '_STR_TARGET_PURSUIT_rise' ,'_STR_TARGET_PURSUIT_fall', '_STR_TARGET_PURSUIT', ...
+    '_STR_TARGET_FIXATION_rise','_STR_TARGET_FIXATION_fall', '_STR_TARGET_FIXATION', ...
+    '_DETECT_SACCADE_END_rise' ,'_DETECT_SACCADE_END_fall', '_DETECT_SACCADE_END', ...
+    '_photodiode_rise','_photodiode_fall', '_photodiode'};
 for counter_variable = 1 : 1 : length(variable_list)
     variable_name = variable_list{counter_variable};
     eval([ 'EPHYS.Alignment.event' variable_name ' = ' 'event' variable_name ';']);
 end
 
-for counter_variable = 1 : 1 : length(variable_list)
-    variable_name = variable_list{counter_variable};
-    eval([ 'event_temp_' ' = ' 'event' variable_name ';']);
-    length_time = length(event_temp_);
-    inds_span_ = (0) : 1 : (100);
-    ind_event_temp_  = find(event_temp_);
-    inds_event_temp_ = repmat( ind_event_temp_(:), 1, length(inds_span_)) + repmat(inds_span_(:)', length(ind_event_temp_), 1);
-    inds_event_temp_( inds_event_temp_ < 1 ) = 1;
-    inds_event_temp_( inds_event_temp_ > length_time ) = length_time;
-    event_temp_(inds_event_temp_(:)) = true;
-    eval([ 'event'   variable_name '_100' ' = ' 'event_temp_'   ';']);
-end
 
 event_state_combined = ...
-    double(event_state_str_fixation_100)   .* 1 + ...
-    double(event_state_sac_detect_on_100)  .* 2 + ...
-    double(event_state_sac_detect_off_100) .* 3 ;%+ ...
-%     double(event_state_end_fixation_100)   .* 4 + ...
-%     double(event_state_iti_100)            .* 5 ;
-event_state_combined(event_state_combined>3) = 3;
+    double(event_photodiode)  .* 1;
+
 event_photodiode_combined = ...
-    double(event_photodiode_rise_100)  .* 1;% + ...
-    %double(event_photodiode_fall_100)  .* 2 ;
+    double(event_photodiode)  .* 1;
 
 EPHYS.Alignment.event_state_combined      = event_state_combined;
 EPHYS.Alignment.event_photodiode_combined = event_photodiode_combined;
 
 state_description = [
-'state_str_fixation: 1 , ', ...
-'state_sac_detect_on: 2 , ', ...
-'state_sac_detect_off: 3 , '];%, ...
-% 'state_end_fixation: 4 , ', ...
-% 'state_iti: 5', ...
-% ];
+'STR_TARGET_PURSUIT: 1 , ', ...
+'STR_TARGET_FIXATION: 3 , ', ...
+'DETECT_SACCADE_END: 7 , '];
+
 photodiode_description = [
-'state_str_fixation: 1 , ', ...
-'state_sac_detect_off: 1 , ', ...
+'STR_TARGET_FIXATION: 1 , ', ...
+'DETECT_SACCADE_END: 1 , ', ...
 ];
 EPHYS.Alignment.state_description      = state_description;
 EPHYS.Alignment.photodiode_description = photodiode_description;
 
 EPHYS.Alignment.eye_r_vm_filt = interp1(EPHYS.time_30K, EPHYS.eye_r_vm_filt, time_reference, 'linear', 'extrap');
+
+fprintf(' --> Completed. \n');
+
+%% Build BEHAVE Alignment events
+clearvars -except EPHYS BEHAVE
+fprintf(['Building BEHAVE Alignment events', ' ... ']);
+time_reference      = BEHAVE.time_1K;
+BEHAVE.Alignment.time_1K = time_reference;
+BEHAVE_state_value = BEHAVE.state_value(:);
+event_STR_TARGET_PURSUIT  = (BEHAVE_state_value == 1);
+event_STR_TARGET_FIXATION = (BEHAVE_state_value == 3);
+event_DETECT_SACCADE_END =  (BEHAVE_state_value == 7);
+event_photodiode = event_STR_TARGET_FIXATION | event_DETECT_SACCADE_END;
+
+event_state_combined = ...
+    double(event_photodiode)  .* 1;
+
+event_photodiode_combined = ...
+    double(event_photodiode)  .* 1;
+
+BEHAVE.Alignment.event_state_combined      = event_state_combined;
+BEHAVE.Alignment.event_photodiode_combined = event_photodiode_combined;
+
+state_description = [
+'STR_TARGET_PURSUIT: 1 , ', ...
+'STR_TARGET_FIXATION: 3 , ', ...
+'DETECT_SACCADE_END: 7 , '];
+
+photodiode_description = [
+'STR_TARGET_FIXATION: 1 , ', ...
+'DETECT_SACCADE_END: 1 , ', ...
+];
+BEHAVE.Alignment.state_description      = state_description;
+BEHAVE.Alignment.photodiode_description = photodiode_description;
+
+BEHAVE.Alignment.eye_r_vm_filt = interp1(BEHAVE.time_1K, BEHAVE.eye_r_vm_filt, time_reference, 'linear', 'extrap');
 
 fprintf(' --> Completed. \n');
 
@@ -420,19 +379,13 @@ fprintf(['Aligning EPHYS and BEHAVE state_combined', ' ... ']);
 EPHYS_time_1K              = EPHYS.Alignment.time_1K;
 EPHYS_time_30K             = EPHYS.time_30K;
 BEHAVE_time_1K             = BEHAVE.Alignment.time_1K;
-EPHYS_eye_r_vm_filt  = EPHYS.Alignment.eye_r_vm_filt;
-BEHAVE_eye_r_vm_filt = BEHAVE.Alignment.eye_r_vm_filt;
-EPHYS_eye_r_vm_filt(EPHYS_eye_r_vm_filt < 100) = 0;
-BEHAVE_eye_r_vm_filt(BEHAVE_eye_r_vm_filt < 100) = 0;
-EPHYS_eye_r_vm_filt(EPHYS_eye_r_vm_filt > 1500) = 1500;
-BEHAVE_eye_r_vm_filt(BEHAVE_eye_r_vm_filt > 1500) = 1500;
-% state_combined: find the bias between 2 signals
-[xcorr_value,xcorr_lag] = xcorr(EPHYS_eye_r_vm_filt, BEHAVE_eye_r_vm_filt); % cross-correlate signals with each other
-[~,ind_max_xcross] = max(abs(xcorr_value));
-sample_diff = xcorr_lag(ind_max_xcross);
-
 EPHYS_state_combined       = EPHYS.Alignment.event_state_combined;
 BEHAVE_state_combined      = BEHAVE.Alignment.event_state_combined;
+
+% state_combined: find the bias between 2 signals
+[xcorr_value,xcorr_lag] = xcorr(EPHYS_state_combined, BEHAVE_state_combined); % cross-correlate signals with each other
+[~,ind_max_xcross] = max(abs(xcorr_value));
+sample_diff = xcorr_lag(ind_max_xcross);
 
 if  sample_diff > 0
     EPHYS_EB_xcorr_state_combined_1K  = EPHYS_state_combined(  abs(sample_diff):end);
@@ -453,10 +406,6 @@ if length(BEHAVE_EB_xcorr_state_combined_1K) ~= length(EPHYS_EB_xcorr_state_comb
     BEHAVE_EB_xcorr_state_combined_1K = BEHAVE_EB_xcorr_state_combined_1K( 1:min_length);
     BEHAVE_EB_xcorr_time_1K           = BEHAVE_EB_xcorr_time_1K(           1:min_length);
 end
-
-% accounting for INCORRECT_SACCADE which is recorded in EPHYS but is
-% missing in BEHAVE
-EPHYS_EB_xcorr_state_combined_1K((EPHYS_EB_xcorr_state_combined_1K == 3) & (BEHAVE_EB_xcorr_state_combined_1K == 0)) = 0;
 
 % %% state_combined: find the Dynamic Time Warp (DTW) between 2 time series
 % low pass filter the signals to generate a sinusoid around rises and falls
@@ -561,11 +510,9 @@ EPHYS.CH_EVE.align_states.BEHAVE_EB_xcorr_state_combined_1K = BEHAVE_EB_xcorr_st
 fprintf(' --> Completed. \n');
 
 if EPHYS.debug_figures
-clf(figure(1));subplot(2,1,1);plot(EPHYS_eye_r_vm_filt);subplot(2,1,2);plot(BEHAVE_eye_r_vm_filt);
-clf(figure(2));subplot(2,1,1);plot(EPHYS_state_combined);subplot(2,1,2);plot(BEHAVE_state_combined);
-clf(figure(3));subplot(2,1,1);plot(EPHYS_EB_xcorr_state_combined_1K);subplot(2,1,2);plot(BEHAVE_EB_xcorr_state_combined_1K);
-clf(figure(4));subplot(2,1,1);plot(EPHYS_EB_xcorr_state_combined_1K);subplot(2,1,2);plot(BEHAVE_EB_xcorr_state_combined_1K);
-clf(figure(5));subplot(2,1,1);plot(EPHYS_EB_xcorr_state_combined_1K);subplot(2,1,2);plot(BEHAVE_EB_xcorr_state_combined_1K(EB_ind_convert_from_BEHAVE_to_EPHYS));
+clf(figure(1));subplot(2,1,1);plot(EPHYS_state_combined);subplot(2,1,2);plot(BEHAVE_state_combined);
+clf(figure(2));subplot(2,1,1);plot(EPHYS_EB_xcorr_state_combined_1K);subplot(2,1,2);plot(BEHAVE_EB_xcorr_state_combined_1K);
+clf(figure(3));subplot(2,1,1);plot(EPHYS_EB_xcorr_state_combined_1K);subplot(2,1,2);plot(BEHAVE_EB_xcorr_state_combined_1K(EB_ind_convert_from_BEHAVE_to_EPHYS));
 end
 disp(['length EPHYS: ' num2str( EPHYS.Alignment.time_1K(end)-EPHYS.Alignment.time_1K(1) )])
 disp(['length BEHAVE: ' num2str( BEHAVE.Alignment.time_1K(end)-BEHAVE.Alignment.time_1K(1) )])
@@ -641,7 +588,6 @@ for counter_ind = 1 : 1 : length(EPHYS_PD_inds_DTW)
     PD_ind_convert_from_EPHYS_to_BEHAVE(ind_BEHAVE_PD_DTW) = ind_EPHYS_PD_DTW;
     PD_ind_convert_from_BEHAVE_to_EPHYS(ind_EPHYS_PD_DTW)  = ind_BEHAVE_PD_DTW;
 end
-
 
 time_reference      = EPHYS_time_30K(:);
 length_time         = length(time_reference);

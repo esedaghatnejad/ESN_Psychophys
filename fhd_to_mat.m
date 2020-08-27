@@ -6,8 +6,8 @@ if nargin < 1
     folder_path = pwd;
 end
 % add '/' to the end of folder_path
-if ~strcmp(folder_path(end), '/')
-    folder_path = [folder_path '/'];
+if ~strcmp(folder_path(end), filesep)
+    folder_path = [folder_path filesep];
 end
 % get the list of fhd files to analyze
 FILES_FHD = dir([folder_path '*.fhd']);

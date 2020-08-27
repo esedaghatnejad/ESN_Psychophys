@@ -177,12 +177,12 @@ fprintf(['Building EPHYS Alignment events', ' ... ']);
 
 time_reference      = ( ESN_Round(EPHYS.time_30K(1),0.001) : 0.001 : ESN_Round(EPHYS.time_30K(end),0.001) )';
 length_time         = length(time_reference);
-time_STR_TARGET_PURSUIT_rise = ESN_Round( EPHYS.CH_EVE.data( (EPHYS.CH_EVE.data(:,2) == 6) & ((EPHYS.CH_EVE.data(:,3) == 1)) , 1) , 0.001);
-time_STR_TARGET_PURSUIT_fall = ESN_Round( EPHYS.CH_EVE.data( (EPHYS.CH_EVE.data(:,2) == 6) & ((EPHYS.CH_EVE.data(:,3) == 0)) , 1) , 0.001);
-time_STR_TARGET_FIXATION_rise = ESN_Round( EPHYS.CH_EVE.data( (EPHYS.CH_EVE.data(:,2) == 6) & ((EPHYS.CH_EVE.data(:,3) == 1)) , 1) , 0.001);
-time_STR_TARGET_FIXATION_fall = ESN_Round( EPHYS.CH_EVE.data( (EPHYS.CH_EVE.data(:,2) == 6) & ((EPHYS.CH_EVE.data(:,3) == 0)) , 1) , 0.001);
-time_DETECT_SACCADE_END_rise = ESN_Round( EPHYS.CH_EVE.data( (EPHYS.CH_EVE.data(:,2) == 6) & ((EPHYS.CH_EVE.data(:,3) == 1)) , 1) , 0.001);
-time_DETECT_SACCADE_END_fall = ESN_Round( EPHYS.CH_EVE.data( (EPHYS.CH_EVE.data(:,2) == 6) & ((EPHYS.CH_EVE.data(:,3) == 0)) , 1) , 0.001);
+time_STR_TARGET_PURSUIT_rise = ESN_Round( EPHYS.CH_EVE.data( (EPHYS.CH_EVE.data(:,2) == 2) & ((EPHYS.CH_EVE.data(:,3) == 1)) , 1) , 0.001);
+time_STR_TARGET_PURSUIT_fall = ESN_Round( EPHYS.CH_EVE.data( (EPHYS.CH_EVE.data(:,2) == 2) & ((EPHYS.CH_EVE.data(:,3) == 0)) , 1) , 0.001);
+time_STR_TARGET_FIXATION_rise = ESN_Round( EPHYS.CH_EVE.data( (EPHYS.CH_EVE.data(:,2) == 3) & ((EPHYS.CH_EVE.data(:,3) == 1)) , 1) , 0.001);
+time_STR_TARGET_FIXATION_fall = ESN_Round( EPHYS.CH_EVE.data( (EPHYS.CH_EVE.data(:,2) == 3) & ((EPHYS.CH_EVE.data(:,3) == 0)) , 1) , 0.001);
+time_DETECT_SACCADE_END_rise = ESN_Round( EPHYS.CH_EVE.data( (EPHYS.CH_EVE.data(:,2) == 4) & ((EPHYS.CH_EVE.data(:,3) == 1)) , 1) , 0.001);
+time_DETECT_SACCADE_END_fall = ESN_Round( EPHYS.CH_EVE.data( (EPHYS.CH_EVE.data(:,2) == 4) & ((EPHYS.CH_EVE.data(:,3) == 0)) , 1) , 0.001);
 time_photodiode_rise      = ESN_Round( EPHYS.CH_EVE.data( (EPHYS.CH_EVE.data(:,2) == 6) & ((EPHYS.CH_EVE.data(:,3) == 1)) , 1) , 0.001);
 time_photodiode_fall      = ESN_Round( EPHYS.CH_EVE.data( (EPHYS.CH_EVE.data(:,2) == 6) & ((EPHYS.CH_EVE.data(:,3) == 0)) , 1) , 0.001);
 variable_list = {...
@@ -311,9 +311,10 @@ for counter_variable = 1 : 1 : length(variable_list)
     eval([ 'EPHYS.Alignment.event' variable_name ' = ' 'event' variable_name ';']);
 end
 
-
 event_state_combined = ...
-    double(event_photodiode)  .* 1;
+    double(event_STR_TARGET_PURSUIT)  .* 1 + ...
+    double(event_STR_TARGET_FIXATION) .* 3 + ...
+    double(event_DETECT_SACCADE_END)  .* 7 ;
 
 event_photodiode_combined = ...
     double(event_photodiode)  .* 1;
@@ -349,7 +350,9 @@ event_DETECT_SACCADE_END =  (BEHAVE_state_value == 7);
 event_photodiode = event_STR_TARGET_FIXATION | event_DETECT_SACCADE_END;
 
 event_state_combined = ...
-    double(event_photodiode)  .* 1;
+    double(event_STR_TARGET_PURSUIT)  .* 1 + ...
+    double(event_STR_TARGET_FIXATION) .* 3 + ...
+    double(event_DETECT_SACCADE_END)  .* 7 ;
 
 event_photodiode_combined = ...
     double(event_photodiode)  .* 1;

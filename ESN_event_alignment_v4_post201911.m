@@ -55,6 +55,7 @@ min_length = min([ ...
     length(BEHAVE.right_horizontal_eye),...
     length(BEHAVE.right_vertical_eye),...
     length(BEHAVE.t),...
+    length(BEHAVE.state_value),...
     ]);
 % timeseries
 inds_invalid   = false(min_length, 1);
@@ -62,6 +63,7 @@ time_eyelink   = double(BEHAVE.eyelink_time(1:min_length)');          inds_inval
 eye_r_px       = double(BEHAVE.right_horizontal_eye(1:min_length)');  inds_invalid = isnan(eye_r_px)     | inds_invalid;
 eye_r_py       = double(BEHAVE.right_vertical_eye(1:min_length)');    inds_invalid = isnan(eye_r_py)     | inds_invalid;
 time_tgt       = double(BEHAVE.t(1:min_length)');                     inds_invalid = isnan(time_tgt)     | inds_invalid;
+state          = double(BEHAVE.state_value(1:min_length)');           inds_invalid = isnan(state)        | inds_invalid;
 % correct for the bias between time_eyelink and time_tgt
 time_eyelink   = time_eyelink .* (time_tgt(end)-time_tgt(1)) ./ (time_eyelink(end)-time_eyelink(1));
 time_eyelink   = time_eyelink - time_eyelink(1) + time_tgt(1);
@@ -74,9 +76,11 @@ inds_invalid = (abs(eye_r_py) > 15.0) | inds_invalid;
 time_eyelink(inds_invalid) = [];
 eye_r_px(    inds_invalid) = [];
 eye_r_py(    inds_invalid) = [];
+state(       inds_invalid) = [];
 % reconstruct eye_r data
 eye_r_px = interp1(time_eyelink, eye_r_px, time_1K, 'linear', 'extrap');
 eye_r_py = interp1(time_eyelink, eye_r_py, time_1K, 'linear', 'extrap');
+state    = interp1(time_eyelink, state,    time_1K, 'nearest','extrap');
 % filter params
 sampling_freq = 1000.0;
 cutoff_freq = 100.0;
@@ -90,6 +94,7 @@ eye_r_vm_filt = sqrt(eye_r_vx_filt.^2 + eye_r_vy_filt.^2);
 eye_r_vm_filt = abs(filtfilt(b_butter,a_butter,eye_r_vm_filt));
 
 BEHAVE.time_1K  = time_1K;
+BEHAVE.state    = state;
 BEHAVE.eye_r_px_filt = eye_r_px_filt;
 BEHAVE.eye_r_py_filt = eye_r_py_filt;
 BEHAVE.eye_r_vx_filt = eye_r_vx_filt;
@@ -343,10 +348,10 @@ clearvars -except EPHYS BEHAVE
 fprintf(['Building BEHAVE Alignment events', ' ... ']);
 time_reference      = BEHAVE.time_1K;
 BEHAVE.Alignment.time_1K = time_reference;
-BEHAVE_state_value = BEHAVE.state_value(:);
-event_STR_TARGET_PURSUIT  = (BEHAVE_state_value == 1);
-event_STR_TARGET_FIXATION = (BEHAVE_state_value == 3);
-event_DETECT_SACCADE_END =  (BEHAVE_state_value == 7);
+BEHAVE_state = BEHAVE.state(:);
+event_STR_TARGET_PURSUIT  = (BEHAVE_state == 1);
+event_STR_TARGET_FIXATION = (BEHAVE_state == 3);
+event_DETECT_SACCADE_END =  (BEHAVE_state == 7);
 event_photodiode = event_STR_TARGET_FIXATION | event_DETECT_SACCADE_END;
 
 event_state_combined = ...

@@ -377,6 +377,14 @@ CS_inds(CS_inds > length(ch_data)) = length(ch_data);
 SS_waveform = ch_data(SS_inds);
 CS_waveform = ch_data(CS_inds);
 
+if length(SS_index) == 1
+    SS_waveform = SS_waveform(:)';
+end
+
+if length(CS_index) == 1
+    CS_waveform = CS_waveform(:)';
+end
+
 EPHYS.CH_sorted.SS_data.SS_ind = SS_index;
 EPHYS.CH_sorted.CS_data.CS_ind = CS_index;
 EPHYS.CH_sorted.SS_data.SS_time = SS_time;
@@ -506,6 +514,16 @@ for counter_trial = 1 : 1 : num_trials
     end
     BEHAVE_EB_xcorr_time_corrSac_offset(counter_trial) = BEHAVE.SACS_CORR_DATA.time(ind_corrSac_offset_, counter_trial);
 end
+
+num_trials = sum(BEHAVE_EB_xcorr_time_corrSac_offset < BEHAVE_EB_xcorr_time_1K(end));
+BEHAVE_EB_xcorr_time_cue_present    = BEHAVE_EB_xcorr_time_cue_present(   1:num_trials);
+BEHAVE_EB_xcorr_time_primSac_onset  = BEHAVE_EB_xcorr_time_primSac_onset( 1:num_trials);
+BEHAVE_EB_xcorr_time_primSac_vmax   = BEHAVE_EB_xcorr_time_primSac_vmax(  1:num_trials);
+BEHAVE_EB_xcorr_time_primSac_offset = BEHAVE_EB_xcorr_time_primSac_offset(1:num_trials);
+BEHAVE_EB_xcorr_time_corrSac_onset  = BEHAVE_EB_xcorr_time_corrSac_onset( 1:num_trials);
+BEHAVE_EB_xcorr_time_corrSac_vmax   = BEHAVE_EB_xcorr_time_corrSac_vmax(  1:num_trials);
+BEHAVE_EB_xcorr_time_corrSac_offset = BEHAVE_EB_xcorr_time_corrSac_offset(1:num_trials);
+
 BEHAVE_EB_xcorr_time_cue_present(end+1)    = max([BEHAVE_EB_xcorr_time_1K(end), BEHAVE_EB_xcorr_time_cue_present(end)])+1;
 BEHAVE_EB_xcorr_time_primSac_onset(end+1)  = max([BEHAVE_EB_xcorr_time_1K(end), BEHAVE_EB_xcorr_time_primSac_onset(end)])+1;
 BEHAVE_EB_xcorr_time_primSac_vmax(end+1)   = max([BEHAVE_EB_xcorr_time_1K(end), BEHAVE_EB_xcorr_time_primSac_vmax(end)])+1;
@@ -1270,14 +1288,15 @@ EPHYS_corrSac_offset_train_aligned(EPHYS.CH_EVE.EPHYS_EB_aligned_ind_corrSac_off
 % % eye velocity
 BEHAVE_eye_r_vm_filt = EPHYS.CH_EVE.BEHAVE_eye_r_vm_filt_1K;
 % % check validity of trials
-inds_valid = BEHAVE.SACS_PRIM_DATA.validity & BEHAVE.SACS_CORR_DATA.validity;
-error_prim = sqrt( (BEHAVE.SACS_PRIM_DATA.eye_r_px_finish - BEHAVE.TRIALS_DATA.cue_x).^2 + (BEHAVE.SACS_PRIM_DATA.eye_r_py_finish - BEHAVE.TRIALS_DATA.cue_y).^2 );
-error_corr = sqrt( (BEHAVE.SACS_CORR_DATA.eye_r_px_finish - BEHAVE.TRIALS_DATA.end_x).^2 + (BEHAVE.SACS_CORR_DATA.eye_r_py_finish - BEHAVE.TRIALS_DATA.end_y).^2 );
+num_trials = size(BEHAVE_inds_event,1);
+inds_valid = BEHAVE.SACS_PRIM_DATA.validity(1:num_trials) & BEHAVE.SACS_CORR_DATA.validity(1:num_trials);
+error_prim = sqrt( (BEHAVE.SACS_PRIM_DATA.eye_r_px_finish(1:num_trials) - BEHAVE.TRIALS_DATA.cue_x(1:num_trials)).^2 + (BEHAVE.SACS_PRIM_DATA.eye_r_py_finish(1:num_trials) - BEHAVE.TRIALS_DATA.cue_y(1:num_trials)).^2 );
+error_corr = sqrt( (BEHAVE.SACS_CORR_DATA.eye_r_px_finish(1:num_trials) - BEHAVE.TRIALS_DATA.end_x(1:num_trials)).^2 + (BEHAVE.SACS_CORR_DATA.eye_r_py_finish(1:num_trials) - BEHAVE.TRIALS_DATA.end_y(1:num_trials)).^2 );
 inds_valid = inds_valid & (error_prim<3) & (error_corr<3);
 % % inds directions
 if contains(prim_OR_corr, 'prim')
-prim_delta_x = (BEHAVE.TRIALS_DATA.cue_x-BEHAVE.TRIALS_DATA.start_x);
-prim_delta_y = (BEHAVE.TRIALS_DATA.cue_y-BEHAVE.TRIALS_DATA.start_y);
+prim_delta_x = (BEHAVE.TRIALS_DATA.cue_x(1:num_trials)-BEHAVE.TRIALS_DATA.start_x(1:num_trials));
+prim_delta_y = (BEHAVE.TRIALS_DATA.cue_y(1:num_trials)-BEHAVE.TRIALS_DATA.start_y(1:num_trials));
 prim_angle = atan2d(prim_delta_y, prim_delta_x);
 inds_000   = (prim_angle >  -20) & (prim_angle <  +20) & inds_valid;
 inds_045   = (prim_angle >  +25) & (prim_angle <  +65) & inds_valid;
@@ -1288,8 +1307,8 @@ inds_270   = (prim_angle > -110) & (prim_angle <  -70) & inds_valid;
 inds_315   = (prim_angle >  -65) & (prim_angle <  -25) & inds_valid;
 inds_180   = ((prim_angle > +155) | (prim_angle < -155)) & inds_valid;
 elseif contains(prim_OR_corr, 'corr')
-corr_delta_x = (BEHAVE.TRIALS_DATA.end_x-BEHAVE.TRIALS_DATA.cue_x);
-corr_delta_y = (BEHAVE.TRIALS_DATA.end_y-BEHAVE.TRIALS_DATA.cue_y);
+corr_delta_x = (BEHAVE.TRIALS_DATA.end_x(1:num_trials)-BEHAVE.TRIALS_DATA.cue_x(1:num_trials));
+corr_delta_y = (BEHAVE.TRIALS_DATA.end_y(1:num_trials)-BEHAVE.TRIALS_DATA.cue_y(1:num_trials));
 corr_angle = atan2d(corr_delta_y, corr_delta_x);
 inds_000   = (corr_angle >  -20) & (corr_angle <  +20) & inds_valid;
 inds_045   = (corr_angle >  +25) & (corr_angle <  +65) & inds_valid;

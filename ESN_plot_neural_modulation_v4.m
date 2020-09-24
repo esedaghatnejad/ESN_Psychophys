@@ -515,14 +515,19 @@ for counter_trial = 1 : 1 : num_trials
     BEHAVE_EB_xcorr_time_corrSac_offset(counter_trial) = BEHAVE.SACS_CORR_DATA.time(ind_corrSac_offset_, counter_trial);
 end
 
-num_trials = sum(BEHAVE_EB_xcorr_time_corrSac_offset < BEHAVE_EB_xcorr_time_1K(end));
-BEHAVE_EB_xcorr_time_cue_present    = BEHAVE_EB_xcorr_time_cue_present(   1:num_trials);
-BEHAVE_EB_xcorr_time_primSac_onset  = BEHAVE_EB_xcorr_time_primSac_onset( 1:num_trials);
-BEHAVE_EB_xcorr_time_primSac_vmax   = BEHAVE_EB_xcorr_time_primSac_vmax(  1:num_trials);
-BEHAVE_EB_xcorr_time_primSac_offset = BEHAVE_EB_xcorr_time_primSac_offset(1:num_trials);
-BEHAVE_EB_xcorr_time_corrSac_onset  = BEHAVE_EB_xcorr_time_corrSac_onset( 1:num_trials);
-BEHAVE_EB_xcorr_time_corrSac_vmax   = BEHAVE_EB_xcorr_time_corrSac_vmax(  1:num_trials);
-BEHAVE_EB_xcorr_time_corrSac_offset = BEHAVE_EB_xcorr_time_corrSac_offset(1:num_trials);
+% num_trials = sum(BEHAVE_EB_xcorr_time_corrSac_offset < BEHAVE_EB_xcorr_time_1K(end));
+last_trial_num = find(BEHAVE_EB_xcorr_time_corrSac_offset < BEHAVE_EB_xcorr_time_1K(end), 1, 'last');
+first_trial_num = find(BEHAVE_EB_xcorr_time_cue_present > BEHAVE_EB_xcorr_time_1K(1), 1, 'first');
+range_trials = first_trial_num : last_trial_num;
+num_trials = length(range_trials);
+
+BEHAVE_EB_xcorr_time_cue_present    = BEHAVE_EB_xcorr_time_cue_present(   range_trials);
+BEHAVE_EB_xcorr_time_primSac_onset  = BEHAVE_EB_xcorr_time_primSac_onset( range_trials);
+BEHAVE_EB_xcorr_time_primSac_vmax   = BEHAVE_EB_xcorr_time_primSac_vmax(  range_trials);
+BEHAVE_EB_xcorr_time_primSac_offset = BEHAVE_EB_xcorr_time_primSac_offset(range_trials);
+BEHAVE_EB_xcorr_time_corrSac_onset  = BEHAVE_EB_xcorr_time_corrSac_onset( range_trials);
+BEHAVE_EB_xcorr_time_corrSac_vmax   = BEHAVE_EB_xcorr_time_corrSac_vmax(  range_trials);
+BEHAVE_EB_xcorr_time_corrSac_offset = BEHAVE_EB_xcorr_time_corrSac_offset(range_trials);
 
 BEHAVE_EB_xcorr_time_cue_present(end+1)    = max([BEHAVE_EB_xcorr_time_1K(end), BEHAVE_EB_xcorr_time_cue_present(end)])+1;
 BEHAVE_EB_xcorr_time_primSac_onset(end+1)  = max([BEHAVE_EB_xcorr_time_1K(end), BEHAVE_EB_xcorr_time_primSac_onset(end)])+1;
@@ -1245,6 +1250,7 @@ plot(cosd(0:5:360)*0.30, sind(0:5:360)*0.30, 'LineWidth', 1, 'Color', [0.5 0.5 0
 
 x_axis = [cosd(0) cosd(45) cosd(90) cosd(135) cosd(180) cosd(225) cosd(270) cosd(315) cosd(0)] .* prob_amplitude;
 y_axis = [sind(0) sind(45) sind(90) sind(135) sind(180) sind(225) sind(270) sind(315) sind(0)] .* prob_amplitude;
+x_axis = x_axis(~isnan(x_axis)); y_axis = y_axis(~isnan(y_axis));
 plot(x_axis(:), y_axis(:), 'LineWidth', 3, 'Color', color_CS)
 axis equal
 set(gca, 'YColor', color_CS)
@@ -1289,10 +1295,13 @@ EPHYS_corrSac_offset_train_aligned(EPHYS.CH_EVE.EPHYS_EB_aligned_ind_corrSac_off
 BEHAVE_eye_r_vm_filt = EPHYS.CH_EVE.BEHAVE_eye_r_vm_filt_1K;
 % % check validity of trials
 num_trials = size(BEHAVE_inds_event,1);
-inds_valid = BEHAVE.SACS_PRIM_DATA.validity(1:num_trials) & BEHAVE.SACS_CORR_DATA.validity(1:num_trials);
+% inds_valid = BEHAVE.SACS_PRIM_DATA.validity(1:num_trials) & BEHAVE.SACS_CORR_DATA.validity(1:num_trials);
+% error_prim = sqrt( (BEHAVE.SACS_PRIM_DATA.eye_r_px_finish(1:num_trials) - BEHAVE.TRIALS_DATA.cue_x(1:num_trials)).^2 + (BEHAVE.SACS_PRIM_DATA.eye_r_py_finish(1:num_trials) - BEHAVE.TRIALS_DATA.cue_y(1:num_trials)).^2 );
+% error_corr = sqrt( (BEHAVE.SACS_CORR_DATA.eye_r_px_finish(1:num_trials) - BEHAVE.TRIALS_DATA.end_x(1:num_trials)).^2 + (BEHAVE.SACS_CORR_DATA.eye_r_py_finish(1:num_trials) - BEHAVE.TRIALS_DATA.end_y(1:num_trials)).^2 );
+% inds_valid = inds_valid & (error_prim<3) & (error_corr<3);
+inds_valid = BEHAVE.SACS_PRIM_DATA.validity(1:num_trials);
 error_prim = sqrt( (BEHAVE.SACS_PRIM_DATA.eye_r_px_finish(1:num_trials) - BEHAVE.TRIALS_DATA.cue_x(1:num_trials)).^2 + (BEHAVE.SACS_PRIM_DATA.eye_r_py_finish(1:num_trials) - BEHAVE.TRIALS_DATA.cue_y(1:num_trials)).^2 );
-error_corr = sqrt( (BEHAVE.SACS_CORR_DATA.eye_r_px_finish(1:num_trials) - BEHAVE.TRIALS_DATA.end_x(1:num_trials)).^2 + (BEHAVE.SACS_CORR_DATA.eye_r_py_finish(1:num_trials) - BEHAVE.TRIALS_DATA.end_y(1:num_trials)).^2 );
-inds_valid = inds_valid & (error_prim<3) & (error_corr<3);
+inds_valid = inds_valid & (error_prim<3);
 % % inds directions
 if contains(prim_OR_corr, 'prim')
 prim_delta_x = (BEHAVE.TRIALS_DATA.cue_x(1:num_trials)-BEHAVE.TRIALS_DATA.start_x(1:num_trials));

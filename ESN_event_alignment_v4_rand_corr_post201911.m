@@ -1,4 +1,4 @@
-function ESN_event_alignment_v4_post201911
+function ESN_event_alignment_v4_rand_corr_post201911
 %% clear
 clear;
 
@@ -18,25 +18,15 @@ fprintf(' --> Completed. \n')
 EPHYS.debug_figures = false;
 
 %% load ADC1 and ADC2
-[file_name,file_path] = uigetfile([EPHYS.file_path_CH_EVE filesep '*_ADC1.continuous'], 'Select ADC1.continuous file');
+[file_name,file_path] = uigetfile([EPHYS.file_path_CH_EVE filesep '*.continuous'], 'Select .continuous file');
 fprintf(['Loading ', file_name, ' ... ']);
 if ~strcmp(file_path(end), filesep);file_path = [file_path filesep];end
 [ch_data, ch_time, ch_info] = load_open_ephys_data([file_path file_name]);
 EPHYS.ADC1.ch_data = ch_data;
 EPHYS.ADC1.ch_time = ch_time;
 EPHYS.ADC1.ch_info = ch_info;
+EPHYS.time_30K   = double(EPHYS.ADC1.ch_time);
 fprintf(' --> Completed. \n')
-
-[file_name,file_path] = uigetfile([EPHYS.file_path_CH_EVE filesep '*_ADC2.continuous'], 'Select ADC2.continuous file');
-fprintf(['Loading ', file_name, ' ... ']);
-if ~strcmp(file_path(end), filesep);file_path = [file_path filesep];end
-[ch_data, ch_time, ch_info] = load_open_ephys_data([file_path file_name]);
-EPHYS.ADC2.ch_data = ch_data;
-EPHYS.ADC2.ch_time = ch_time;
-EPHYS.ADC2.ch_info = ch_info;
-fprintf(' --> Completed. \n')
-
-EPHYS.time_30K   = EPHYS.ADC1.ch_time;
 
 %% load BEHAVE DATA
 [file_name,file_path] = uigetfile([EPHYS.file_path_CH_EVE filesep '*.mat'], 'Select _corrective_saccades file');
@@ -46,22 +36,18 @@ data = load([file_path file_name],'data');
 BEHAVE = data.data;
 fprintf(' --> Completed. \n')
 
-%% Filter BEHAVE Eye Data
+%% BEHAVE Data
 clearvars -except EPHYS BEHAVE
 fprintf(['Filter BEHAVE Eye Data', ' ... ']);
 
 min_length = min([ ...
     length(BEHAVE.eyelink_time),...
-    length(BEHAVE.right_horizontal_eye),...
-    length(BEHAVE.right_vertical_eye),...
     length(BEHAVE.t),...
     length(BEHAVE.state_value),...
     ]);
 % timeseries
 inds_invalid   = false(min_length, 1);
 time_eyelink   = double(BEHAVE.eyelink_time(1:min_length)');          inds_invalid = isnan(time_eyelink) | inds_invalid;
-eye_r_px       = double(BEHAVE.right_horizontal_eye(1:min_length)');  inds_invalid = isnan(eye_r_px)     | inds_invalid;
-eye_r_py       = double(BEHAVE.right_vertical_eye(1:min_length)');    inds_invalid = isnan(eye_r_py)     | inds_invalid;
 time_tgt       = double(BEHAVE.t(1:min_length)');                     inds_invalid = isnan(time_tgt)     | inds_invalid;
 state          = double(BEHAVE.state_value(1:min_length)');           inds_invalid = isnan(state)        | inds_invalid;
 % correct for the bias between time_eyelink and time_tgt
@@ -70,77 +56,14 @@ time_eyelink   = time_eyelink - time_eyelink(1) + time_tgt(1);
 time_1K        = (time_eyelink(1) : 0.001 : time_eyelink(end))';
 % make non unique points of eye traces invalid
 inds_invalid = ([false; (diff(time_eyelink)==0)]) | inds_invalid;
-inds_invalid = (abs(eye_r_px) > 15.0) | inds_invalid;
-inds_invalid = (abs(eye_r_py) > 15.0) | inds_invalid;
 % remove invalid values
 time_eyelink(inds_invalid) = [];
-eye_r_px(    inds_invalid) = [];
-eye_r_py(    inds_invalid) = [];
 state(       inds_invalid) = [];
-% reconstruct eye_r data
-eye_r_px = interp1(time_eyelink, eye_r_px, time_1K, 'linear', 'extrap');
-eye_r_py = interp1(time_eyelink, eye_r_py, time_1K, 'linear', 'extrap');
+% reconstruct data
 state    = interp1(time_eyelink, state,    time_1K, 'nearest','extrap');
-% filter params
-sampling_freq = 1000.0;
-cutoff_freq = 100.0;
-[b_butter,a_butter] = butter(3,(cutoff_freq/(sampling_freq/2)), 'low');
-% filter eye_r data
-eye_r_px_filt = filtfilt(b_butter,a_butter,eye_r_px);
-eye_r_py_filt = filtfilt(b_butter,a_butter,eye_r_py);
-eye_r_vx_filt = diff(eye_r_px_filt)./diff(time_1K); eye_r_vx_filt=[eye_r_vx_filt(1); eye_r_vx_filt];
-eye_r_vy_filt = diff(eye_r_py_filt)./diff(time_1K); eye_r_vy_filt=[eye_r_vy_filt(1); eye_r_vy_filt];
-eye_r_vm_filt = sqrt(eye_r_vx_filt.^2 + eye_r_vy_filt.^2);
-eye_r_vm_filt = abs(filtfilt(b_butter,a_butter,eye_r_vm_filt));
 
 BEHAVE.time_1K  = time_1K;
 BEHAVE.state    = state;
-BEHAVE.eye_r_px_filt = eye_r_px_filt;
-BEHAVE.eye_r_py_filt = eye_r_py_filt;
-BEHAVE.eye_r_vx_filt = eye_r_vx_filt;
-BEHAVE.eye_r_vy_filt = eye_r_vy_filt;
-BEHAVE.eye_r_vm_filt = eye_r_vm_filt;
-
-fprintf(' --> Completed. \n')
-
-%% Filter EPHYS Eye Data
-clearvars -except EPHYS BEHAVE
-fprintf(['Filter EPHYS Eye Data', ' ... ']);
-% timeseries
-inds_invalid   = false(length(EPHYS.time_30K), 1);
-time_30K       = double(EPHYS.time_30K);
-time_ephys     = double(EPHYS.time_30K);             inds_invalid = isnan(time_ephys)   | inds_invalid;
-eye_r_px       = double(EPHYS.ADC2.ch_data) * 5.0;   inds_invalid = isnan(eye_r_px)     | inds_invalid;
-eye_r_py       = double(EPHYS.ADC1.ch_data) * 5.0;   inds_invalid = isnan(eye_r_py)     | inds_invalid;
-% make non unique points of eye traces invalid
-inds_invalid = ([false; (diff(time_ephys)==0)]) | inds_invalid;
-inds_invalid = (abs(eye_r_px) > 15.0) | inds_invalid;
-inds_invalid = (abs(eye_r_py) > 15.0) | inds_invalid;
-% remove invalid values
-time_ephys(  inds_invalid) = [];
-eye_r_px(    inds_invalid) = [];
-eye_r_py(    inds_invalid) = [];
-% reconstruct eye_r data
-eye_r_px = interp1(time_ephys, eye_r_px, time_30K, 'linear', 'extrap');
-eye_r_py = interp1(time_ephys, eye_r_py, time_30K, 'linear', 'extrap');
-% filter params
-sampling_freq = 30000.0;
-cutoff_freq = 100.0;
-[b_butter,a_butter] = butter(3,(cutoff_freq/(sampling_freq/2)), 'low');
-% filter eye_r data
-eye_r_px_filt = filtfilt(b_butter,a_butter,eye_r_px);
-eye_r_py_filt = filtfilt(b_butter,a_butter,eye_r_py);
-eye_r_vx_filt = diff(eye_r_px_filt)./diff(time_30K); eye_r_vx_filt=[eye_r_vx_filt(1); eye_r_vx_filt];
-eye_r_vy_filt = diff(eye_r_py_filt)./diff(time_30K); eye_r_vy_filt=[eye_r_vy_filt(1); eye_r_vy_filt];
-eye_r_vm_filt = sqrt(eye_r_vx_filt.^2 + eye_r_vy_filt.^2);
-eye_r_vm_filt = abs(filtfilt(b_butter,a_butter,eye_r_vm_filt));
-
-EPHYS.time_30K  = time_30K;
-EPHYS.eye_r_px_filt = eye_r_px_filt;
-EPHYS.eye_r_py_filt = eye_r_py_filt;
-EPHYS.eye_r_vx_filt = eye_r_vx_filt;
-EPHYS.eye_r_vy_filt = eye_r_vy_filt;
-EPHYS.eye_r_vm_filt = eye_r_vm_filt;
 
 fprintf(' --> Completed. \n')
 
@@ -339,8 +262,6 @@ photodiode_description = [
 EPHYS.Alignment.state_description      = state_description;
 EPHYS.Alignment.photodiode_description = photodiode_description;
 
-EPHYS.Alignment.eye_r_vm_filt = interp1(EPHYS.time_30K, EPHYS.eye_r_vm_filt, time_reference, 'linear', 'extrap');
-
 fprintf(' --> Completed. \n');
 
 %% Build BEHAVE Alignment events
@@ -376,8 +297,6 @@ photodiode_description = [
 ];
 BEHAVE.Alignment.state_description      = state_description;
 BEHAVE.Alignment.photodiode_description = photodiode_description;
-
-BEHAVE.Alignment.eye_r_vm_filt = interp1(BEHAVE.time_1K, BEHAVE.eye_r_vm_filt, time_reference, 'linear', 'extrap');
 
 fprintf(' --> Completed. \n');
 

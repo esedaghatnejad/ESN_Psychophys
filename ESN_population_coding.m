@@ -9,7 +9,7 @@ path_data_monkey_sorted = uigetdir;
 % build pCell_list, this is a hard coded cell with the id of all of the pCells and the bundles
 
 % pCell_list = build_pCell_list_Mirza_pre201906(); 
-pCell_list = build_pCell_list_Mirza_post201906();
+% pCell_list = build_pCell_list_Mirza_post201906();
 % pCell_list = build_pCell_list_Ramon();
 
 % pCell_list_1 = build_pCell_list_Mirza_pre201906(); pCell_list_2 = build_pCell_list_Mirza_post201906();
@@ -18,8 +18,8 @@ pCell_list = build_pCell_list_Mirza_post201906();
 % pCell_list_1 = build_pCell_list_Mirza_post201906(); pCell_list_2 = build_pCell_list_Ramon();
 % pCell_list = vertcat(pCell_list_1, pCell_list_2);
 
-% pCell_list_1 = build_pCell_list_Mirza_pre201906(); pCell_list_2 = build_pCell_list_Mirza_post201906(); pCell_list_3 = build_pCell_list_Ramon();
-% pCell_list = vertcat(pCell_list_1, pCell_list_2, pCell_list_3);
+pCell_list_1 = build_pCell_list_Mirza_pre201906(); pCell_list_2 = build_pCell_list_Mirza_post201906(); pCell_list_3 = build_pCell_list_Ramon();
+pCell_list = vertcat(pCell_list_1, pCell_list_2, pCell_list_3);
 
 % build ALL_PCELL_COMPRESSED_DATA, open plot data and put them together
 ALL_PCELL_COMPRESSED_DATA = build_ALL_PCELL_COMPRESSED_DATA(pCell_list, path_data_monkey_sorted);
@@ -181,13 +181,17 @@ pCell_list_Ramon(32, 1:2) = {'200109_110904_04_sorted_RSh', '200109_112601_04_so
 pCell_list_Ramon(33, 1:1) = {'200109_125642_03_sorted_RSh'};
 pCell_list_Ramon(34, 1:3) = {'200122_125828_07_sorted_RSh', '200122_133020_07_sorted_RSh', '200122_135404_07_sorted_RSh'};
 pCell_list_Ramon(35, 1:2) = {'200122_133020_04_sorted_RSh', '200122_135404_04_sorted_RSh'};
-pCell_list_Ramon(36, 1:4) = {'200128_151251_04_sorted_RSh', '200128_151937_06_sorted_RSh', '200128_153045_06_sorted_RSh', '200128_154444_01_sorted_RSh'};
-pCell_list_Ramon(37, 1:1) = {'200128_163856_04_sorted_RSh'};
-pCell_list_Ramon(38, 1:3) = {'200204_162413_04_sorted_RSh', '200204_163427_04_sorted_RSh', '200204_164913_03_sorted_RSh'};
-pCell_list_Ramon(39, 1:1) = {'200211_162022_03_sorted_RSh'};
-pCell_list_Ramon(40, 1:5) = {'200303_153615_03_sorted_RSh', '200303_155436_03_sorted_RSh', '200303_163555_03_sorted_RSh', '200303_165850_03_sorted_RSh', '200303_172913_03_sorted_RSh'};
+pCell_list_Ramon(36, 1:4) = {'200123_124808_07_sorted_PGH', '200123_131422_07_sorted_PGH', '200123_133835_07_sorted_PGH', '200123_140924_07_sorted_PGH'};
+pCell_list_Ramon(37, 1:4) = {'200128_151251_04_sorted_RSh', '200128_151937_06_sorted_RSh', '200128_153045_06_sorted_RSh', '200128_154444_01_sorted_RSh'};
+pCell_list_Ramon(38, 1:1) = {'200128_163856_04_sorted_RSh'};
+pCell_list_Ramon(39, 1:4) = {'200129_094755_04_sorted_PGH', '200129_124934_04_sorted_PGH', '200129_131018_04_sorted_PGH', '200129_133230_04_sorted_PGH'};
+pCell_list_Ramon(40, 1:3) = {'200204_162413_04_sorted_RSh', '200204_163427_04_sorted_RSh', '200204_164913_03_sorted_RSh'};
 
-pCell_list_Ramon(41, 1:3) = {'200814_113452_05_sorted_RSh', '200814_114000_05_sorted_RSh', '200814_114425_05_sorted_RSh'};
+pCell_list_Ramon(41, 1:1) = {'200211_162022_03_sorted_RSh'};
+pCell_list_Ramon(42, 1:5) = {'200303_153615_03_sorted_RSh', '200303_155436_03_sorted_RSh', '200303_163555_03_sorted_RSh', '200303_165850_03_sorted_RSh', '200303_172913_03_sorted_RSh'};
+pCell_list_Ramon(43, 1:3) = {'200814_113452_05_sorted_RSh', '200814_114000_05_sorted_RSh', '200814_114425_05_sorted_RSh'};
+pCell_list_Ramon(44, 1:3) = {'200914_122203_04_sorted_RSh', '200914_124954_04_sorted_RSh', '200914_132356_04_sorted_RSh'};
+pCell_list_Ramon(45, 1:3) = {'200916_130045_02_sorted_PGH', '200916_133908_02_sorted_PGH', '200916_142429_02_sorted_PGH'};
 
 end
 
@@ -528,7 +532,7 @@ train_data_dirs  = {'_right', '_top', '_left', '_down'};
 for counter_ALL_PCELL = 1 : length(ALL_PCELL_COMPRESSED_DATA)
     field_names_ALL_PCELL = fieldnames(ALL_PCELL_COMPRESSED_DATA(counter_ALL_PCELL));
     field_names_ALL_PCELL = field_names_ALL_PCELL(contains(field_names_ALL_PCELL, 'raster_data_'));
-    overall_prob_tuning = ALL_PCELL_COMPRESSED_DATA(counter_ALL_PCELL).CS_Tuning.overall_prob_tuning;
+    overall_prob_tuning = ALL_PCELL_COMPRESSED_DATA(counter_ALL_PCELL).CS_Tuning.overall_prob_tuning;% 1:8;% 
     for counter_field_names_ALL_PCELL = 1 : 1 : length(field_names_ALL_PCELL)
         field_name_ALL_PCELL = field_names_ALL_PCELL{counter_field_names_ALL_PCELL};
         for counter_direction = 1 : 1 : length(direction_names)
@@ -639,10 +643,10 @@ function plot_RASTER_DATA_ALL_PCELL_TUNED(path_data_monkey_sorted, ALL_PCELL_COM
 %% Plot RASTER_DATA_ALL_PCELL_TUNED
 fprintf(['Ploting ' ' ... ']);
 close all
-range_SS = [30 100];
-range_SS_population = [-30 50];
+range_SS = [20 120];
+range_SS_population = [-40 60];
 range_CS = [0 4];
-range_vm = [0 500];
+range_vm = [0 600];
 num_pCells = length(ALL_PCELL_COMPRESSED_DATA);
 clearvars hFig hAx
 
@@ -668,11 +672,11 @@ for counter_train_data_dirs = 1 : 1 : length(train_data_dirs)
                 train_data_logic_SS = train_data_logic_SS - (SS_firing_rate ./ 1000);
                 
                 num_perm = 5000;
-                num_cells = size(train_data_logic_SS, 1);
+                num_samples = num_pCells ; % 50; % 
                 length_span = size(train_data_logic_SS, 2);
                 train_data_logic_SS_perm = nan(num_perm, length_span);
                 for counter_perm = 1 : num_perm
-                    inds_perm = randi(num_cells,[num_cells 1]);
+                    inds_perm = randi(num_pCells,[num_samples 1]);
                     train_data_logic_SS_ = train_data_logic_SS(inds_perm, :);
                     train_data_logic_SS_(isnan(train_data_logic_SS_)) = 0;
                     numTrial_ = numTrial(inds_perm, :);
@@ -680,7 +684,7 @@ for counter_train_data_dirs = 1 : 1 : length(train_data_dirs)
                     train_data_logic_SS_perm(counter_perm, :) = firing_SS_mean;
                 end
                 variable_data_mean = ESN_smooth( nanmean(train_data_logic_SS_perm, 1) );
-                variable_data_stdv = ESN_smooth( nanstd(train_data_logic_SS_perm, 0, 1) );
+                variable_data_stdv = ESN_smooth( nanstd(train_data_logic_SS_perm, 0, 1) ) ./ sqrt(num_samples) * 3; % 95% CI
             end
             if counter_train_data_names ~= 1
                 variable_data = RASTER_DATA_ALL_PCELL_TUNED.(field_name).([train_data_name train_data_dir]);
@@ -696,9 +700,9 @@ for counter_train_data_dirs = 1 : 1 : length(train_data_dirs)
             hAx{counter_train_data_dirs}(subplot_num) = subplot(4, 4, subplot_num);
             hAx_ = hAx{counter_train_data_dirs}(subplot_num);
             hold(hAx_, 'on')
-            plot(inds_span, variable_data_mean, '-k', 'LineWidth', 1)
             plot(inds_span, variable_data_mean+variable_data_stdv, '-k', 'LineWidth', 0.5)
             plot(inds_span, variable_data_mean-variable_data_stdv, '-k', 'LineWidth', 0.5)
+            plot(inds_span, variable_data_mean, '-k', 'LineWidth', 1)
             if(counter_field_names == 1)
                 ylabel(hAx_, yLabels{counter_train_data_names});
             end
@@ -732,22 +736,15 @@ primSac_offset_prob_ALL_PCELL = nan(length(ALL_PCELL_COMPRESSED_DATA), 8);
 corrSac_onset_prob_ALL_PCELL  = nan(length(ALL_PCELL_COMPRESSED_DATA), 8);
 numTrials_ALL_PCELL = nan(length(ALL_PCELL_COMPRESSED_DATA), 1);
 for counter_ALL_PCELL_COMPRESSED_DATA = 1 : 1 : length(ALL_PCELL_COMPRESSED_DATA)
+    overall_prob_tuning = ALL_PCELL_COMPRESSED_DATA(counter_ALL_PCELL_COMPRESSED_DATA).CS_Tuning.overall_prob_tuning;% 1:8;% 
     cue_present_prob_ALL_PCELL(counter_ALL_PCELL_COMPRESSED_DATA, :) = ...
-        ALL_PCELL_COMPRESSED_DATA(counter_ALL_PCELL_COMPRESSED_DATA).CS_Tuning.cue_present_prob( ...
-        ALL_PCELL_COMPRESSED_DATA(counter_ALL_PCELL_COMPRESSED_DATA).CS_Tuning.overall_prob_tuning ... 
-        );
+        ALL_PCELL_COMPRESSED_DATA(counter_ALL_PCELL_COMPRESSED_DATA).CS_Tuning.cue_present_prob( overall_prob_tuning );
     primSac_onset_prob_ALL_PCELL(counter_ALL_PCELL_COMPRESSED_DATA, :) = ...
-        ALL_PCELL_COMPRESSED_DATA(counter_ALL_PCELL_COMPRESSED_DATA).CS_Tuning.primSac_onset_prob( ...
-        ALL_PCELL_COMPRESSED_DATA(counter_ALL_PCELL_COMPRESSED_DATA).CS_Tuning.overall_prob_tuning ... 
-        );
+        ALL_PCELL_COMPRESSED_DATA(counter_ALL_PCELL_COMPRESSED_DATA).CS_Tuning.primSac_onset_prob( overall_prob_tuning );
     primSac_offset_prob_ALL_PCELL(counter_ALL_PCELL_COMPRESSED_DATA, :) = ...
-        ALL_PCELL_COMPRESSED_DATA(counter_ALL_PCELL_COMPRESSED_DATA).CS_Tuning.primSac_offset_prob( ...
-        ALL_PCELL_COMPRESSED_DATA(counter_ALL_PCELL_COMPRESSED_DATA).CS_Tuning.overall_prob_tuning ... 
-        );
+        ALL_PCELL_COMPRESSED_DATA(counter_ALL_PCELL_COMPRESSED_DATA).CS_Tuning.primSac_offset_prob( overall_prob_tuning );
     corrSac_onset_prob_ALL_PCELL(counter_ALL_PCELL_COMPRESSED_DATA, :) = ...
-        ALL_PCELL_COMPRESSED_DATA(counter_ALL_PCELL_COMPRESSED_DATA).CS_Tuning.corrSac_onset_prob( ...
-        ALL_PCELL_COMPRESSED_DATA(counter_ALL_PCELL_COMPRESSED_DATA).CS_Tuning.overall_prob_tuning ... 
-        );
+        ALL_PCELL_COMPRESSED_DATA(counter_ALL_PCELL_COMPRESSED_DATA).CS_Tuning.corrSac_onset_prob(overall_prob_tuning);
     numTrials_ALL_PCELL(counter_ALL_PCELL_COMPRESSED_DATA, :) = ALL_PCELL_COMPRESSED_DATA(counter_ALL_PCELL_COMPRESSED_DATA).CS_Tuning.numTrials;
 end
 
@@ -822,6 +819,33 @@ set(gca, 'XTick', -0.3:0.1:0.3, 'YTick', -0.3:0.1:0.3)
 ESN_Beautify_Plot(hFig(length(train_data_dirs)+1), [4, 3])
 title('CS Tuning', 'Interpreter', 'none');
 
+hFig(length(train_data_dirs)+2) = figure(length(train_data_dirs)+2);
+clf(hFig(length(train_data_dirs)+2));
+hold on
+plot_order_ = [7 8 1 2 3 4 5 6];
+plot(overall_prob_TUNED_stdv_plus(plot_order_), '-k', 'LineWidth', 0.5)
+plot(overall_prob_TUNED_stdv_minus(plot_order_), '-k', 'LineWidth', 0.5)
+plot(overall_prob_TUNED_mean(plot_order_), '-k', 'LineWidth', 1)
+ylabel('CS probability');
+xlabel('Direction')
+set(gca, 'XTick', 1:1:8, 'XTickLabel', {'-90','-45','ON','45','90','135','180','225'})
+
+avg_prob_TUNED_mean = nanmean(nanmean(overall_prob_TUNED, 2));
+avg_prob_TUNED_stdv = nanstd(nanmean(overall_prob_TUNED, 2), 0, 1) ./ sqrt(num_pCells);
+avg_prob_TUNED_mean = repmat(avg_prob_TUNED_mean, 1, size(overall_prob_TUNED,2));
+avg_prob_TUNED_stdv = repmat(avg_prob_TUNED_stdv, 1, size(overall_prob_TUNED,2));
+avg_prob_TUNED_stdv_plus = avg_prob_TUNED_mean + avg_prob_TUNED_stdv;
+avg_prob_TUNED_stdv_minus = avg_prob_TUNED_mean - avg_prob_TUNED_stdv;
+
+plot_order_ = [7 8 1 2 3 4 5 6];
+plot(avg_prob_TUNED_stdv_plus(plot_order_), '-k', 'LineWidth', 0.5)
+plot(avg_prob_TUNED_stdv_minus(plot_order_), '-k', 'LineWidth', 0.5)
+plot(avg_prob_TUNED_mean(plot_order_), '-k', 'LineWidth', 1)
+ylim([0.10 0.30])
+
+ESN_Beautify_Plot(hFig(length(train_data_dirs)+2), [4, 3])
+title('CS Tuning', 'Interpreter', 'none');
+
 fprintf(' --> Completed. \n');
 
 %% Save combined file
@@ -857,6 +881,8 @@ saveas(hFig(11), [save_file_path filesep save_file_name '_CS_OFF'], 'pdf');
 saveas(hFig(11), [save_file_path filesep save_file_name '_CS_OFF'], 'png');
 saveas(hFig(12), [save_file_path filesep save_file_name '_CS_tun'], 'pdf');
 saveas(hFig(12), [save_file_path filesep save_file_name '_CS_tun'], 'png');
+saveas(hFig(13), [save_file_path filesep save_file_name '_CS_tun_linear'], 'pdf');
+saveas(hFig(13), [save_file_path filesep save_file_name '_CS_tun_linear'], 'png');
 
 close all
 
@@ -876,4 +902,832 @@ function smooth_data_ = ESN_smooth(data_)
 smooth_data_ = smooth(data_, 21, 'sgolay', 2);
 end
 
+%% function RE-RUN ESN_plot_neural_modulation_v4
+function re_run_ESN_plot_neural_modulation_v4(pCell_list, path_data_monkey_sorted)
+if ~strcmp(path_data_monkey_sorted(end), filesep);path_data_monkey_sorted = [path_data_monkey_sorted filesep];end
+pCell_list_isstr = arrayfun(@iscellstr,pCell_list);
+num_pCells = size(pCell_list, 1);
+%% Loop over pCells
+for counter_pCell = 1 : 1 : num_pCells
+    fprintf(['Analyzing pCell no. ', num2str(counter_pCell), ' / ' num2str(num_pCells) ' ... ']);
+    num_recording = sum(pCell_list_isstr(counter_pCell, :));
+    for counter_recording = 1 : 1 : num_recording
+        %% build plot_data address
+        file_name = pCell_list{counter_pCell, counter_recording}; % '190423_142023_01_sorted_ESN_plot_data';
+        year_ = file_name(1:2);
+        month_ = file_name(3:4);
+        day_ = file_name(5:6);
+        hour_ = file_name(8:9);
+        minute_ = file_name(10:11);
+        second_ = file_name(12:13);
+        subFolder_month = ['20' year_ '-' month_ filesep];
+        subFolder_day = ['20' year_ '-' month_ '-' day_ filesep];
+        subFolder_recording = ['20' year_ '-' month_ '-' day_ '_' hour_ '-' minute_ '-' second_ filesep];
+        subFolder_figs = ['analyzed_data' filesep];
+        file_path = [path_data_monkey_sorted subFolder_month subFolder_day subFolder_recording subFolder_figs];
+        %% RE-RUN ESN_plot_neural_modulation_v4
+        params.auto = true;
+        params.file_path = file_path;
+        params.file_name = file_name;
+        ESN_plot_neural_modulation_v4(1, params);
+    end
+end
 
+end
+
+%% function RE-RUN ESN_monkey_behavior_calibrate
+function re_run_ESN_monkey_behavior_calibrate(pCell_list, path_data_monkey_sorted)
+if ~strcmp(path_data_monkey_sorted(end), filesep);path_data_monkey_sorted = [path_data_monkey_sorted filesep];end
+pCell_list_isstr = arrayfun(@iscellstr,pCell_list);
+num_pCells = size(pCell_list, 1);
+%% Loop over pCells
+for counter_pCell = 1 : 1 : num_pCells
+    fprintf(['Analyzing pCell no. ', num2str(counter_pCell), ' / ' num2str(num_pCells) ' ... ']);
+    num_recording = sum(pCell_list_isstr(counter_pCell, :));
+    file_path_list = cell(0,1);
+    file_name_list = cell(0,1);
+    for counter_recording = 1 : 1 : num_recording
+        %% build plot_data address
+        file_name = pCell_list{counter_pCell, counter_recording}; % '190423_142023_01_sorted_ESN_plot_data';
+        year_ = file_name(1:2);
+        month_ = file_name(3:4);
+        day_ = file_name(5:6);
+        hour_ = file_name(8:9);
+        minute_ = file_name(10:11);
+        second_ = file_name(12:13);
+        subFolder_month = ['20' year_ '-' month_ filesep];
+        subFolder_day = ['20' year_ '-' month_ '-' day_ filesep];
+        subFolder_recording = ['20' year_ '-' month_ '-' day_ '_' hour_ '-' minute_ '-' second_ filesep];
+        subFolder_figs = ['analyzed_data' filesep];
+        file_path = [path_data_monkey_sorted subFolder_month subFolder_day subFolder_recording subFolder_figs];
+        file_name_ANALYZED = [file_name(1:13) '_ANALYZED.mat'];
+        file_path_list{counter_recording,1} = file_path;
+        file_name_list{counter_recording,1} = file_name_ANALYZED;
+    end
+    %% RE-RUN ESN_monkey_behavior_calibrate
+    ESN_monkey_behavior_calibrate(file_path_list, file_name_list);
+end
+
+end
+
+
+%% function plot_SS_CS_firing_histogram
+function plot_SS_CS_firing_histogram()
+clearvars -except path_data_monkey_sorted pCell_list ALL_PCELL_COMPRESSED_DATA RASTER_DATA_ALL_PCELL_TUNED
+%%
+num_pCells = length(ALL_PCELL_COMPRESSED_DATA);
+numTrials_pCells = nan(num_pCells, 1);
+SS_firing_pCells = nan(num_pCells, 1);
+CS_firing_pCells = nan(num_pCells, 1);
+for counter_pCell = 1 : 1 : num_pCells
+    numTrials_pCells(counter_pCell, 1) = ALL_PCELL_COMPRESSED_DATA(counter_pCell).CS_Tuning.numTrials;
+    SS_firing_pCells(counter_pCell, 1) = ALL_PCELL_COMPRESSED_DATA(counter_pCell).Neural_Properties_data.SS_firing_rate;
+    CS_firing_pCells(counter_pCell, 1) = ALL_PCELL_COMPRESSED_DATA(counter_pCell).Neural_Properties_data.CS_firing_rate;
+end
+
+SS_firing_pCells_mean = nanmean(SS_firing_pCells);
+SS_firing_pCells_stdv = nanstd( SS_firing_pCells);
+SS_firing_pCells_sem  = nanstd( SS_firing_pCells)./sqrt(num_pCells);
+CS_firing_pCells_mean = nanmean(CS_firing_pCells);
+CS_firing_pCells_stdv = nanstd( CS_firing_pCells);
+CS_firing_pCells_sem  = nanstd( CS_firing_pCells)./sqrt(num_pCells);
+
+fprintf(['numTrials ', 'mean: ', num2str(mean(numTrials_pCells)), ',\t SEM: ', num2str(std(numTrials_pCells)./sqrt(num_pCells)), ',\t std: ', num2str(std(numTrials_pCells)), '\n'])
+fprintf(['SS_firing ', 'mean: ', num2str(mean(SS_firing_pCells)), ',\t SEM: ', num2str(std(SS_firing_pCells)./sqrt(num_pCells)), ',\t std: ', num2str(std(SS_firing_pCells)), '\n'])
+fprintf(['CS_firing ', 'mean: ', num2str(mean(CS_firing_pCells)), ',\t SEM: ', num2str(std(CS_firing_pCells)./sqrt(num_pCells)), ',\t std: ', num2str(std(CS_firing_pCells)), '\n'])
+
+hFig = figure(101);
+clf(hFig)
+subplot(1,2,1)
+hold on
+SS_firing_edges = 5:10:135;
+histogram(SS_firing_pCells, SS_firing_edges, 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'b')
+histogram(SS_firing_pCells, SS_firing_edges, 'DisplayStyle', 'stairs', 'EdgeColor', 'b', 'FaceColor', 'none', 'linewidth', 2)
+yl_ = ylim;
+plot([(SS_firing_pCells_mean+SS_firing_pCells_stdv), (SS_firing_pCells_mean+SS_firing_pCells_stdv)], yl_, '--b', 'LineWidth', 0.5);
+plot([(SS_firing_pCells_mean-SS_firing_pCells_stdv), (SS_firing_pCells_mean-SS_firing_pCells_stdv)], yl_, '--b', 'LineWidth', 0.5);
+plot([(SS_firing_pCells_mean+SS_firing_pCells_sem), (SS_firing_pCells_mean+SS_firing_pCells_sem)], yl_, '--b', 'LineWidth', 1);
+plot([(SS_firing_pCells_mean-SS_firing_pCells_sem), (SS_firing_pCells_mean-SS_firing_pCells_sem)], yl_, '--b', 'LineWidth', 1);
+plot([(SS_firing_pCells_mean), (SS_firing_pCells_mean)], yl_, '-b', 'LineWidth', 1.5);
+xlabel('SS Firing Rate (Hz)')
+ylabel('Count (#)')
+title(['mean= ' num2str(SS_firing_pCells_mean,3)])
+
+subplot(1,2,2)
+hold on
+CS_firing_edges = 0.25:0.1:1.55;
+histogram(CS_firing_pCells, CS_firing_edges, 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'r')
+histogram(CS_firing_pCells, CS_firing_edges, 'DisplayStyle', 'stairs', 'EdgeColor', 'r', 'FaceColor', 'none', 'linewidth', 2)
+yl_ = ylim;
+plot([(CS_firing_pCells_mean+CS_firing_pCells_stdv), (CS_firing_pCells_mean+CS_firing_pCells_stdv)], yl_, '--r', 'LineWidth', 0.5);
+plot([(CS_firing_pCells_mean-CS_firing_pCells_stdv), (CS_firing_pCells_mean-CS_firing_pCells_stdv)], yl_, '--r', 'LineWidth', 0.5);
+plot([(CS_firing_pCells_mean+CS_firing_pCells_sem),  (CS_firing_pCells_mean+CS_firing_pCells_sem)],  yl_, '--r', 'LineWidth', 1);
+plot([(CS_firing_pCells_mean-CS_firing_pCells_sem),  (CS_firing_pCells_mean-CS_firing_pCells_sem)],  yl_, '--r', 'LineWidth', 1);
+plot([(CS_firing_pCells_mean),                       (CS_firing_pCells_mean)], yl_, '-r', 'LineWidth', 1.5);
+xlabel('CS Firing Rate (Hz)')
+ylabel('Count (#)')
+title(['mean= ' num2str(CS_firing_pCells_mean,2)])
+ESN_Beautify_Plot(hFig, [6, 4])
+
+end
+
+%% function plot_DCN
+function plot_DCN
+clearvars -except path_data_monkey_sorted pCell_list ALL_PCELL_COMPRESSED_DATA RASTER_DATA_ALL_PCELL_TUNED
+%%
+num_pCells = length(ALL_PCELL_COMPRESSED_DATA);
+inds_span = nanmean(RASTER_DATA_ALL_PCELL_TUNED.('raster_data_primSac_onset').inds_span, 1);
+%
+% SS_prim_000 = RASTER_DATA_ALL_PCELL_TUNED.('raster_data_primSac_onset').(['train_data_logic_SS' '_000']);
+% SS_prim_180 = RASTER_DATA_ALL_PCELL_TUNED.('raster_data_primSac_onset').(['train_data_logic_SS' '_180']);
+% SS_prim_DCN = SS_prim_180 - SS_prim_000;
+
+field_name = 'raster_data_primSac_onset';
+train_data_dir = '_180';
+numTrial = RASTER_DATA_ALL_PCELL_TUNED.(field_name).(['numTrial' train_data_dir]);
+SS_firing_rate = RASTER_DATA_ALL_PCELL_TUNED.(field_name).(['SS_firing_rate' train_data_dir]);
+train_data_logic_SS = RASTER_DATA_ALL_PCELL_TUNED.(field_name).(['train_data_logic_SS' train_data_dir]);
+train_data_logic_SS = train_data_logic_SS - (SS_firing_rate ./ 1000);
+num_perm = 5000;
+num_samples = num_pCells ; % 50; %
+length_span = size(train_data_logic_SS, 2);
+train_data_logic_SS_perm = nan(num_perm, length_span);
+for counter_perm = 1 : num_perm
+    inds_perm = randi(num_pCells,[num_samples 1]);
+    train_data_logic_SS_ = train_data_logic_SS(inds_perm, :);
+    train_data_logic_SS_(isnan(train_data_logic_SS_)) = 0;
+    numTrial_ = numTrial(inds_perm, :);
+    firing_SS_mean = numTrial_' * train_data_logic_SS_ ./ nansum(numTrial_);
+    train_data_logic_SS_perm(counter_perm, :) = firing_SS_mean;
+end
+SS_prim_180 = train_data_logic_SS_perm;
+
+field_name = 'raster_data_primSac_onset';
+train_data_dir = '_000';
+numTrial = RASTER_DATA_ALL_PCELL_TUNED.(field_name).(['numTrial' train_data_dir]);
+SS_firing_rate = RASTER_DATA_ALL_PCELL_TUNED.(field_name).(['SS_firing_rate' train_data_dir]);
+train_data_logic_SS = RASTER_DATA_ALL_PCELL_TUNED.(field_name).(['train_data_logic_SS' train_data_dir]);
+train_data_logic_SS = train_data_logic_SS - (SS_firing_rate ./ 1000);
+num_perm = 5000;
+num_samples = num_pCells ; % 50; %
+length_span = size(train_data_logic_SS, 2);
+train_data_logic_SS_perm = nan(num_perm, length_span);
+for counter_perm = 1 : num_perm
+    inds_perm = randi(num_pCells,[num_samples 1]);
+    train_data_logic_SS_ = train_data_logic_SS(inds_perm, :);
+    train_data_logic_SS_(isnan(train_data_logic_SS_)) = 0;
+    numTrial_ = numTrial(inds_perm, :);
+    firing_SS_mean = numTrial_' * train_data_logic_SS_ ./ nansum(numTrial_);
+    train_data_logic_SS_perm(counter_perm, :) = firing_SS_mean;
+end
+SS_prim_000 = train_data_logic_SS_perm;
+
+SS_prim_DCN = SS_prim_180 - SS_prim_000;
+
+%
+% SS_corr_000 = RASTER_DATA_ALL_PCELL_TUNED.('raster_data_corrSac_onset').(['train_data_logic_SS' '_000']);
+% SS_corr_180 = RASTER_DATA_ALL_PCELL_TUNED.('raster_data_corrSac_onset').(['train_data_logic_SS' '_180']);
+% SS_corr_DCN = SS_corr_180 - SS_corr_000;
+
+field_name = 'raster_data_corrSac_onset';
+train_data_dir = '_180';
+numTrial = RASTER_DATA_ALL_PCELL_TUNED.(field_name).(['numTrial' train_data_dir]);
+SS_firing_rate = RASTER_DATA_ALL_PCELL_TUNED.(field_name).(['SS_firing_rate' train_data_dir]);
+train_data_logic_SS = RASTER_DATA_ALL_PCELL_TUNED.(field_name).(['train_data_logic_SS' train_data_dir]);
+train_data_logic_SS = train_data_logic_SS - (SS_firing_rate ./ 1000);
+num_perm = 5000;
+num_samples = num_pCells ; % 50; %
+length_span = size(train_data_logic_SS, 2);
+train_data_logic_SS_perm = nan(num_perm, length_span);
+for counter_perm = 1 : num_perm
+    inds_perm = randi(num_pCells,[num_samples 1]);
+    train_data_logic_SS_ = train_data_logic_SS(inds_perm, :);
+    train_data_logic_SS_(isnan(train_data_logic_SS_)) = 0;
+    numTrial_ = numTrial(inds_perm, :);
+    firing_SS_mean = numTrial_' * train_data_logic_SS_ ./ nansum(numTrial_);
+    train_data_logic_SS_perm(counter_perm, :) = firing_SS_mean;
+end
+SS_corr_180 = train_data_logic_SS_perm;
+
+field_name = 'raster_data_corrSac_onset';
+train_data_dir = '_000';
+numTrial = RASTER_DATA_ALL_PCELL_TUNED.(field_name).(['numTrial' train_data_dir]);
+SS_firing_rate = RASTER_DATA_ALL_PCELL_TUNED.(field_name).(['SS_firing_rate' train_data_dir]);
+train_data_logic_SS = RASTER_DATA_ALL_PCELL_TUNED.(field_name).(['train_data_logic_SS' train_data_dir]);
+train_data_logic_SS = train_data_logic_SS - (SS_firing_rate ./ 1000);
+num_perm = 5000;
+num_samples = num_pCells ; % 50; %
+length_span = size(train_data_logic_SS, 2);
+train_data_logic_SS_perm = nan(num_perm, length_span);
+for counter_perm = 1 : num_perm
+    inds_perm = randi(num_pCells,[num_samples 1]);
+    train_data_logic_SS_ = train_data_logic_SS(inds_perm, :);
+    train_data_logic_SS_(isnan(train_data_logic_SS_)) = 0;
+    numTrial_ = numTrial(inds_perm, :);
+    firing_SS_mean = numTrial_' * train_data_logic_SS_ ./ nansum(numTrial_);
+    train_data_logic_SS_perm(counter_perm, :) = firing_SS_mean;
+end
+SS_corr_000 = train_data_logic_SS_perm;
+
+SS_corr_DCN = SS_corr_180 - SS_corr_000;
+%
+range_SS = [-15 25];
+range_SS_DCN = [-15 25];
+range_idx = 200:400;
+hFig = figure(102);
+clf(hFig);
+subplot(2,3,1)
+hold on
+variable_data = SS_prim_000;
+variable_data_mean = nanmean(variable_data, 1);
+variable_data_stdv = nanstd(variable_data, 0, 1) ./ sqrt(num_pCells) * 3; % 95% CI
+variable_data_mean = ESN_smooth(variable_data_mean * 1000);
+variable_data_stdv = ESN_smooth(variable_data_stdv * 1000);
+plot(inds_span(range_idx), variable_data_mean(range_idx)+variable_data_stdv(range_idx), '-k', 'LineWidth', 0.5)
+plot(inds_span(range_idx), variable_data_mean(range_idx)-variable_data_stdv(range_idx), '-k', 'LineWidth', 0.5)
+plot(inds_span(range_idx), variable_data_mean(range_idx), '-k', 'LineWidth', 1)
+ylim(range_SS)
+title('SS_prim_000', 'Interpreter', 'none')
+
+subplot(2,3,2)
+hold on
+variable_data = SS_prim_180;
+variable_data_mean = nanmean(variable_data, 1);
+variable_data_stdv = nanstd(variable_data, 0, 1) ./ sqrt(num_pCells) * 3; % 95% CI
+variable_data_mean = ESN_smooth(variable_data_mean * 1000);
+variable_data_stdv = ESN_smooth(variable_data_stdv * 1000);
+plot(inds_span(range_idx), variable_data_mean(range_idx)+variable_data_stdv(range_idx), '-k', 'LineWidth', 0.5)
+plot(inds_span(range_idx), variable_data_mean(range_idx)-variable_data_stdv(range_idx), '-k', 'LineWidth', 0.5)
+plot(inds_span(range_idx), variable_data_mean(range_idx), '-k', 'LineWidth', 1)
+ylim(range_SS)
+title('SS_prim_180', 'Interpreter', 'none')
+
+subplot(2,3,3)
+hold on
+variable_data = SS_prim_DCN;
+variable_data_mean = nanmean(variable_data, 1);
+variable_data_stdv = nanstd(variable_data, 0, 1) ./ sqrt(num_pCells) * 3; % 95% CI
+variable_data_mean = ESN_smooth(variable_data_mean * 1000);
+variable_data_stdv = ESN_smooth(variable_data_stdv * 1000);
+plot(inds_span(range_idx), variable_data_mean(range_idx)+variable_data_stdv(range_idx), '-k', 'LineWidth', 0.5)
+plot(inds_span(range_idx), variable_data_mean(range_idx)-variable_data_stdv(range_idx), '-k', 'LineWidth', 0.5)
+plot(inds_span(range_idx), variable_data_mean(range_idx), '-k', 'LineWidth', 1)
+ylim(range_SS_DCN)
+title('SS_prim_DCN', 'Interpreter', 'none')
+
+subplot(2,3,4)
+hold on
+variable_data = SS_corr_000;
+variable_data_mean = nanmean(variable_data, 1);
+variable_data_stdv = nanstd(variable_data, 0, 1) ./ sqrt(num_pCells) * 3; % 95% CI
+variable_data_mean = ESN_smooth(variable_data_mean * 1000);
+variable_data_stdv = ESN_smooth(variable_data_stdv * 1000);
+plot(inds_span(range_idx), variable_data_mean(range_idx)+variable_data_stdv(range_idx), '-k', 'LineWidth', 0.5)
+plot(inds_span(range_idx), variable_data_mean(range_idx)-variable_data_stdv(range_idx), '-k', 'LineWidth', 0.5)
+plot(inds_span(range_idx), variable_data_mean(range_idx), '-k', 'LineWidth', 1)
+ylim(range_SS)
+title('SS_corr_000', 'Interpreter', 'none')
+
+subplot(2,3,5)
+hold on
+variable_data = SS_corr_180;
+variable_data_mean = nanmean(variable_data, 1);
+variable_data_stdv = nanstd(variable_data, 0, 1) ./ sqrt(num_pCells) * 3; % 95% CI
+variable_data_mean = ESN_smooth(variable_data_mean * 1000);
+variable_data_stdv = ESN_smooth(variable_data_stdv * 1000);
+plot(inds_span(range_idx), variable_data_mean(range_idx)+variable_data_stdv(range_idx), '-k', 'LineWidth', 0.5)
+plot(inds_span(range_idx), variable_data_mean(range_idx)-variable_data_stdv(range_idx), '-k', 'LineWidth', 0.5)
+plot(inds_span(range_idx), variable_data_mean(range_idx), '-k', 'LineWidth', 1)
+ylim(range_SS)
+title('SS_corr_180', 'Interpreter', 'none')
+
+subplot(2,3,6)
+hold on
+variable_data = SS_corr_DCN;
+variable_data_mean = nanmean(variable_data, 1);
+variable_data_stdv = nanstd(variable_data, 0, 1) ./ sqrt(num_pCells) * 3; % 95% CI
+variable_data_mean = ESN_smooth(variable_data_mean * 1000);
+variable_data_stdv = ESN_smooth(variable_data_stdv * 1000);
+plot(inds_span(range_idx), variable_data_mean(range_idx)+variable_data_stdv(range_idx), '-k', 'LineWidth', 0.5)
+plot(inds_span(range_idx), variable_data_mean(range_idx)-variable_data_stdv(range_idx), '-k', 'LineWidth', 0.5)
+plot(inds_span(range_idx), variable_data_mean(range_idx), '-k', 'LineWidth', 1)
+ylim(range_SS_DCN)
+title('SS_corr_DCN', 'Interpreter', 'none')
+
+ESN_Beautify_Plot(hFig, [8, 6])
+end
+
+%% function plot_SS_firing_histogram
+function plot_burster_pauser
+clearvars -except path_data_monkey_sorted pCell_list ALL_PCELL_COMPRESSED_DATA RASTER_DATA_ALL_PCELL_TUNED
+%%
+num_pCells = length(ALL_PCELL_COMPRESSED_DATA);
+SS_firing_rate_all = RASTER_DATA_ALL_PCELL_TUNED.raster_data_primSac_onset.SS_firing_rate_all;
+
+primSac_onset_train_data_logic_SS_all = RASTER_DATA_ALL_PCELL_TUNED.raster_data_primSac_onset.train_data_logic_SS_all;
+% Definition-1: Saccade duration compared to baseline activity
+% primSac_onset_activity = nanmean(primSac_onset_train_data_logic_SS_all(:,300:350), 2);
+% primSac_onset_activity_change = (primSac_onset_activity*1000) - SS_firing_rate_all;
+% Definition-2: Pre-saccade compare to post-saccade
+primSac_onset_activity = nanmean(primSac_onset_train_data_logic_SS_all(:,300:400), 2);
+primSac_onset_activity_prior = nanmean(primSac_onset_train_data_logic_SS_all(:,100:200), 2);
+primSac_onset_activity_change = (primSac_onset_activity*1000) - (primSac_onset_activity_prior*1000);
+% reshape and average
+primSac_onset_activity_change = reshape(primSac_onset_activity_change, num_pCells, []);
+primSac_onset_activity_change = nanmean(primSac_onset_activity_change, 2);
+
+corrSac_onset_train_data_logic_SS_all = RASTER_DATA_ALL_PCELL_TUNED.raster_data_corrSac_onset.train_data_logic_SS_all;
+% Definition-1: Saccade duration compared to baseline activity
+% corrSac_onset_activity = nanmean(corrSac_onset_train_data_logic_SS_all(:,300:350), 2);
+% corrSac_onset_activity_change = (corrSac_onset_activity*1000) - SS_firing_rate_all;
+% Definition-2: Pre-saccade compare to post-saccade
+corrSac_onset_activity = nanmean(corrSac_onset_train_data_logic_SS_all(:,300:400), 2);
+corrSac_onset_activity_prior = nanmean(corrSac_onset_train_data_logic_SS_all(:,100:200), 2);
+corrSac_onset_activity_change = (corrSac_onset_activity*1000) - (corrSac_onset_activity_prior*1000);
+% reshape and average
+corrSac_onset_activity_change = reshape(corrSac_onset_activity_change, num_pCells, []);
+corrSac_onset_activity_change = nanmean(corrSac_onset_activity_change, 2);
+
+activity_change = nanmean([primSac_onset_activity_change, corrSac_onset_activity_change], 2);
+
+hFig = figure(103);
+clf(hFig)
+edges_ = -85:10:85;
+subplot(1,3,1)
+hold on
+histogram(activity_change, edges_,  'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'm')
+histogram(activity_change, edges_,  'DisplayStyle', 'stairs', 'EdgeColor', 'm', 'FaceColor', 'none', 'linewidth', 2)
+yl_ = ylim;
+plot([0, 0], yl_, '-k', 'LineWidth', 1.5);
+xlabel({'Change in activity', 'during saccade (Hz)'})
+ylabel('Count (#)')
+title('Prim+Corr')
+subplot(1,3,2)
+hold on
+histogram(primSac_onset_activity_change, edges_,  'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'b')
+histogram(primSac_onset_activity_change, edges_,  'DisplayStyle', 'stairs', 'EdgeColor', 'b', 'FaceColor', 'none', 'linewidth', 2)
+yl_ = ylim;
+plot([0, 0], yl_, '-k', 'LineWidth', 1.5);
+xlabel({'Change in activity', 'during saccade (Hz)'})
+ylabel('Count (#)')
+title('Prim')
+subplot(1,3,3)
+hold on
+histogram(corrSac_onset_activity_change, edges_,  'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'r')
+histogram(corrSac_onset_activity_change, edges_,  'DisplayStyle', 'stairs', 'EdgeColor', 'r', 'FaceColor', 'none', 'linewidth', 2)
+yl_ = ylim;
+plot([0, 0], yl_, '-k', 'LineWidth', 1.5);
+xlabel({'Change in activity', 'during saccade (Hz)'})
+ylabel('Count (#)')
+title('Corr')
+
+sgtitle(hFig, 'ALL Directions', 'Interpreter', 'none');
+ESN_Beautify_Plot(hFig, [6, 4])
+
+%%
+num_pCells = length(ALL_PCELL_COMPRESSED_DATA);
+SS_firing_rate_180 = RASTER_DATA_ALL_PCELL_TUNED.raster_data_primSac_onset.SS_firing_rate_180;
+
+primSac_onset_train_data_logic_SS_180 = RASTER_DATA_ALL_PCELL_TUNED.raster_data_primSac_onset.train_data_logic_SS_180;
+% Definition-1: Saccade duration compared to baseline activity
+% primSac_onset_activity = nanmean(primSac_onset_train_data_logic_SS_180(:,300:350), 2);
+% primSac_onset_activity_change = (primSac_onset_activity*1000) - SS_firing_rate_180;
+% Definition-2: Pre-saccade compare to post-saccade
+primSac_onset_activity = nanmean(primSac_onset_train_data_logic_SS_180(:,300:400), 2);
+primSac_onset_activity_prior = nanmean(primSac_onset_train_data_logic_SS_180(:,100:200), 2);
+primSac_onset_activity_change = (primSac_onset_activity*1000) - (primSac_onset_activity_prior*1000);
+% reshape and average
+primSac_onset_activity_change = reshape(primSac_onset_activity_change, num_pCells, []);
+primSac_onset_activity_change = nanmean(primSac_onset_activity_change, 2);
+
+corrSac_onset_train_data_logic_SS_180 = RASTER_DATA_ALL_PCELL_TUNED.raster_data_corrSac_onset.train_data_logic_SS_180;
+% Definition-1: Saccade duration compared to baseline activity
+% corrSac_onset_activity = nanmean(corrSac_onset_train_data_logic_SS_180(:,300:350), 2);
+% corrSac_onset_activity_change = (corrSac_onset_activity*1000) - SS_firing_rate_180;
+% Definition-2: Pre-saccade compare to post-saccade
+corrSac_onset_activity = nanmean(corrSac_onset_train_data_logic_SS_180(:,300:400), 2);
+corrSac_onset_activity_prior = nanmean(corrSac_onset_train_data_logic_SS_180(:,100:200), 2);
+corrSac_onset_activity_change = (corrSac_onset_activity*1000) - (corrSac_onset_activity_prior*1000);
+% reshape and average
+corrSac_onset_activity_change = reshape(corrSac_onset_activity_change, num_pCells, []);
+corrSac_onset_activity_change = nanmean(corrSac_onset_activity_change, 2);
+
+activity_change = nanmean([primSac_onset_activity_change, corrSac_onset_activity_change], 2);
+
+hFig = figure(104);
+clf(hFig)
+edges_ = -95:10:95;
+subplot(1,3,1)
+hold on
+histogram(activity_change, edges_,  'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'm')
+histogram(activity_change, edges_,  'DisplayStyle', 'stairs', 'EdgeColor', 'm', 'FaceColor', 'none', 'linewidth', 2)
+yl_ = ylim;
+plot([0, 0], yl_, '-k', 'LineWidth', 1.5);
+xlabel({'Change in activity', 'during saccade (Hz)'})
+ylabel('Count (#)')
+title('Prim+Corr')
+subplot(1,3,2)
+hold on
+histogram(primSac_onset_activity_change, edges_,  'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'b')
+histogram(primSac_onset_activity_change, edges_,  'DisplayStyle', 'stairs', 'EdgeColor', 'b', 'FaceColor', 'none', 'linewidth', 2)
+yl_ = ylim;
+plot([0, 0], yl_, '-k', 'LineWidth', 1.5);
+xlabel({'Change in activity', 'during saccade (Hz)'})
+ylabel('Count (#)')
+title('Prim')
+subplot(1,3,3)
+hold on
+histogram(corrSac_onset_activity_change, edges_,  'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'r')
+histogram(corrSac_onset_activity_change, edges_,  'DisplayStyle', 'stairs', 'EdgeColor', 'r', 'FaceColor', 'none', 'linewidth', 2)
+yl_ = ylim;
+plot([0, 0], yl_, '-k', 'LineWidth', 1.5);
+xlabel({'Change in activity', 'during saccade (Hz)'})
+ylabel('Count (#)')
+title('Corr')
+
+sgtitle(hFig, 'CS+180 Direction', 'Interpreter', 'none');
+ESN_Beautify_Plot(hFig, [6, 4])
+
+%%
+% extract burster/pauser cells and form a new ALL_PCELL_COMPRESSED_DATA
+num_pCells = length(ALL_PCELL_COMPRESSED_DATA);
+
+primSac_onset_train_data_logic_SS_all = RASTER_DATA_ALL_PCELL_TUNED.raster_data_primSac_onset.train_data_logic_SS_all;
+% Definition-2: Pre-saccade compare to post-saccade
+primSac_onset_activity = nanmean(primSac_onset_train_data_logic_SS_all(:,250:400), 2);
+primSac_onset_activity_prior = nanmean(primSac_onset_train_data_logic_SS_all(:,100:200), 2);
+primSac_onset_activity_change = (primSac_onset_activity*1000) - (primSac_onset_activity_prior*1000);
+% reshape and average
+primSac_onset_activity_change = reshape(primSac_onset_activity_change, num_pCells, []);
+primSac_onset_activity_change = nanmean(primSac_onset_activity_change, 2);
+
+cell_idx_burster = find(primSac_onset_activity_change>0);
+cell_idx_pauser = find(primSac_onset_activity_change<0);
+cell_idx_interest = cell_idx_burster;
+
+% ALL_PCELL_COMPRESSED_DATA_BKP = ALL_PCELL_COMPRESSED_DATA;
+% ALL_PCELL_COMPRESSED_DATA = ALL_PCELL_COMPRESSED_DATA_BKP;
+clearvars ALL_PCELL_COMPRESSED_DATA;
+for counter_cell = 1 : length(cell_idx_interest)
+    ALL_PCELL_COMPRESSED_DATA(counter_cell) = ALL_PCELL_COMPRESSED_DATA_BKP(cell_idx_interest(counter_cell));
+end
+
+end
+
+%% function plot_waveforms
+function plot_waveforms()
+clearvars -except path_data_monkey_sorted pCell_list ALL_PCELL_COMPRESSED_DATA RASTER_DATA_ALL_PCELL_TUNED
+%%
+num_pCells = length(ALL_PCELL_COMPRESSED_DATA);
+numTrials_pCells = nan(num_pCells, 1);
+SS_waveform_pCells = nan(num_pCells, 180);
+CS_waveform_pCells = nan(num_pCells, 180);
+SS_xprob_pCells = nan(num_pCells, 100);
+CS_xprob_pCells = nan(num_pCells, 100);
+SS_firing_pCells = nan(num_pCells, 1);
+for counter_pCell = 1 : 1 : num_pCells
+    Neural_Properties_data = ALL_PCELL_COMPRESSED_DATA(counter_pCell).Neural_Properties_data;
+    SS_waveform_pCells(counter_pCell, :) = Neural_Properties_data.SS_waveform;
+    CS_waveform_pCells(counter_pCell, :) = Neural_Properties_data.CS_waveform;
+    SS_xprob_pCells(counter_pCell, :) = Neural_Properties_data.Corr_data.SS_SSxSS_AUTO;
+    CS_xprob_pCells(counter_pCell, :) = Neural_Properties_data.Corr_data.CS_CSxSS_AUTO;
+    SS_firing_pCells(counter_pCell, 1) = Neural_Properties_data.SS_firing_rate;
+end
+SS_waveform_pCells_max = max([max(SS_waveform_pCells, [], 2), abs(min(SS_waveform_pCells, 2))], [], 2);
+SS_waveform_pCells_norm = SS_waveform_pCells ./ SS_waveform_pCells_max;
+CS_waveform_pCells_norm = CS_waveform_pCells ./ SS_waveform_pCells_max;
+SS_xprob_pCells_norm = SS_xprob_pCells ./ (SS_firing_pCells./1000);
+SS_xprob_pCells_norm(:,50) = 0;
+CS_xprob_pCells_norm = CS_xprob_pCells ./ (SS_firing_pCells./1000);
+
+SS_waveform_mean = nanmean(SS_waveform_pCells_norm);
+SS_waveform_stdv = nanstd( SS_waveform_pCells_norm);%./sqrt(num_pCells);
+SS_waveform_stdv_p = SS_waveform_mean + SS_waveform_stdv;
+SS_waveform_stdv_m = SS_waveform_mean - SS_waveform_stdv;
+
+CS_waveform_mean = nanmean(CS_waveform_pCells_norm);
+CS_waveform_stdv = nanstd( CS_waveform_pCells_norm);%./sqrt(num_pCells);
+CS_waveform_stdv_p = CS_waveform_mean + CS_waveform_stdv;
+CS_waveform_stdv_m = CS_waveform_mean - CS_waveform_stdv;
+
+SS_xprob_mean = nanmean(SS_xprob_pCells_norm);
+SS_xprob_stdv = nanstd( SS_xprob_pCells_norm);%./sqrt(num_pCells);
+SS_xprob_stdv_p = SS_xprob_mean + SS_xprob_stdv;
+SS_xprob_stdv_m = SS_xprob_mean - SS_xprob_stdv;
+
+CS_xprob_mean = nanmean(CS_xprob_pCells_norm);
+CS_xprob_stdv = nanstd( CS_xprob_pCells_norm);%./sqrt(num_pCells);
+CS_xprob_stdv_p = CS_xprob_mean + CS_xprob_stdv;
+CS_xprob_stdv_m = CS_xprob_mean - CS_xprob_stdv;
+
+time_waveform = (-59:1:120)./30;
+time_xprob = (-49:1:50);
+
+hFig = figure(105);
+clf(hFig)
+subplot(1,2,1)
+hold on
+% plot(time_waveform, SS_waveform_pCells_norm, '-k', 'LineWidth', 0.5)
+plot(time_waveform, SS_waveform_stdv_m, '-b', 'LineWidth', 0.5)
+plot(time_waveform, SS_waveform_stdv_p, '-b', 'LineWidth', 0.5)
+plot(time_waveform, SS_waveform_mean, '-b', 'LineWidth', 1.5)
+% ylabel('SS waveform')
+% xlabel('Time (ms)')
+
+% subplot(2,2,2)
+% hold on
+% plot(time_waveform, CS_waveform_pCells_norm, '-k', 'LineWidth', 0.5)
+plot(time_waveform, CS_waveform_stdv_m, '-r', 'LineWidth', 0.5)
+plot(time_waveform, CS_waveform_stdv_p, '-r', 'LineWidth', 0.5)
+plot(time_waveform, CS_waveform_mean, '-r', 'LineWidth', 1.5)
+ylabel('waveform')
+xlabel('Time (ms)')
+
+
+subplot(1,2,2)
+hold on
+% plot(time_xprob, SS_xprob_pCells_norm, '-k', 'LineWidth', 0.5)
+plot(time_xprob, SS_xprob_stdv_p, '-b', 'LineWidth', 0.5)
+plot(time_xprob, SS_xprob_stdv_m, '-b', 'LineWidth', 0.5)
+plot(time_xprob, SS_xprob_mean, '-b', 'LineWidth', 1.5)
+% ylabel('SS prob')
+% xlabel('Time (ms)')
+
+% subplot(2,2,4)
+% hold on
+% plot(time_xprob, CS_xprob_pCells_norm, '-k', 'LineWidth', 0.5)
+plot(time_xprob, CS_xprob_stdv_p, '-r', 'LineWidth', 0.5)
+plot(time_xprob, CS_xprob_stdv_m, '-r', 'LineWidth', 0.5)
+plot(time_xprob, CS_xprob_mean, '-r', 'LineWidth', 1.5)
+ylabel('prob')
+xlabel('Time (ms)')
+
+ESN_Beautify_Plot(hFig, [6, 4])
+
+%%
+hFig = figure(106);
+clf(hFig)
+% time_xprob = (-49:1:50);
+CS_xprob_pCells_norm = CS_xprob_pCells ./ nanmean(CS_xprob_pCells(:,20:50), 2);
+% CS_xprob_pCells_norm = smoothdata(CS_xprob_pCells_norm, 2, 'sgolay', 5, 'omitnan', 'Degree', 2);
+[~,idx] = max(CS_xprob_pCells_norm(:,56:end)>0.63, [], 2);
+suppression_ = idx+5;
+hold on
+edges_ = 6.5: 1 : 31.5;
+histogram(suppression_, edges_,  'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'r')
+histogram(suppression_, edges_,  'DisplayStyle', 'stairs', 'EdgeColor', 'r', 'FaceColor', 'none', 'linewidth', 2)
+ylabel('Count')
+xlabel('CS suppression (ms)')
+ESN_Beautify_Plot(hFig, [6, 4])
+end
+
+%% function plot_CS_on_two_bump
+function plot_CS_on_two_bump
+clearvars -except path_data_monkey_sorted pCell_list ALL_PCELL_COMPRESSED_DATA RASTER_DATA_ALL_PCELL_TUNED
+%%
+num_pCells = length(ALL_PCELL_COMPRESSED_DATA);
+cue_present_train_data_logic_CS_000 = RASTER_DATA_ALL_PCELL_TUNED.raster_data_cue_present.train_data_logic_CS_000;
+cue_present_smooth = smoothdata(cue_present_train_data_logic_CS_000, 2, 'movmean', 21, 'omitnan');
+% cue_present_smooth = cue_present_train_data_logic_CS_000;
+hFig = figure(107);
+clf(hFig)
+subplot(2,2,1)
+hold on
+time_cue_present = (-50:1:250);
+range_ = (250:1:550);
+cue_present_smooth = (cue_present_smooth(:,range_).*1000);
+plot_mean = nanmean(cue_present_smooth);
+plot_stdv = nanstd(cue_present_smooth)./sqrt(num_pCells);
+plot_stdv_p = plot_mean + plot_stdv;
+plot_stdv_m = plot_mean - plot_stdv;
+plot(time_cue_present, plot_stdv_m, 'k')
+plot(time_cue_present, plot_stdv_p, 'k')
+plot(time_cue_present, plot_mean, 'k')
+yl_ = ylim;
+plot([45 45], yl_, 'k');
+plot([95 95], yl_, 'k');
+plot([145 145], yl_, 'k');
+xlabel('Time for cue (ms)')
+ylabel('CS firing (Hz)')
+
+subplot(2,2,2)
+hold on
+peak_1 = mean(cue_present_train_data_logic_CS_000(:,(351:400)-5), 2)*1000;
+peak_2 = mean(cue_present_train_data_logic_CS_000(:,(401:450)-5), 2)*1000;
+
+x = peak_1(:);
+y = peak_2(:);
+slope = polyfit(x,y,1);
+yfit = polyval(slope,sort(x));
+mdl = fitlm(x,y);
+p_val = mdl.Coefficients.pValue;
+slope = mdl.Coefficients.Estimate;
+
+plot(peak_1, peak_2, '.k');
+plot(sort(x), yfit, '-k');
+xlabel('Avg. firing 45-95ms')
+ylabel('Avg. firing 95-145ms')
+title({['slope:' mat2str(slope,3)], ['p-value:' mat2str(p_val,3)]})
+
+clearvars -except path_data_monkey_sorted pCell_list ALL_PCELL_COMPRESSED_DATA RASTER_DATA_ALL_PCELL_TUNED
+num_pCells = length(ALL_PCELL_COMPRESSED_DATA);
+primSac_offset_train_data_logic_CS_000 = RASTER_DATA_ALL_PCELL_TUNED.raster_data_primSac_offset.train_data_logic_CS_000;
+primSac_offset_smooth = smoothdata(primSac_offset_train_data_logic_CS_000, 2, 'movmean', 21, 'omitnan');
+% cue_present_smooth = cue_present_train_data_logic_CS_000;
+hFig = figure(107);
+subplot(2,2,3)
+hold on
+time_primSac_offset = (-50:1:250);
+range_ = (250:1:550);
+primSac_offset_smooth = (primSac_offset_smooth(:,range_).*1000);
+plot_mean = nanmean(primSac_offset_smooth);
+plot_stdv = nanstd(primSac_offset_smooth)./sqrt(num_pCells);
+plot_stdv_p = plot_mean + plot_stdv;
+plot_stdv_m = plot_mean - plot_stdv;
+plot(time_primSac_offset, plot_stdv_m, 'k')
+plot(time_primSac_offset, plot_stdv_p, 'k')
+plot(time_primSac_offset, plot_mean, 'k')
+yl_ = ylim;
+plot([30 30], yl_, 'k');
+plot([80 80], yl_, 'k');
+plot([130 130], yl_, 'k');
+xlabel('Time for primSac offset (ms)')
+ylabel('CS firing (Hz)')
+
+subplot(2,2,4)
+hold on
+peak_1 = mean(primSac_offset_train_data_logic_CS_000(:,(351:400)-20), 2)*1000;
+peak_2 = mean(primSac_offset_train_data_logic_CS_000(:,(401:450)-20), 2)*1000;
+
+x = peak_1(:);
+y = peak_2(:);
+slope = polyfit(x,y,1);
+yfit = polyval(slope,sort(x));
+mdl = fitlm(x,y);
+p_val = mdl.Coefficients.pValue;
+slope = mdl.Coefficients.Estimate;
+
+plot(peak_1, peak_2, '.k');
+plot(sort(x), yfit, '-k');
+xlabel('Avg. firing 30-80ms')
+ylabel('Avg. firing 80-130ms')
+title({['slope:' mat2str(slope,3)], ['p-value:' mat2str(p_val,3)]})
+
+ESN_Beautify_Plot(hFig, [6, 4])
+end
+
+%% function plot_bootstrap_population_CS000_CS180
+function plot_bootstrap_population_CS000_CS180
+clearvars -except path_data_monkey_sorted pCell_list ALL_PCELL_COMPRESSED_DATA RASTER_DATA_ALL_PCELL_TUNED
+%%
+field_name = 'raster_data_primSac_onset';
+train_data_dir = '_180';
+numTrial = RASTER_DATA_ALL_PCELL_TUNED.(field_name).(['numTrial' train_data_dir]);
+SS_firing_rate = RASTER_DATA_ALL_PCELL_TUNED.(field_name).(['SS_firing_rate' train_data_dir]);
+train_data_logic_SS = RASTER_DATA_ALL_PCELL_TUNED.(field_name).(['train_data_logic_SS' train_data_dir]);
+train_data_logic_SS = train_data_logic_SS - (SS_firing_rate ./ 1000);
+
+nBoot = 2000; %number of bootstraps
+num_time_points = size(train_data_logic_SS, 2);
+variable_data_mean = nan(1, num_time_points);
+variable_data_stdv_p = nan(1, num_time_points);
+variable_data_stdv_m = nan(1, num_time_points);
+tic
+for counter_time = 1 : num_time_points
+    data_ = train_data_logic_SS(:,counter_time);
+    [bci,bmeans] = bootci(nBoot,{@mean,data_},'alpha',.05,'type','per'); %90 confidence interval
+    bmu = mean(bmeans); % Compute bootstrap sample mean
+    variable_data_mean(1, counter_time) = bmu;
+    variable_data_stdv_p(1, counter_time) = bci(2);
+    variable_data_stdv_m(1, counter_time) = bci(1);
+end
+toc
+
+hFig = figure(108);
+clf(hFig)
+hold on
+plot(ESN_smooth( variable_data_stdv_m ).*1000, 'k')
+plot(ESN_smooth( variable_data_stdv_p ).*1000, 'k')
+plot(ESN_smooth( variable_data_mean ).*1000, 'k')
+
+%%
+num_perm = 5000;
+num_samples = 50; % num_pCells
+length_span = size(train_data_logic_SS, 2);
+train_data_logic_SS_perm = nan(num_perm, length_span);
+for counter_perm = 1 : num_perm
+    inds_perm = randi(num_pCells,[num_samples 1]);
+    train_data_logic_SS_ = train_data_logic_SS(inds_perm, :);
+    train_data_logic_SS_(isnan(train_data_logic_SS_)) = 0;
+    numTrial_ = numTrial(inds_perm, :);
+    firing_SS_mean = numTrial_' * train_data_logic_SS_ ./ nansum(numTrial_) .* 1000;
+    train_data_logic_SS_perm(counter_perm, :) = firing_SS_mean;
+end
+variable_data_mean = ESN_smooth( nanmean(train_data_logic_SS_perm, 1) );
+variable_data_stdv = ESN_smooth( nanstd(train_data_logic_SS_perm, 0, 1) ) ./ sqrt(num_samples);
+
+end
+
+%% function plot_CS_bandpower
+function plot_cs_bandpower()
+%%
+psort_data = Psort_read_psort;
+%% cs_waveform
+ch_data = psort_data.topLevel_data.ch_data;
+sample_rate = psort_data.topLevel_data.sample_rate;
+win_len_before = 0.5e-3; % 30e-3; % 
+win_len_after = 10e-3; % 30e-3; % 
+% cs_waveform
+spike_bool = psort_data.topLevel_data.cs_index;
+[cs_waveform, ~] = extract_waveform(ch_data, spike_bool, sample_rate, win_len_before, win_len_after);
+cs_waveform = cs_waveform - median(cs_waveform);
+% ss_waveform
+spike_bool = psort_data.topLevel_data.ss_index;
+[ss_waveform, ~] = extract_waveform(ch_data, spike_bool, sample_rate, win_len_before, win_len_after);
+% ss_waveform = ss_waveform - median(ss_waveform);
+%% cs_power
+pband = bandpower(cs_waveform',sample_rate,[0 100]);
+ptot  = bandpower(cs_waveform',sample_rate,[0 5000]);
+cs_power = 100*(pband./ptot);
+pband = bandpower(ss_waveform',sample_rate,[0 100]);
+ptot  = bandpower(ss_waveform',sample_rate,[0 5000]);
+ss_power = 100*(pband./ptot);
+%% plot power
+hFig = figure(1);
+clf(hFig);
+subplot(3,2,1)
+plot(cs_power, '.k');
+subplot(3,2,2)
+plot(ss_power, '.k');
+subplot(3,2,3)
+plot(detrend(cs_power), '.k');
+subplot(3,2,4)
+plot(detrend(ss_power), '.k');
+subplot(3,2,5)
+hold on
+histogram((cs_power),  'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'r')
+histogram((cs_power),  'DisplayStyle', 'stairs', 'EdgeColor', 'r', 'FaceColor', 'none', 'linewidth', 2)
+subplot(3,2,6)
+hold on
+histogram((ss_power),  'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'b')
+histogram((ss_power),  'DisplayStyle', 'stairs', 'EdgeColor', 'b', 'FaceColor', 'none', 'linewidth', 2)
+
+ESN_Beautify_Plot(hFig, [8,6])
+
+%% plot spect
+win_len_before_ = 30e-3; % 0.5e-3; % 
+win_len_after_ = 30e-3; % 10e-3; % 
+% cs_waveform
+spike_bool_ = psort_data.topLevel_data.cs_index;
+[cs_waveform_, cs_span_] = extract_waveform(ch_data, spike_bool_, sample_rate, win_len_before_, win_len_after_);
+% cs_waveform_ = cs_waveform_ - median(cs_waveform_);
+%%
+idx = 1502;
+signal = cs_waveform_(idx,:)';
+[s,f,t] = spectrogram(signal,32,30,2^12,sample_rate);
+t = (t - mean(t) + mean(mean(cs_span_))) * 1000;
+
+hFig = figure(2);
+clf(hFig);
+subplot(4,1,1)
+plot(mean(cs_span_)*1000, signal, '-k')
+ylim([-2000 2500])
+xlim([-30 30])
+ylabel('Waveform (uV)')
+
+subplot(4,1,[2 3])
+surf(t, f, abs(s));
+shading interp
+view([0 0 90])
+ylim([0 5000])
+xlim([-30 30])
+ylabel('Frequency (Hz)')
+
+subplot(4,1,4)
+surf(t, f, abs(s));
+shading interp
+view([0 0 90])
+ylim([0 100])
+xlim([-30 30])
+xlabel('Time (ms)')
+
+end
+
+%% function extract_waveform
+function [waveform, span] = extract_waveform(data, spike_bool, sample_rate, win_len_before, win_len_after)
+spike_bool = logical(spike_bool); spike_bool(1) = false; spike_bool(end) = false;
+spike_int = find(spike_bool);
+win_len_before_int = round(double(win_len_before) * double(sample_rate));
+win_len_after_int  = round(double(win_len_after)  * double(sample_rate));
+span_int = (-win_len_before_int : 1 : win_len_after_int);
+num_row = length(spike_int);
+num_col = length(span_int);
+spike_int = repmat(spike_int(:), 1, num_col);
+span_int  = repmat(span_int(:)', num_row, 1);
+
+ind = spike_int + span_int;
+ind(ind<1) = 1;
+ind(ind>length(data)) = length(data);
+waveform = data(ind);
+span = span_int / double(sample_rate);
+end

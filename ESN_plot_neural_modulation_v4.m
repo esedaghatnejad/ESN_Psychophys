@@ -1,12 +1,15 @@
 %% function ESN_plot_neural_modulation_v3(num_data_set)
-function ESN_plot_neural_modulation_v4(num_data_set)
+function ESN_plot_neural_modulation_v4(num_data_set, params)
 if nargin < 1
     num_data_set = 1;
+end
+if nargin < 2
+    params.auto = false;
 end
 %% Build EPHYS_ and BEHAVE_ for each single dataset
 clearvars EPHYS BEHAVE
 for counter_dataset = 1 : 1 : num_data_set
-    [EPHYS_(counter_dataset), BEHAVE_(counter_dataset)] = build_EPHYS_BEHAVE_single_dataset;
+    [EPHYS_(counter_dataset), BEHAVE_(counter_dataset)] = build_EPHYS_BEHAVE_single_dataset(params);
 end
 EPHYS.CH_sorted_file_name = EPHYS_(1).CH_sorted_file_name;
 EPHYS.CH_sorted_file_path = EPHYS_(1).CH_sorted_file_path;
@@ -231,8 +234,13 @@ ESN_Beautify_Plot(fig_handle_(plot_data.fig_num_), [8.0 8.0])
 sgtitle(fig_handle_(plot_data.fig_num_), Neural_Properties_data.file_name, 'Interpreter', 'none');
 
 %% Save Fig
+if ~params.auto
 response_save_fig = questdlg('Do you want to save the figures?',...
     'Question Dialog','Yes','No','Yes');
+else
+response_save_fig = 'No';
+close('all')
+end
 if contains(response_save_fig, 'Yes')
 fprintf(['Saving plots', ' ...'])
 save_file_path = uigetdir(EPHYS.CH_sorted_file_path, 'Select where to save the figures.');
@@ -272,12 +280,21 @@ for counter_dataset = 1 : 1 : num_data_set
 end
 
 %% Save plot data
+if ~params.auto
 response_save_data = questdlg('Do you want to save the plot_data?',...
     'Question Dialog','Yes','No','Yes');
+else
+response_save_data = 'Yes';
+end
 if contains(response_save_data, 'Yes')
 file_name = [Neural_Properties_data.file_name '_plot_data.mat'];
 file_path = Neural_Properties_data.file_path;
+if ~params.auto
 [save_file_name,save_file_path] = uiputfile([file_path filesep file_name], 'Select where to save the plot data.');
+else
+save_file_name = file_name;
+save_file_path = [file_path filesep '..' filesep 'analyzed_figs'];
+end
 fprintf(['Saving ' save_file_name ' ... ']);
 if ~isequal(save_file_name,0)
 save([save_file_path filesep save_file_name], 'Neural_Properties_data', ...
@@ -326,11 +343,16 @@ smooth_data_ = smooth(data_, 21, 'sgolay', 2);
 end
 
 %% function build_EPHYS_BEHAVE_single_dataset
-function [EPHYS, BEHAVE] = build_EPHYS_BEHAVE_single_dataset
+function [EPHYS, BEHAVE] = build_EPHYS_BEHAVE_single_dataset(params)
 
 %% load EPHYS sorted DATA
+if ~params.auto
 file_path = [pwd filesep];
 [file_name, file_path] = uigetfile([file_path '*.psort'], 'Select psort file');
+else
+file_name = [params.file_name '.psort'];
+file_path = params.file_path;
+end
 fprintf(['Loading ', file_name, ' ... ']);
 % EPHYS.CH_sorted = load([file_path filesep file_name], 'CS_data', 'SS_data');
 DATA_PSORT = Psort_read_psort([file_path file_name]);
@@ -339,8 +361,13 @@ EPHYS.CH_sorted_file_path = file_path;
 fprintf(' --> Completed. \n')
 
 %% load EPHYS EVENT DATA
+if ~params.auto
 file_name = EPHYS.CH_sorted_file_name(1:13);
 [file_name,file_path] = uigetfile([file_path file_name '_EVE1_aligned.mat'], 'Select EVENT DATA file');
+else
+file_name = [EPHYS.CH_sorted_file_name(1:13) '_EVE1_aligned.mat'];
+file_path = params.file_path;
+end
 fprintf(['Loading ', file_name, ' ... ']);
 EPHYS.CH_EVE = load([file_path file_name]);
 if isfield(EPHYS.CH_EVE, 'EPHYS_time_15K')
@@ -353,8 +380,13 @@ EPHYS.CH_EVE.BEHAVE_time_1K = EPHYS.CH_EVE.BEHAVE_time_1K(:);
 fprintf(' --> Completed. \n')
 
 %% load BEHAVE DATA
+if ~params.auto
 file_name = EPHYS.CH_sorted_file_name(1:13);
 [file_name,file_path] = uigetfile([file_path file_name '_ANALYZED.mat'], 'Select _ANALYZED file');
+else
+file_name = [EPHYS.CH_sorted_file_name(1:13) '_ANALYZED.mat'];
+file_path = params.file_path;
+end
 fprintf(['Loading ', file_name, ' ... ']);
 BEHAVE = load([file_path file_name]);
 fprintf(' --> Completed. \n')
@@ -598,7 +630,11 @@ end
 % convert xcorr to aligned for EPHYS. We find the events on BEHAVE and then
 % should convert it to EPHYS for SS & CS (EPHYS related events). We should not convert BEHAVE for
 % BEHAVE related events.
-EPHYS_EB_aligned_ind_cue_present_1K    = EPHYS.CH_EVE.align_states.EPHYS_EB_aligned_ind_1K(BEHAVE_EB_xcorr_ind_cue_present);
+
+% EPHYS_EB_aligned_ind_cue_present_1K    = EPHYS.CH_EVE.align_states.EPHYS_EB_aligned_ind_1K(BEHAVE_EB_xcorr_ind_cue_present);
+% EPHYS_EB_aligned_ind_cue_photodiode_1K = EPHYS.CH_EVE.align_photodiode.EPHYS_PD_aligned_ind_1K(BEHAVE_EB_xcorr_ind_cue_present);
+EPHYS_EB_aligned_ind_cue_present_1K = EPHYS.CH_EVE.align_photodiode.EPHYS_PD_aligned_ind_1K(BEHAVE_EB_xcorr_ind_cue_present);
+
 EPHYS_EB_aligned_ind_primSac_onset_1K  = EPHYS.CH_EVE.align_states.EPHYS_EB_aligned_ind_1K(BEHAVE_EB_xcorr_ind_primSac_onset);
 EPHYS_EB_aligned_ind_primSac_vmax_1K  = EPHYS.CH_EVE.align_states.EPHYS_EB_aligned_ind_1K(BEHAVE_EB_xcorr_ind_primSac_vmax);
 EPHYS_EB_aligned_ind_primSac_offset_1K = EPHYS.CH_EVE.align_states.EPHYS_EB_aligned_ind_1K(BEHAVE_EB_xcorr_ind_primSac_offset);

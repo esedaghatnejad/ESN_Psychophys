@@ -26,11 +26,14 @@ set(hFig, 'Position', [[1 1] figure_size]);
 set(hFig, 'Renderer', 'painters');
 set(hFig, 'PaperOrientation', 'portrait');
 
+font_name = 'Arial'; % 'Courier New'; %
+font_size = 12;
+
 AxesChildren = findall(hFig, 'type', 'axes');
 for counter = 1 : 1 : length(AxesChildren)
-    AxesChildren(counter).FontName      = 'Helvetica Neue';
+    AxesChildren(counter).FontName      = font_name;
     AxesChildren(counter).FontUnits     = 'points';
-    AxesChildren(counter).FontSize      = 12;
+    AxesChildren(counter).FontSize      = font_size;
     AxesChildren(counter).Box           = 'off';
     AxesChildren(counter).TickDir       = 'out';
     AxesChildren(counter).TickLength    = [.02 .02];
@@ -43,15 +46,15 @@ for counter = 1 : 1 : length(AxesChildren)
 %     AxesChildren(counter).YColor        = [0 0 0];
     AxesChildren(counter).LineWidth     = 1;
     
-    AxesChildren(counter).XLabel.FontName  = 'Helvetica Neue';
+    AxesChildren(counter).XLabel.FontName  = font_name;
     AxesChildren(counter).XLabel.FontUnits = 'points';
-    AxesChildren(counter).XLabel.FontSize  = 12;
-    AxesChildren(counter).YLabel.FontName  = 'Helvetica Neue';
+    AxesChildren(counter).XLabel.FontSize  = font_size;
+    AxesChildren(counter).YLabel.FontName  = font_name;
     AxesChildren(counter).YLabel.FontUnits = 'points';
-    AxesChildren(counter).YLabel.FontSize  = 12;
-    AxesChildren(counter).Title.FontName   = 'Helvetica Neue';
+    AxesChildren(counter).YLabel.FontSize  = font_size;
+    AxesChildren(counter).Title.FontName   = font_name;
     AxesChildren(counter).Title.FontUnits  = 'points';
-    AxesChildren(counter).Title.FontSize   = 14;
+    AxesChildren(counter).Title.FontSize   = font_size;
     AxesChildren(counter).Title.FontWeight = 'bold';
     
     hold(AxesChildren(counter), 'off');
@@ -59,16 +62,16 @@ end
 
 LegendChildren = findall(hFig, 'tag', 'legend');
 for counter = 1 : 1 : length(LegendChildren)
-    LegendChildren(counter).FontName  = 'Helvetica Neue';
+    LegendChildren(counter).FontName  = font_name;
     LegendChildren(counter).FontUnits = 'points';
-    LegendChildren(counter).FontSize  = 12;
+    LegendChildren(counter).FontSize  = font_size;
 end
 
 TextChildren = findall(hFig, 'type', 'text');
 for counter = 1 : 1 : length(TextChildren)
-    TextChildren(counter).FontName  = 'Helvetica Neue';
+    TextChildren(counter).FontName  = font_name;
     TextChildren(counter).FontUnits = 'points';
-    TextChildren(counter).FontSize  = 12;
+    TextChildren(counter).FontSize  = font_size;
 end
 
 

@@ -20,7 +20,7 @@ path_data_monkey_sorted = uigetdir;
 
 pCell_list_1 = build_pCell_list_Mirza_pre201906(); pCell_list_2 = build_pCell_list_Mirza_post201906(); pCell_list_3 = build_pCell_list_Ramon();
 pCell_list = vertcat(pCell_list_1, pCell_list_2, pCell_list_3);
-
+%
 % build ALL_PCELL_COMPRESSED_DATA, open plot data and put them together
 ALL_PCELL_COMPRESSED_DATA = build_ALL_PCELL_COMPRESSED_DATA(pCell_list, path_data_monkey_sorted);
 
@@ -969,7 +969,6 @@ for counter_pCell = 1 : 1 : num_pCells
 end
 
 end
-
 
 %% function plot_SS_CS_firing_histogram
 function plot_SS_CS_firing_histogram()

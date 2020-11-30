@@ -375,8 +375,8 @@ if isfield(EPHYS.CH_EVE, 'EPHYS_time_15K')
 else
     EPHYS.CH_EVE.EPHYS_time_30K = EPHYS.CH_EVE.EPHYS_time_30K(:);
 end
-EPHYS.CH_EVE.EPHYS_time_1K  = EPHYS.CH_EVE.EPHYS_time_1K(:);
-EPHYS.CH_EVE.BEHAVE_time_1K = EPHYS.CH_EVE.BEHAVE_time_1K(:);
+EPHYS.CH_EVE.EPHYS_time_1K  = reshape(EPHYS.CH_EVE.EPHYS_time_1K ,[], 1);
+EPHYS.CH_EVE.BEHAVE_time_1K = reshape(EPHYS.CH_EVE.BEHAVE_time_1K,[], 1);
 fprintf(' --> Completed. \n')
 
 %% load BEHAVE DATA
@@ -409,13 +409,8 @@ CS_inds(CS_inds > length(ch_data)) = length(ch_data);
 SS_waveform = ch_data(SS_inds);
 CS_waveform = ch_data(CS_inds);
 
-if length(SS_index) == 1
-    SS_waveform = SS_waveform(:)';
-end
-
-if length(CS_index) == 1
-    CS_waveform = CS_waveform(:)';
-end
+SS_waveform  = reshape(SS_waveform,[], length(waveform_inds_span));
+CS_waveform  = reshape(CS_waveform,[], length(waveform_inds_span));
 
 EPHYS.CH_sorted.SS_data.SS_ind = SS_index;
 EPHYS.CH_sorted.CS_data.CS_ind = CS_index;

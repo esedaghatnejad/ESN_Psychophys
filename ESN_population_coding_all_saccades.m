@@ -24,17 +24,18 @@ save([path_data_monkey_sorted filesep ALL_PCELL_name filesep 'ALL_PCELL_all_sacc
     '-v7.3')
 
 %%
-clearvars -except ALL_PCELL_all_saccades
+clearvars -except ALL_PCELL_all_saccades idx_burster idx_pauser
 ALL_PCELL_all_saccades_tuned = build_ALL_PCELL_all_saccades_tuned(ALL_PCELL_all_saccades);
 ALL_PCELL_all_saccades_tuned_amp = avg_over_angle(ALL_PCELL_all_saccades_tuned);
 ALL_PCELL_all_saccades_tuned_ang = avg_over_amplitude(ALL_PCELL_all_saccades_tuned);
+ALL_PCELL_all_saccades_amp = avg_over_angle(ALL_PCELL_all_saccades);
+ALL_PCELL_all_saccades_ang = avg_over_amplitude(ALL_PCELL_all_saccades);
 %
 ALL_PCELL_all_saccades_tuned_ang_amp = avg_over_angle(ALL_PCELL_all_saccades_tuned_ang);
 ALL_PCELL_all_saccades_tuned_amp_ang = avg_over_amplitude(ALL_PCELL_all_saccades_tuned_amp);
-
+ALL_PCELL_all_saccades_ang_amp = avg_over_angle(ALL_PCELL_all_saccades_ang);
+ALL_PCELL_all_saccades_amp_ang = avg_over_amplitude(ALL_PCELL_all_saccades_amp);
 %
-
-
 
 end
 
@@ -793,7 +794,9 @@ ang_bin(ang_bin == ang_edges_last_bin_id) = 1;
 num_amp_bin = length(amp_edges) - 1;
 num_ang_bin = length(ang_edges) - 2;
 
-variable_list = {'primSac', 'corrSac', 'toTgt', 'fromTgt', 'lowAmp', 'toTgtStr', 'fromCenter', 'aroundCenter', 'nonTask'};
+BEHAVE.SACS_ALL_DATA.is_all = BEHAVE.SACS_ALL_DATA.validity;
+
+variable_list = {'primSac', 'corrSac', 'toTgt', 'fromTgt', 'lowAmp', 'toTgtStr', 'fromCenter', 'aroundCenter', 'nonTask', 'all'};
 indType_list = {'start', 'vmax', 'finish'};
 spikeType_list = {'SS', 'CS'};
 
@@ -1101,135 +1104,135 @@ fprintf(' --> Completed. \n')
 end
 
 %% function ESN_smooth
-function smooth_data_ = ESN_smooth(data_, dim)
-% smooth data using 2nd order Savitzky-Golay filter with 21 points
-% if data_ is a matrix, the method will smooth each column by default or smooth along dim.
-% method = 'moving';  % Moving average. A lowpass filter with filter coefficients equal to the reciprocal of the span.
-% method = 'lowess';  % Local regression using weighted linear least squares and a 1st degree polynomial model.
-% method = 'loess';   % Local regression using weighted linear least squares and a 2nd degree polynomial model.
-% method = 'sgolay';  % Savitzky-Golay filter. A generalized moving average with filter coefficients determined by an unweighted linear least-squares regression and a polynomial model of specified degree (default is 2). The method can accept nonuniform predictor data.
-% method = 'rlowess'; % A robust version of 'lowess' that assigns lower weight to outliers in the regression. The method assigns zero weight to data outside six mean absolute deviations.
-% method = 'rloess';  % A robust version of 'loess' that assigns lower weight to outliers in the regression. The method assigns zero weight to data outside six mean absolute deviations.
-% smooth_data_ = smooth(data_, method);
-if nargin < 2
-    dim = 1;
-end
-if size(data_, 1) == 1
-    smooth_data_ = reshape(smooth(data_, 21, 'sgolay', 2), 1, []);
-elseif size(data_, 2) == 1
-    smooth_data_ = reshape(smooth(data_, 21, 'sgolay', 2), [], 1);
-else
-    smooth_data_ = nan(size(data_));
-    if dim == 1
-        % smooth columns
-        for counter_col = 1 : size(data_, 2)
-            smooth_data_(:, counter_col) = reshape(smooth(data_(:, counter_col), 21, 'sgolay', 2), [], 1);
-        end
-    elseif dim == 2
-        % smooth rows
-        for counter_row = 1 : size(data_, 1)
-            smooth_data_(counter_row, :) = reshape(smooth(data_(counter_row, :), 21, 'sgolay', 2), 1, []);
-        end
-    end
-    
-end
-end
+% function smooth_data_ = ESN_smooth(data_, dim)
+% % smooth data using 2nd order Savitzky-Golay filter with 21 points
+% % if data_ is a matrix, the method will smooth each column by default or smooth along dim.
+% % method = 'moving';  % Moving average. A lowpass filter with filter coefficients equal to the reciprocal of the span.
+% % method = 'lowess';  % Local regression using weighted linear least squares and a 1st degree polynomial model.
+% % method = 'loess';   % Local regression using weighted linear least squares and a 2nd degree polynomial model.
+% % method = 'sgolay';  % Savitzky-Golay filter. A generalized moving average with filter coefficients determined by an unweighted linear least-squares regression and a polynomial model of specified degree (default is 2). The method can accept nonuniform predictor data.
+% % method = 'rlowess'; % A robust version of 'lowess' that assigns lower weight to outliers in the regression. The method assigns zero weight to data outside six mean absolute deviations.
+% % method = 'rloess';  % A robust version of 'loess' that assigns lower weight to outliers in the regression. The method assigns zero weight to data outside six mean absolute deviations.
+% % smooth_data_ = smooth(data_, method);
+% if nargin < 2
+%     dim = 1;
+% end
+% if size(data_, 1) == 1
+%     smooth_data_ = reshape(smooth(data_, 21, 'sgolay', 2), 1, []);
+% elseif size(data_, 2) == 1
+%     smooth_data_ = reshape(smooth(data_, 21, 'sgolay', 2), [], 1);
+% else
+%     smooth_data_ = nan(size(data_));
+%     if dim == 1
+%         % smooth columns
+%         for counter_col = 1 : size(data_, 2)
+%             smooth_data_(:, counter_col) = reshape(smooth(data_(:, counter_col), 21, 'sgolay', 2), [], 1);
+%         end
+%     elseif dim == 2
+%         % smooth rows
+%         for counter_row = 1 : size(data_, 1)
+%             smooth_data_(counter_row, :) = reshape(smooth(data_(counter_row, :), 21, 'sgolay', 2), 1, []);
+%         end
+%     end
+%     
+% end
+% end
 
 %% function ESN_correlogram
-function Corr_data = ESN_correlogram(SS_time, CS_time)
-bin_size_time = 1e-3; % seconds
-span_window_size = (1 / bin_size_time) * (100 / 1000);
-span_window_size_half = round(span_window_size / 2);
-inds_span = ((-span_window_size_half+1) : 1 : (span_window_size_half))';
-
-if (~isempty(CS_time)) && (~isempty(SS_time))
-    ch_time_min = min([SS_time(1) CS_time(1)]);
-    ch_time_min = max([(ch_time_min-2.0) 0]);
-    ch_time_max = max([SS_time(end) CS_time(end)]) + 2.0;
-    
-    CH__.SS_data.SS_time =  SS_time - ch_time_min;
-    CH__.CS_data.CS_time =  CS_time - ch_time_min;
-    CH__.SS_data.SS_time = ESN_Round(CH__.SS_data.SS_time, bin_size_time);
-    CH__.CS_data.CS_time = ESN_Round(CH__.CS_data.CS_time, bin_size_time);
-    CH__.SS_data.SS_ind  = round(CH__.SS_data.SS_time .* (1/bin_size_time));
-    CH__.SS_data.SS_ind( CH__.SS_data.SS_ind < 1 ) = 1;
-    CH__.CS_data.CS_ind  = round(CH__.CS_data.CS_time .* (1/bin_size_time));
-    CH__.CS_data.CS_ind( CH__.CS_data.CS_ind < 1 ) = 1;
-    CH__.CH_data.ch_time_reconstruct = ch_time_min : bin_size_time : ch_time_max;
-elseif (~isempty(CS_time))
-    ch_time_min = min(  CS_time(1) );
-    ch_time_min = max([(ch_time_min-2.0) 0]);
-    ch_time_max = max(  CS_time(end) ) + 2.0;
-    
-    CH__.CS_data.CS_time =  CS_time - ch_time_min;
-    CH__.CS_data.CS_time = ESN_Round(CH__.CS_data.CS_time, bin_size_time);
-    CH__.CS_data.CS_ind  = round(CH__.CS_data.CS_time .* (1/bin_size_time));
-    CH__.CS_data.CS_ind( CH__.CS_data.CS_ind < 1 ) = 1;
-    CH__.CH_data.ch_time_reconstruct = ch_time_min : bin_size_time : ch_time_max;
-elseif (~isempty(SS_time))
-    ch_time_min = min( SS_time(1)  );
-    ch_time_min = max([(ch_time_min-2.0) 0]);
-    ch_time_max = max( SS_time(end)  ) + 2.0;
-    
-    CH__.SS_data.SS_time =  SS_time - ch_time_min;
-    CH__.SS_data.SS_time = ESN_Round(CH__.SS_data.SS_time, bin_size_time);
-    CH__.SS_data.SS_ind  = round(CH__.SS_data.SS_time .* (1/bin_size_time));
-    CH__.SS_data.SS_ind( CH__.SS_data.SS_ind < 1 ) = 1;
-    CH__.CH_data.ch_time_reconstruct = ch_time_min : bin_size_time : ch_time_max;
-end
-
-% SSxSS_AUTO
-if (~isempty(SS_time))
-    CH__.SS_data.SS_inds_reconstruct = repmat( CH__.SS_data.SS_ind(:), 1, length(inds_span)) + repmat(inds_span(:)', length(CH__.SS_data.SS_ind), 1);
-    CH__.SS_data.SS_inds_reconstruct( CH__.SS_data.SS_inds_reconstruct < 1 ) = 1;
-    CH__.SS_data.SS_inds_reconstruct( CH__.SS_data.SS_inds_reconstruct > length( CH__.CH_data.ch_time_reconstruct ) ) = length( CH__.CH_data.ch_time_reconstruct );
-    
-    CH__.SS_data.SS_event_trace = false( size(CH__.CH_data.ch_time_reconstruct) );
-    CH__.SS_data.SS_event_trace( CH__.SS_data.SS_ind ) = true ;
-    CH__.SS_data.SS_event_trace( 1   ) = false;
-    CH__.SS_data.SS_event_trace( end ) = false;
-    
-    CH__.SS_data.SS_event_reconstruct = CH__.SS_data.SS_event_trace( CH__.SS_data.SS_inds_reconstruct );
-    % SSxSS correlogram
-    SSxSS_AUTO       = CH__.SS_data.SS_event_reconstruct;
-    ss_inds_span     = repmat(inds_span(:)',     size(SS_time(:),1), 1);
-    ss_bin_size_time = repmat(bin_size_time(:)', size(SS_time(:),1), 1);
-else
-    SSxSS_AUTO       = false(0, length(inds_span(:)'));
-    ss_inds_span     = nan(0, length(inds_span(:)'));
-    ss_bin_size_time = nan(0, 1);
-end
-
-% CSxSS_WITHIN
-if (~isempty(CS_time)) && (~isempty(SS_time))
-    CH__.CS_data.CS_inds_reconstruct = repmat( CH__.CS_data.CS_ind(:), 1, length(inds_span)) + repmat(inds_span(:)', length(CH__.CS_data.CS_ind), 1);
-    CH__.CS_data.CS_inds_reconstruct( CH__.CS_data.CS_inds_reconstruct < 1 ) = 1;
-    CH__.CS_data.CS_inds_reconstruct( CH__.CS_data.CS_inds_reconstruct > length( CH__.CH_data.ch_time_reconstruct ) ) = length( CH__.CH_data.ch_time_reconstruct );
-    
-    CH__.SS_data.SS_event_trace = false( size(CH__.CH_data.ch_time_reconstruct) );
-    CH__.SS_data.SS_event_trace( CH__.SS_data.SS_ind ) = true ;
-    CH__.SS_data.SS_event_trace( 1   ) = false;
-    CH__.SS_data.SS_event_trace( end ) = false;
-    
-    CH__.SS_data.SS_event_reconstruct = CH__.SS_data.SS_event_trace( CH__.CS_data.CS_inds_reconstruct );
-    % CSxSS correlogram
-    CSxSS_AUTO       = CH__.SS_data.SS_event_reconstruct;
-    cs_inds_span     = repmat(inds_span(:)',     size(CS_time(:),1), 1);
-    cs_bin_size_time = repmat(bin_size_time(:)', size(CS_time(:),1), 1);
-else
-    CSxSS_AUTO       = false(0, length(inds_span(:)'));
-    cs_inds_span     = nan(0, length(inds_span(:)'));
-    cs_bin_size_time = nan(0, 1);
-end
-
-Corr_data = struct;
-Corr_data.CS_inds_span     = cs_inds_span;
-Corr_data.CS_bin_size_time = cs_bin_size_time;
-Corr_data.SS_inds_span     = ss_inds_span;
-Corr_data.SS_bin_size_time = ss_bin_size_time;
-Corr_data.SS_SSxSS_AUTO    = SSxSS_AUTO;
-Corr_data.CS_CSxSS_AUTO    = CSxSS_AUTO;
-end
+% function Corr_data = ESN_correlogram(SS_time, CS_time)
+% bin_size_time = 1e-3; % seconds
+% span_window_size = (1 / bin_size_time) * (100 / 1000);
+% span_window_size_half = round(span_window_size / 2);
+% inds_span = ((-span_window_size_half+1) : 1 : (span_window_size_half))';
+% 
+% if (~isempty(CS_time)) && (~isempty(SS_time))
+%     ch_time_min = min([SS_time(1) CS_time(1)]);
+%     ch_time_min = max([(ch_time_min-2.0) 0]);
+%     ch_time_max = max([SS_time(end) CS_time(end)]) + 2.0;
+%     
+%     CH__.SS_data.SS_time =  SS_time - ch_time_min;
+%     CH__.CS_data.CS_time =  CS_time - ch_time_min;
+%     CH__.SS_data.SS_time = ESN_Round(CH__.SS_data.SS_time, bin_size_time);
+%     CH__.CS_data.CS_time = ESN_Round(CH__.CS_data.CS_time, bin_size_time);
+%     CH__.SS_data.SS_ind  = round(CH__.SS_data.SS_time .* (1/bin_size_time));
+%     CH__.SS_data.SS_ind( CH__.SS_data.SS_ind < 1 ) = 1;
+%     CH__.CS_data.CS_ind  = round(CH__.CS_data.CS_time .* (1/bin_size_time));
+%     CH__.CS_data.CS_ind( CH__.CS_data.CS_ind < 1 ) = 1;
+%     CH__.CH_data.ch_time_reconstruct = ch_time_min : bin_size_time : ch_time_max;
+% elseif (~isempty(CS_time))
+%     ch_time_min = min(  CS_time(1) );
+%     ch_time_min = max([(ch_time_min-2.0) 0]);
+%     ch_time_max = max(  CS_time(end) ) + 2.0;
+%     
+%     CH__.CS_data.CS_time =  CS_time - ch_time_min;
+%     CH__.CS_data.CS_time = ESN_Round(CH__.CS_data.CS_time, bin_size_time);
+%     CH__.CS_data.CS_ind  = round(CH__.CS_data.CS_time .* (1/bin_size_time));
+%     CH__.CS_data.CS_ind( CH__.CS_data.CS_ind < 1 ) = 1;
+%     CH__.CH_data.ch_time_reconstruct = ch_time_min : bin_size_time : ch_time_max;
+% elseif (~isempty(SS_time))
+%     ch_time_min = min( SS_time(1)  );
+%     ch_time_min = max([(ch_time_min-2.0) 0]);
+%     ch_time_max = max( SS_time(end)  ) + 2.0;
+%     
+%     CH__.SS_data.SS_time =  SS_time - ch_time_min;
+%     CH__.SS_data.SS_time = ESN_Round(CH__.SS_data.SS_time, bin_size_time);
+%     CH__.SS_data.SS_ind  = round(CH__.SS_data.SS_time .* (1/bin_size_time));
+%     CH__.SS_data.SS_ind( CH__.SS_data.SS_ind < 1 ) = 1;
+%     CH__.CH_data.ch_time_reconstruct = ch_time_min : bin_size_time : ch_time_max;
+% end
+% 
+% % SSxSS_AUTO
+% if (~isempty(SS_time))
+%     CH__.SS_data.SS_inds_reconstruct = repmat( CH__.SS_data.SS_ind(:), 1, length(inds_span)) + repmat(inds_span(:)', length(CH__.SS_data.SS_ind), 1);
+%     CH__.SS_data.SS_inds_reconstruct( CH__.SS_data.SS_inds_reconstruct < 1 ) = 1;
+%     CH__.SS_data.SS_inds_reconstruct( CH__.SS_data.SS_inds_reconstruct > length( CH__.CH_data.ch_time_reconstruct ) ) = length( CH__.CH_data.ch_time_reconstruct );
+%     
+%     CH__.SS_data.SS_event_trace = false( size(CH__.CH_data.ch_time_reconstruct) );
+%     CH__.SS_data.SS_event_trace( CH__.SS_data.SS_ind ) = true ;
+%     CH__.SS_data.SS_event_trace( 1   ) = false;
+%     CH__.SS_data.SS_event_trace( end ) = false;
+%     
+%     CH__.SS_data.SS_event_reconstruct = CH__.SS_data.SS_event_trace( CH__.SS_data.SS_inds_reconstruct );
+%     % SSxSS correlogram
+%     SSxSS_AUTO       = CH__.SS_data.SS_event_reconstruct;
+%     ss_inds_span     = repmat(inds_span(:)',     size(SS_time(:),1), 1);
+%     ss_bin_size_time = repmat(bin_size_time(:)', size(SS_time(:),1), 1);
+% else
+%     SSxSS_AUTO       = false(0, length(inds_span(:)'));
+%     ss_inds_span     = nan(0, length(inds_span(:)'));
+%     ss_bin_size_time = nan(0, 1);
+% end
+% 
+% % CSxSS_WITHIN
+% if (~isempty(CS_time)) && (~isempty(SS_time))
+%     CH__.CS_data.CS_inds_reconstruct = repmat( CH__.CS_data.CS_ind(:), 1, length(inds_span)) + repmat(inds_span(:)', length(CH__.CS_data.CS_ind), 1);
+%     CH__.CS_data.CS_inds_reconstruct( CH__.CS_data.CS_inds_reconstruct < 1 ) = 1;
+%     CH__.CS_data.CS_inds_reconstruct( CH__.CS_data.CS_inds_reconstruct > length( CH__.CH_data.ch_time_reconstruct ) ) = length( CH__.CH_data.ch_time_reconstruct );
+%     
+%     CH__.SS_data.SS_event_trace = false( size(CH__.CH_data.ch_time_reconstruct) );
+%     CH__.SS_data.SS_event_trace( CH__.SS_data.SS_ind ) = true ;
+%     CH__.SS_data.SS_event_trace( 1   ) = false;
+%     CH__.SS_data.SS_event_trace( end ) = false;
+%     
+%     CH__.SS_data.SS_event_reconstruct = CH__.SS_data.SS_event_trace( CH__.CS_data.CS_inds_reconstruct );
+%     % CSxSS correlogram
+%     CSxSS_AUTO       = CH__.SS_data.SS_event_reconstruct;
+%     cs_inds_span     = repmat(inds_span(:)',     size(CS_time(:),1), 1);
+%     cs_bin_size_time = repmat(bin_size_time(:)', size(CS_time(:),1), 1);
+% else
+%     CSxSS_AUTO       = false(0, length(inds_span(:)'));
+%     cs_inds_span     = nan(0, length(inds_span(:)'));
+%     cs_bin_size_time = nan(0, 1);
+% end
+% 
+% Corr_data = struct;
+% Corr_data.CS_inds_span     = cs_inds_span;
+% Corr_data.CS_bin_size_time = cs_bin_size_time;
+% Corr_data.SS_inds_span     = ss_inds_span;
+% Corr_data.SS_bin_size_time = ss_bin_size_time;
+% Corr_data.SS_SSxSS_AUTO    = SSxSS_AUTO;
+% Corr_data.CS_CSxSS_AUTO    = CSxSS_AUTO;
+% end
 
 %% function RE-RUN ESN_monkey_behavior_all_saccades
 function re_run_ESN_monkey_behavior_all_saccades(pCell_list, path_data_monkey_sorted)
@@ -1425,33 +1428,39 @@ plot((nanmean((data_1+data_2)./2)), 'k')
 end
 
 
-%% function scratch_plot4
+%% function scratch_plot4, USED for MLMC, Permutation
 function scratch_plot4
 %%
 hFig = figure(4);
 clf(hFig)
 
-variable_name_category = 'nonTask';
-event_type = 'vmax';
+variable_name_category = 'toTgtStr';
+event_type = 'start';
 spike_type = 'SS';
+flag_cs_180_minus_cs_on = false;
 variable_name_spike    = [spike_type '_train_' event_type];
 variable_name_velocity = [spike_type '_velocity_' event_type];
 variable_name_num_sac  = [spike_type '_num_sac_' event_type];
 variable_name_firing   = [spike_type '_firing_rate'];
-ind_ang = 1;
+ind_ang = 5;
+ind_ang_cs_180 = 5;
 ind_amp = 2;
-range_ = 201:400;
-num_pCells = 110;
+range_ = 201:400; % range_ = 1:600; % 
+num_pCells = 110; % 55; % 
+idx_pCells = idx_burster; % 1:110; % idx_pauser; % 
 
 ALL_PCELL_DATA_1 = ALL_PCELL_all_saccades_tuned;
 
-num_sac = ALL_PCELL_DATA_1.(variable_name_category).(variable_name_num_sac){ind_amp, ind_ang};
-firing_rate = ALL_PCELL_all_saccades.Neural_Properties.(variable_name_firing);
-train_data = ALL_PCELL_DATA_1.(variable_name_category).(variable_name_spike){ind_amp, ind_ang}*1000;
+
+num_sac = ALL_PCELL_DATA_1.(variable_name_category).(variable_name_num_sac){ind_amp, ind_ang}(idx_pCells, :);
+firing_rate = ALL_PCELL_all_saccades.Neural_Properties.(variable_name_firing)(idx_pCells, :);
+train_data = ALL_PCELL_DATA_1.(variable_name_category).(variable_name_spike){ind_amp, ind_ang}(idx_pCells, :)*1000;
 train_data = train_data - repmat(firing_rate(:,1), 1, size(train_data, 2));
-num_sac_2 = ALL_PCELL_DATA_1.(variable_name_category).(variable_name_num_sac){ind_amp, 5};
-train_data_2 = ALL_PCELL_DATA_1.(variable_name_category).(variable_name_spike){ind_amp, 5}*1000;
+if flag_cs_180_minus_cs_on
+num_sac_2 = ALL_PCELL_DATA_1.(variable_name_category).(variable_name_num_sac){ind_amp, ind_ang_cs_180}(idx_pCells, :);
+train_data_2 = ALL_PCELL_DATA_1.(variable_name_category).(variable_name_spike){ind_amp, ind_ang_cs_180}(idx_pCells, :)*1000;
 train_data_2 = train_data_2 - repmat(firing_rate(:,1), 1, size(train_data_2, 2));
+end
 
 num_perm = 5000;
 num_samples = num_pCells ; % 50; % 
@@ -1465,12 +1474,14 @@ for counter_perm = 1 : num_perm
     firing_mean_ = num_sac_' * train_data_ ./ nansum(num_sac_);
     train_data_perm(counter_perm, :) = firing_mean_;
     
+    if flag_cs_180_minus_cs_on
     inds_perm_2 = inds_perm; % randi(num_pCells,[num_samples 1]); % 
     train_data_2_ = train_data_2(inds_perm_2, :);
     train_data_2_(isnan(train_data_2_)) = 0;
     num_sac_2_ = num_sac_2(inds_perm_2, 1);
     firing_mean_2_ = num_sac_2_' * train_data_2_ ./ nansum(num_sac_2_);
     train_data_perm(counter_perm, :) = firing_mean_ - firing_mean_2_;
+    end
     
 end
 data_mean = ESN_smooth( nanmean(train_data_perm, 1) );
@@ -1486,8 +1497,8 @@ plot(x_axis_data_stdv, (y_axis_data_stdv), 'k', 'LineWidth', 0.25)
 % plot((data_mean - data_stdv), 'k', 'LineWidth', 0.25)
 plot((data_mean), 'k', 'LineWidth', 1)
 % set(gca, 'XTick', 0:200:600)
-ylim([-20 30])
-% ylim([-1 1.5])
+ylim([-20 25])
+% ylim([-1 2.5])
 
 subplot(1, 2, 2)
 hold on
@@ -1504,46 +1515,152 @@ ESN_Beautify_Plot(hFig, [3 1.5])
 
 end
 
-%%
+%% function classify_pCells
 function classify_pCells
-%%
-data_ = ALL_PCELL_all_saccades_tuned_ang_amp.primSac.SS_train_start{1,1};
+%% Build pca and umap data
+data_ = ALL_PCELL_all_saccades_tuned_ang_amp.primSac.SS_train_start{1,1} * 1000;
 SS_baseline = mean(data_(:,151:250), 2);
-data_norm = data_ ./ repmat(SS_baseline, 1, size(data_, 2));
+data_norm = data_ - repmat(SS_baseline, 1, size(data_, 2));
 data_smooth = ESN_smooth(data_norm, 2);
 
 [~, pca_mat, ~] = pca(data_smooth(:,250:400));
 [reduction, umap, clusterIdentifiers, extras]=run_umap(data_smooth(:,250:400));
 
-hFig = figure(1);
-clf(hFig);
-subplot(1, 3, 1)
-plot(data_smooth')
-ylim([0 inf])
-subplot(1, 3, 2)
-plot(pca_mat(:, 1), pca_mat(:, 2), '.k')
-
-subplot(1, 3, 3)
-plot(reduction(:, 1), reduction(:, 2), '.k')
-%%
-label_1 = reduction(:, 1) < 9.5;
+%% Cluster Using UMAP
+data_gmm_ = [reduction(:, 1), reduction(:, 2)];
+n_component_gmm_ = 2;
+gmm_model_ = fitgmdist(data_gmm_,n_component_gmm_);
+idx = cluster(gmm_model_,data_gmm_);
+%% Plot UMAP
 hFig = figure(2);
 clf(hFig);
-subplot(1, 2, 1)
+subplot(2, 2, 1)
 hold on
-plot((-49:100)',data_smooth(label_1,251:400)', 'b')
-plot((-49:100)',data_smooth(~label_1,251:400)', 'r')
+plot((-49:100)',data_smooth(idx==1,251:400)', 'b')
+plot((-49:100)',nanmean(data_smooth(idx==1,251:400))', 'k', 'LineWidth', 2)
+plot((-49:100)',data_smooth(9,251:400)', 'm')
+plot((-49:100)',data_smooth(27,251:400)', 'c')
+
+subplot(2, 2, 3)
+hold on
+plot((-49:100)',data_smooth(idx==2,251:400)', 'r')
+plot((-49:100)',nanmean(data_smooth(idx==2,251:400))', 'k', 'LineWidth', 2)
+plot((-49:100)',data_smooth(106,251:400)', 'm')
+plot((-49:100)',data_smooth(23,251:400)', 'c')
 xlabel('Saccade onset (ms)')
 ylabel('Normalized SS firing rate')
-ylim([0 inf])
-
-subplot(1, 2, 2)
+% ylim([0 inf])
+MarkerSize_ = 3;
+subplot(2, 2, [2 4])
 hold on
-plot(reduction(label_1, 1), reduction(label_1, 2), 'ob')
-plot(reduction(~label_1, 1), reduction(~label_1, 2), 'or')
+plot(reduction(idx==1, 1), reduction(idx==1, 2), 'ob',...
+    'MarkerFaceColor', 'b', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
+plot(reduction(9, 1), reduction(9, 2), 'ob',...
+    'MarkerFaceColor', 'm', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
+plot(reduction(27, 1), reduction(27, 2), 'ob',...
+    'MarkerFaceColor', 'c', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
+plot(reduction(idx==2, 1), reduction(idx==2, 2), 'or', ...
+    'MarkerFaceColor', 'r', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
+plot(reduction(106, 1), reduction(106, 2), 'or',...
+    'MarkerFaceColor', 'm', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
+plot(reduction(23, 1), reduction(23, 2), 'or',...
+    'MarkerFaceColor', 'c', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
 xlabel('umap 1')
 ylabel('umap 2')
 
-ESN_Beautify_Plot
+ESN_Beautify_Plot(hFig, [4,2])
 
+%% Cluster Using PCA
+data_gmm_ = [pca_mat(:, 1), pca_mat(:, 2)];
+n_component_gmm_ = 2;
+gmm_model_ = fitgmdist(data_gmm_,n_component_gmm_);
+idx = cluster(gmm_model_,data_gmm_);
+%% Plot PCA
+hFig = figure(2);
+clf(hFig);
+subplot(2, 2, 1)
+hold on
+plot((-49:100)',data_smooth(idx==1,251:400)', 'b')
+plot((-49:100)',nanmean(data_smooth(idx==1,251:400))', 'k', 'LineWidth', 2)
+plot((-49:100)',data_smooth(9,251:400)', 'm')
+plot((-49:100)',data_smooth(27,251:400)', 'c')
+subplot(2, 2, 3)
+hold on
+plot((-49:100)',data_smooth(idx==2,251:400)', 'r')
+plot((-49:100)',nanmean(data_smooth(idx==2,251:400))', 'k', 'LineWidth', 2)
+plot((-49:100)',data_smooth(106,251:400)', 'm')
+plot((-49:100)',data_smooth(23,251:400)', 'c')
+xlabel('Saccade onset (ms)')
+ylabel('Normalized SS firing rate')
+% ylim([0 inf])
+MarkerSize_ = 3;
+subplot(2, 2, [2 4])
+hold on
+plot(pca_mat(idx==1, 1), pca_mat(idx==1, 2), 'ob',...
+    'MarkerFaceColor', 'b', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
+plot(pca_mat(9, 1), pca_mat(9, 2), 'ob',...
+    'MarkerFaceColor', 'm', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
+plot(pca_mat(27, 1), pca_mat(27, 2), 'ob',...
+    'MarkerFaceColor', 'c', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
+plot(pca_mat(idx==2, 1), pca_mat(idx==2, 2), 'or', ...
+    'MarkerFaceColor', 'r', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
+plot(pca_mat(106, 1), pca_mat(106, 2), 'or',...
+    'MarkerFaceColor', 'm', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
+plot(pca_mat(23, 1), pca_mat(23, 2), 'or',...
+    'MarkerFaceColor', 'c', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
+xlabel('pca 1')
+ylabel('pca 2')
+
+ESN_Beautify_Plot(hFig, [4,2])
+
+end
+
+%% function sample_pCells
+function sample_pCells
+%% 
+idx_cell_1 = 9;
+idx_cell_2 = 106;
+idx_cell_3 = 27;
+idx_cell_4 = 23;
+
+data_SS = ALL_PCELL_all_saccades_tuned_amp.primSac.SS_train_start{3,1} * 1000;
+SS_baseline = mean(data_SS(:,151:250), 2);
+data_SS = data_SS - repmat(SS_baseline, 1, size(data_SS, 2));
+data_vel = ALL_PCELL_all_saccades_tuned_amp.primSac.SS_velocity_start{3,1};
+data_SS_smooth = ESN_smooth(data_SS, 2);
+hFig = figure(2);
+clf(hFig);
+subplot(1, 4, 1)
+hold on
+plot((-49:100)',data_SS_smooth(idx_cell_1,251:400)', 'b')
+plot((-49:100)',data_SS_smooth(idx_cell_2,251:400)', 'r')
+ylim([-100 200])
+xlabel('Saccade onset (ms)')
+ylabel('SS firing rate (change, Hz)')
+
+subplot(1, 4, 3)
+hold on
+plot((-49:100)',data_SS_smooth(idx_cell_3,251:400)', 'b')
+plot((-49:100)',data_SS_smooth(idx_cell_4,251:400)', 'r')
+ylim([-100 200])
+xlabel('Saccade onset (ms)')
+ylabel('SS firing rate (change, Hz)')
+
+subplot(1, 4, 2)
+hold on
+plot((-49:100)',data_vel(idx_cell_1,251:400)', 'b')
+plot((-49:100)',data_vel(idx_cell_2,251:400)', 'r')
+ylim([0 600])
+xlabel('Saccade onset (ms)')
+ylabel('Eye velocity (deg/s)')
+
+subplot(1, 4, 4)
+hold on
+plot((-49:100)',data_vel(idx_cell_3,251:400)', 'b')
+plot((-49:100)',data_vel(idx_cell_4,251:400)', 'r')
+ylim([0 600])
+xlabel('Saccade onset (ms)')
+ylabel('Eye velocity (deg/s)')
+
+ESN_Beautify_Plot(hFig, [8,1.5])
 end

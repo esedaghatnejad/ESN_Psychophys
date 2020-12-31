@@ -1,16 +1,19 @@
-function ESN_Beautify_Plot(hFig, figure_size)
+function ESN_Beautify_Plot(hFig, figure_size, font_size)
 
-if nargin == 0
+if nargin < 1
     if	isempty(get(0,'currentfigure'))
         disp('ESN_Beautify_Plot :: ERROR, no figure');
         return;
     end
     hFig = gcf;
+end
+
+if nargin < 2
     figure_size  = [6.0 4.0];
 end
 
-if nargin == 1
-    figure_size  = [6.0 4.0];
+if nargin < 3
+    font_size = 12;
 end
 
 set(hFig, 'Color', [1 1 1]);
@@ -27,7 +30,6 @@ set(hFig, 'Renderer', 'painters');
 set(hFig, 'PaperOrientation', 'portrait');
 
 font_name = 'Arial'; % 'Courier New'; %
-font_size = 12;
 
 AxesChildren = findall(hFig, 'type', 'axes');
 for counter = 1 : 1 : length(AxesChildren)

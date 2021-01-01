@@ -29,6 +29,21 @@ if ~strcmp(file_path(end), filesep);file_path = [file_path filesep];end
 [file_name,file_path] = uigetfile([file_path file_name '_ANALYZED.mat'], 'Select _ANALYZED file');
 fprintf(['Loading ', file_name, ' ... ']);
 BEHAVE = load([file_path file_name]);
+
+if ~isfield(BEHAVE.SACS_ALL_DATA, 'is_all')
+    BEHAVE.SACS_ALL_DATA.is_all = BEHAVE.SACS_ALL_DATA.validity;
+end
+if ~isfield(BEHAVE.SACS_ALL_DATA, 'is_notLowAmp')
+    BEHAVE.SACS_ALL_DATA.is_notLowAmp = BEHAVE.SACS_ALL_DATA.validity;
+    BEHAVE.SACS_ALL_DATA.is_notLowAmp(BEHAVE.SACS_ALL_DATA.is_lowAmp) = false;
+    if ~isfield(BEHAVE.SACS_ALL_DATA, 'is_primSac')
+        BEHAVE.SACS_ALL_DATA.is_notLowAmp(BEHAVE.SACS_ALL_DATA.is_primSac) = false;
+    end
+    if ~isfield(BEHAVE.SACS_ALL_DATA, 'is_corrSac')
+        BEHAVE.SACS_ALL_DATA.is_notLowAmp(BEHAVE.SACS_ALL_DATA.is_corrSac) = false;
+    end
+end
+
 fprintf(' --> Completed. \n')
 
 %% build EPHYS.CH_sorted from DATA_PSORT
@@ -121,6 +136,12 @@ TRAIN_DATA.ang_edges = ang_edges;
 length_train_data_ = length(EPHYS.CH_EVE.EPHYS_time_1K);
 length_velocity_data_ = length(BEHAVE.aligned.time_1K);
 velocity_trace_data = BEHAVE.aligned.eye_r_vm_filt;
+event_sac_onset  = false(size(velocity_trace_data));
+event_sac_vmax   = false(size(velocity_trace_data));
+event_sac_offset = false(size(velocity_trace_data));
+event_sac_onset( BEHAVE.SACS_ALL_DATA.ind_start)  = true;
+event_sac_vmax(  BEHAVE.SACS_ALL_DATA.ind_vmax )  = true;
+event_sac_offset(BEHAVE.SACS_ALL_DATA.ind_finish) = true;
 
 ang_edges_last_bin_id = length(ang_edges) - 1;
 
@@ -158,12 +179,18 @@ for counter_spikeType = 1 : length(spikeType_list)
         ind_train    = ind_converted(is_variable_name & is_ang_bin & is_amp_bin);
         ind_velocity = ind_indType_name(is_variable_name & is_ang_bin & is_amp_bin);
         if isempty(ind_train)
-            train_data = zeros(0, length(inds_span));
-            velocity_data = zeros(0, length(inds_span));
+            train_data             = zeros(0, length(inds_span));
+            velocity_data          = zeros(0, length(inds_span));
+            event_sac_onset_local  = zeros(0, length(inds_span));
+            event_sac_vmax_local   = zeros(0, length(inds_span));
+            event_sac_offset_local = zeros(0, length(inds_span));
             num_saccades = 0;
-            TRAIN_DATA.(variable_name).([spikeType_name '_train_' indType_name]){counter_amp, counter_ang} = train_data;
-            TRAIN_DATA.(variable_name).([spikeType_name '_velocity_' indType_name]){counter_amp, counter_ang} = velocity_data;
-            TRAIN_DATA.(variable_name).([spikeType_name '_num_sac_' indType_name])(counter_amp, counter_ang) = num_saccades;
+            TRAIN_DATA.(variable_name).([spikeType_name '_train_'     indType_name]){counter_amp, counter_ang} = train_data;
+            TRAIN_DATA.(variable_name).([spikeType_name '_velocity_'  indType_name]){counter_amp, counter_ang} = velocity_data;
+            TRAIN_DATA.(variable_name).([spikeType_name '_sacOnset_'  indType_name]){counter_amp, counter_ang} = event_sac_onset_local;
+            TRAIN_DATA.(variable_name).([spikeType_name '_sacVmax_'   indType_name]){counter_amp, counter_ang} = event_sac_vmax_local;
+            TRAIN_DATA.(variable_name).([spikeType_name '_sacOffset_' indType_name]){counter_amp, counter_ang} = event_sac_offset_local;
+            TRAIN_DATA.(variable_name).([spikeType_name '_num_sac_'   indType_name])(counter_amp, counter_ang) = num_saccades;
             continue;
         end
         inds_train = repmat( ind_train(:), 1, length(inds_span)) + repmat(inds_span(:)', length(ind_train), 1);
@@ -175,18 +202,30 @@ for counter_spikeType = 1 : length(spikeType_list)
         if length(ind_train) == 1
             train_data = reshape( spike_train_data(inds_train) , 1, []);
             velocity_data = reshape( velocity_trace_data(inds_velocity) , 1, []);
+            event_sac_onset_local  = reshape( event_sac_onset( inds_velocity) , 1, []);
+            event_sac_vmax_local   = reshape( event_sac_vmax(  inds_velocity) , 1, []);
+            event_sac_offset_local = reshape( event_sac_offset(inds_velocity) , 1, []);
             num_saccades = length(ind_train);
-            TRAIN_DATA.(variable_name).([spikeType_name '_train_' indType_name]){counter_amp, counter_ang} = train_data;
-            TRAIN_DATA.(variable_name).([spikeType_name '_velocity_' indType_name]){counter_amp, counter_ang} = velocity_data;
-            TRAIN_DATA.(variable_name).([spikeType_name '_num_sac_' indType_name])(counter_amp, counter_ang) = num_saccades;
+            TRAIN_DATA.(variable_name).([spikeType_name '_train_'     indType_name]){counter_amp, counter_ang} = train_data;
+            TRAIN_DATA.(variable_name).([spikeType_name '_velocity_'  indType_name]){counter_amp, counter_ang} = velocity_data;
+            TRAIN_DATA.(variable_name).([spikeType_name '_sacOnset_'  indType_name]){counter_amp, counter_ang} = event_sac_onset_local;
+            TRAIN_DATA.(variable_name).([spikeType_name '_sacVmax_'   indType_name]){counter_amp, counter_ang} = event_sac_vmax_local;
+            TRAIN_DATA.(variable_name).([spikeType_name '_sacOffset_' indType_name]){counter_amp, counter_ang} = event_sac_offset_local;
+            TRAIN_DATA.(variable_name).([spikeType_name '_num_sac_'   indType_name])(counter_amp, counter_ang) = num_saccades;
             continue;
         end
         train_data = spike_train_data(inds_train);
         velocity_data = velocity_trace_data(inds_velocity);
+        event_sac_onset_local  = event_sac_onset(inds_velocity);
+        event_sac_vmax_local   = event_sac_vmax(inds_velocity);
+        event_sac_offset_local = event_sac_offset(inds_velocity);
         num_saccades = length(ind_train);
-        TRAIN_DATA.(variable_name).([spikeType_name '_train_' indType_name]){counter_amp, counter_ang} = train_data;
-        TRAIN_DATA.(variable_name).([spikeType_name '_velocity_' indType_name]){counter_amp, counter_ang} = velocity_data;
-        TRAIN_DATA.(variable_name).([spikeType_name '_num_sac_' indType_name])(counter_amp, counter_ang) = num_saccades;
+        TRAIN_DATA.(variable_name).([spikeType_name '_train_'     indType_name]){counter_amp, counter_ang} = train_data;
+        TRAIN_DATA.(variable_name).([spikeType_name '_velocity_'  indType_name]){counter_amp, counter_ang} = velocity_data;
+        TRAIN_DATA.(variable_name).([spikeType_name '_sacOnset_'  indType_name]){counter_amp, counter_ang} = event_sac_onset_local;
+        TRAIN_DATA.(variable_name).([spikeType_name '_sacVmax_'   indType_name]){counter_amp, counter_ang} = event_sac_vmax_local;
+        TRAIN_DATA.(variable_name).([spikeType_name '_sacOffset_' indType_name]){counter_amp, counter_ang} = event_sac_offset_local;
+        TRAIN_DATA.(variable_name).([spikeType_name '_num_sac_'   indType_name])(counter_amp, counter_ang) = num_saccades;
     end
     end
 end
@@ -367,21 +406,35 @@ subplot_fig_num = [4, 7, 8, 9, 6, 3, 2, 1];
 
 range_SS_Firing = [0 200];
 % range_vm        = [0 600];
-Line_Color = lines(7);
-color_SS = Line_Color(1,:);
-color_SS_firing = [0    0.3    0.5];
-color_CS = Line_Color(7,:);
+Line_Color      = lines(7);
+color_SS        = Line_Color(1,:);
+color_SS_firing = [0.0  0.3  0.5];
+color_velocity  = [0.0  0.5  0.5];
+color_CS        = Line_Color(7,:);
+color_sacOnset  = Line_Color(4,:);
+color_sacVmax   = Line_Color(5,:);
+color_sacOffset = Line_Color(2,:);
 fig_handle_(fig_num_) = figure(fig_num_);
 clf(fig_handle_(fig_num_))
 
 for counter_ang = 1 : 1 : num_ang_bin
 subplot(3,3,subplot_fig_num(counter_ang))
 hold on
-train_data_logic_SS_ = TRAIN_DATA_ang.(variable_name).(['SS' '_train_' indType_name]){1, counter_ang};
-train_data_logic_CS_ = TRAIN_DATA_ang.(variable_name).(['CS' '_train_' indType_name]){1, counter_ang};
+train_data_logic_SS_        = TRAIN_DATA_ang.(variable_name).(['SS' '_train_'     indType_name]){1, counter_ang};
+train_data_logic_CS_        = TRAIN_DATA_ang.(variable_name).(['CS' '_train_'     indType_name]){1, counter_ang};
+train_data_logic_sacOnset_  = TRAIN_DATA_ang.(variable_name).(['SS' '_sacOnset_'  indType_name]){1, counter_ang};
+train_data_logic_sacVmax_   = TRAIN_DATA_ang.(variable_name).(['SS' '_sacVmax_'   indType_name]){1, counter_ang};
+train_data_logic_sacOffset_ = TRAIN_DATA_ang.(variable_name).(['SS' '_sacOffset_' indType_name]){1, counter_ang};
+velocity_data_              = TRAIN_DATA_ang.(variable_name).(['SS' '_velocity_'  indType_name]){1, counter_ang};
 
 [x_axis_SS_, y_axis_SS_] = ESN_raster_plot_axes(train_data_logic_SS_, inds_span, 0.5);
 plot(x_axis_SS_(:), y_axis_SS_(:), 'LineWidth', 1, 'Color', color_SS)
+[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_sacOnset_, inds_span, 0.5);
+plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_sacOnset)
+[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_sacVmax_, inds_span, 0.5);
+plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_sacVmax)
+[x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_sacOffset_, inds_span, 0.5);
+plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 2, 'Color', color_sacOffset)
 [x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_CS_, inds_span, 1);
 plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 3, 'Color', color_CS)
 
@@ -390,8 +443,11 @@ ylim([(1-3) (size(train_data_logic_CS_,1)+3)])
 % ylabel('Trials')
 
 yyaxis right;
-firing_SS_ = mean(train_data_logic_SS_) * 1000;
-plot(inds_span, ESN_smooth(firing_SS_), 'LineWidth', 2, 'Color', color_SS_firing)
+hold on
+firing_SS_ = nanmean(train_data_logic_SS_) * 1000;
+velocity_trace_ = nanmean(velocity_data_) ./ 3;
+plot(inds_span, ESN_smooth(firing_SS_), '-','LineWidth', 2, 'Color', color_SS_firing)
+plot(inds_span, velocity_trace_,        '-','LineWidth', 1, 'Color', color_velocity)
 ylabel('SS Firing (spk/s)')
 ylim(range_SS_Firing)
 set(gca, 'YColor', color_SS_firing)
@@ -476,7 +532,7 @@ clearvars TRAIN_DATA_ang
 variable_list = {'notLowAmp', 'lowAmp', 'all'};
 indType_list = {'start', 'vmax', 'finish'};
 spikeType_list = {'SS', 'CS'};
-num_pCells = size(TRAIN_DATA.all.SS_train_start{1,1}, 1);
+% num_pCells = size(TRAIN_DATA.all.SS_train_start{1,1}, 1);
 span_width = size(TRAIN_DATA.all.SS_train_start{1,1}, 2);
 for counter_variable  = 1 : length(variable_list)
 for counter_indType   = 1 : length(indType_list)
@@ -488,20 +544,32 @@ for counter_spikeType = 1 : length(spikeType_list)
     num_ang_bin = size(TRAIN_DATA.(variable_name).([spikeType_name '_train_' indType_name]),2);
     
     for counter_ang = 1 : num_ang_bin
-        train_data_all_ang = zeros(0, span_width);
-        velocity_data_all_ang = zeros(0, span_width);
+        train_data_all_ang       = zeros(0, span_width);
+        velocity_data_all_ang    = zeros(0, span_width);
+        event_sac_onset_all_ang  = zeros(0, span_width);
+        event_sac_vmax_all_ang   = zeros(0, span_width);
+        event_sac_offset_all_ang = zeros(0, span_width);
         num_saccades_all_ang = 0;
         for counter_amp = 1 : num_amp_bin
-            train_data = TRAIN_DATA.(variable_name).([spikeType_name '_train_' indType_name]){counter_amp, counter_ang};
-            velocity_data = TRAIN_DATA.(variable_name).([spikeType_name '_velocity_' indType_name]){counter_amp, counter_ang};
+            train_data             = TRAIN_DATA.(variable_name).([spikeType_name '_train_'     indType_name]){counter_amp, counter_ang};
+            velocity_data          = TRAIN_DATA.(variable_name).([spikeType_name '_velocity_'  indType_name]){counter_amp, counter_ang};
+            event_sac_onset_local  = TRAIN_DATA.(variable_name).([spikeType_name '_sacOnset_'  indType_name]){counter_amp, counter_ang};
+            event_sac_vmax_local   = TRAIN_DATA.(variable_name).([spikeType_name '_sacVmax_'   indType_name]){counter_amp, counter_ang};
+            event_sac_offset_local = TRAIN_DATA.(variable_name).([spikeType_name '_sacOffset_' indType_name]){counter_amp, counter_ang};
             num_saccades = TRAIN_DATA.(variable_name).([spikeType_name '_num_sac_' indType_name])(counter_amp, counter_ang);
-            train_data_all_ang = vertcat(train_data_all_ang, train_data);
-            velocity_data_all_ang = vertcat(velocity_data_all_ang, velocity_data);
+            train_data_all_ang       = vertcat(train_data_all_ang,       train_data);
+            velocity_data_all_ang    = vertcat(velocity_data_all_ang,    velocity_data);
+            event_sac_onset_all_ang  = vertcat(event_sac_onset_all_ang,  event_sac_onset_local);
+            event_sac_vmax_all_ang   = vertcat(event_sac_vmax_all_ang,   event_sac_vmax_local);
+            event_sac_offset_all_ang = vertcat(event_sac_offset_all_ang, event_sac_offset_local);
             num_saccades_all_ang = num_saccades_all_ang + num_saccades;
         end
-        TRAIN_DATA_ang.(variable_name).([spikeType_name '_train_' indType_name]){1, counter_ang} = train_data_all_ang;
-        TRAIN_DATA_ang.(variable_name).([spikeType_name '_velocity_' indType_name]){1, counter_ang} = velocity_data_all_ang;
-        TRAIN_DATA_ang.(variable_name).([spikeType_name '_num_sac_' indType_name]){1, counter_ang} = num_saccades_all_ang;
+        TRAIN_DATA_ang.(variable_name).([spikeType_name '_train_'     indType_name]){1, counter_ang} = train_data_all_ang;
+        TRAIN_DATA_ang.(variable_name).([spikeType_name '_velocity_'  indType_name]){1, counter_ang} = velocity_data_all_ang;
+        TRAIN_DATA_ang.(variable_name).([spikeType_name '_sacOnset_'  indType_name]){1, counter_ang} = event_sac_onset_all_ang;
+        TRAIN_DATA_ang.(variable_name).([spikeType_name '_sacVmax_'   indType_name]){1, counter_ang} = event_sac_vmax_all_ang;
+        TRAIN_DATA_ang.(variable_name).([spikeType_name '_sacOffset_' indType_name]){1, counter_ang} = event_sac_offset_all_ang;
+        TRAIN_DATA_ang.(variable_name).([spikeType_name '_num_sac_'   indType_name]){1, counter_ang} = num_saccades_all_ang;
     end
 end
 end

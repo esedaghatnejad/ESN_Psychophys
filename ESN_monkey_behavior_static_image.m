@@ -239,6 +239,8 @@ BEHAVE.SACS_ALL_DATA.is_lowAmp       = (BEHAVE.SACS_ALL_DATA.eye_r_amp_m < 2.0);
 BEHAVE.SACS_ALL_DATA.is_toTgtStr     = (distance_eye_to_tgtStr_finish < 2.0);
 BEHAVE.SACS_ALL_DATA.is_fromCenter   = (distance_eye_to_tgtStr_start < 2.0);
 BEHAVE.SACS_ALL_DATA.is_aroundCenter = (distance_eye_to_tgtStr_start < 2.0) & (distance_eye_to_tgtStr_finish < 2.0);
+BEHAVE.SACS_ALL_DATA.is_all          = BEHAVE.SACS_ALL_DATA.validity;
+BEHAVE.SACS_ALL_DATA.is_notLowAmp    = BEHAVE.SACS_ALL_DATA.validity;
 
 BEHAVE.SACS_ALL_DATA.is_aroundCenter = BEHAVE.SACS_ALL_DATA.is_aroundCenter | BEHAVE.SACS_ALL_DATA.is_lowAmp;
 BEHAVE.SACS_ALL_DATA.is_toTgtStr = BEHAVE.SACS_ALL_DATA.is_toTgtStr & BEHAVE.SACS_ALL_DATA.is_toTgt;
@@ -269,6 +271,8 @@ BEHAVE.SACS_ALL_DATA.is_toTgt(BEHAVE.SACS_ALL_DATA.is_aroundCenter) = false;
 BEHAVE.SACS_ALL_DATA.is_fromTgt(BEHAVE.SACS_ALL_DATA.is_aroundCenter) = false;
 BEHAVE.SACS_ALL_DATA.is_toTgtStr(BEHAVE.SACS_ALL_DATA.is_aroundCenter) = false;
 BEHAVE.SACS_ALL_DATA.is_fromCenter(BEHAVE.SACS_ALL_DATA.is_aroundCenter) = false;
+
+BEHAVE.SACS_ALL_DATA.is_notLowAmp(BEHAVE.SACS_ALL_DATA.is_lowAmp) = false;
 
 fprintf(' --> Completed. \n')
 

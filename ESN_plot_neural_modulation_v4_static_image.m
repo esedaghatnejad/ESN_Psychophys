@@ -131,9 +131,7 @@ ang_bin(ang_bin == ang_edges_last_bin_id) = 1;
 num_amp_bin = length(amp_edges) - 1;
 num_ang_bin = length(ang_edges) - 2;
 
-BEHAVE.SACS_ALL_DATA.is_all = BEHAVE.SACS_ALL_DATA.validity;
-
-variable_list = {'lowAmp', 'all'};
+variable_list = {'notLowAmp', 'lowAmp', 'all'};
 indType_list = {'start', 'vmax', 'finish'};
 spikeType_list = {'SS', 'CS'};
 
@@ -360,7 +358,7 @@ sgtitle(fig_handle_(fig_num_), Neural_Properties_data.file_name, 'Interpreter', 
 
 %% Plot-2 SS & CS train primSac_onset 
 fig_num_ = 2;
-variable_name  = 'all';
+variable_name  = 'notLowAmp';
 % spikeType_name = 'SS';
 indType_name   = 'start';
 num_ang_bin = 8;
@@ -462,7 +460,7 @@ numCS = length(EPHYS.CH_sorted.CS_data.CS_ind);
 freqCS = numCS/duration;
 numSS = length(EPHYS.CH_sorted.SS_data.SS_ind);
 freqSS = numSS/duration;
-numSac = sum(BEHAVE.SACS_ALL_DATA.validity);
+numSac = sum(BEHAVE.SACS_ALL_DATA.is_notLowAmp);
 fprintf(['*******************************************' '\n'])
 fprintf([file_name '\n'])
 fprintf([       'dur'   '\t'        'numCS'   '\t'        'freqCS'   '\t'        'numSS'   '\t'        'freqSS'   '\t'        'numSac'   '\n'])
@@ -475,7 +473,7 @@ function TRAIN_DATA_ang = avg_over_amplitude(TRAIN_DATA)
 %% Loop over pCells
 fprintf(['Building TRAIN_DATA_ang', ' ... ']);
 clearvars TRAIN_DATA_ang
-variable_list = {'lowAmp', 'all'};
+variable_list = {'notLowAmp', 'lowAmp', 'all'};
 indType_list = {'start', 'vmax', 'finish'};
 spikeType_list = {'SS', 'CS'};
 num_pCells = size(TRAIN_DATA.all.SS_train_start{1,1}, 1);

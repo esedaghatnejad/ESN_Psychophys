@@ -24,6 +24,7 @@ end
 % Last slot or slot N+2 is the most important one. This where the topLevel
 % data is stored
 psortDataBase = struct;
+warning('off','MATLAB:imagesci:deprecatedHDF5:warnBitfieldNotSupported')
 file_info = hdf5info(file_fullPath);
 file_info = file_info.GroupHierarchy;
 

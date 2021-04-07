@@ -1,4 +1,4 @@
-function ESN_monkey_behavior(mat_file_address)
+function ESN_monkey_behavior_sac_sorter(mat_file_address)
 %% Get file_name and file_path
 if nargin > 1
     fprintf('ERROR in ESN_monkey_behavior: incorrect input format.\n');
@@ -22,7 +22,7 @@ EXPERIMENT_PARAMS.mat_PathName = file_path;
 
 %% Load Data
 fprintf('Loading ...\n')
-clearvars -except EXPERIMENT_PARAMS TRIALS_DATA_ALL SACS_PRIM_DATA_ALL SACS_CORR_DATA_ALL;
+clearvars -except EXPERIMENT_PARAMS TRIALS_DATA_ALL;
 filename = EXPERIMENT_PARAMS.mat_FileName;
 pathname = EXPERIMENT_PARAMS.mat_PathName;
 load([pathname filename], 'data');
@@ -32,14 +32,14 @@ EXPERIMENT_PARAMS.folder_name = foldername;
 EXPERIMENT_PARAMS.num_trials  = length(data.trials);
 
 %% Analyze trials
-clearvars -except EXPERIMENT_PARAMS TRIALS_DATA_ALL SACS_PRIM_DATA_ALL SACS_CORR_DATA_ALL data;
+clearvars -except EXPERIMENT_PARAMS TRIALS_DATA_ALL data;
 num_trials = length(data.trials);
 fprintf([EXPERIMENT_PARAMS.file_name ': Analyzing TRIALS ...'])
 for counter_trial = 1 : 1 : num_trials-1
     %% Extract Trial Varibales
     clearvars -except EXPERIMENT_PARAMS ...
-        TRIALS_DATA_ALL SACS_PRIM_DATA_ALL SACS_CORR_DATA_ALL ...
-        TRIALS SACS_PRIM SACS_CORR data counter_trial;
+        TRIALS_DATA_ALL ...
+        TRIALS data counter_trial;
     if ~exist('counter_trial','var'); counter_trial = 1; end;
     % get trial struct
     trial_struct = data.trials{1, counter_trial};
@@ -158,139 +158,10 @@ for counter_trial = 1 : 1 : num_trials-1
     TRIAL.ind_state_iti            = find(TRIAL.time>TRIAL.time_state_iti(end), 1, 'first');
     TRIAL.ind_state_next_trial     = find(TRIAL.time>TRIAL.time_state_next_trial(end), 1, 'first');
     
-    %% Extract Primary Sac
-    clearvars -except EXPERIMENT_PARAMS ...
-        TRIALS_DATA_ALL SACS_PRIM_DATA_ALL SACS_CORR_DATA_ALL ...
-        TRIALS SACS_PRIM SACS_CORR data counter_trial ...
-        TRIAL SAC_PRIM SAC_CORR
-    
-    trial_eye_velocity_trace        = TRIAL.eye_r_vm_filt;
-    ind_search_begin_sac_prim       = TRIAL.ind_state_cue_present;
-    ind_search_end_sac_prim         = TRIAL.ind_state_end_fixation + 50;
-    
-    params_prim.MinPeakHeight       = 150.0; % deg/s
-    params_prim.MinPeakProminence   = 100; % data points
-    params_prim.rough_threshold     = 50.0; % deg/s
-    params_prim.fine_threshold      = 20.0; % deg/s
-    params_prim.sampling_freq       = 1000.0; % Hz
-    params_prim.cutoff_freq         = 50.0; % Hz
-    params_prim.window_half_length  = 4; % data points
-    params_prim.prominence_or_first = 'prominent'; % which peak to select, 'prominent' or 'first'
-    
-    output_ = ESN_Sac_Finder(trial_eye_velocity_trace, ...
-        ind_search_begin_sac_prim, ind_search_end_sac_prim, params_prim);
-    
-    validity_sac_prim   = output_.validity;
-    inds_sac_prim       = output_.inds;
-    ind_sac_prim_start  = output_.ind_start;
-    ind_sac_prim_vmax   = output_.ind_vmax;
-    ind_sac_prim_finish = output_.ind_finish;
-    
-    %% Save Primary Sac data to SAC_PRIM
-    SAC_PRIM.validity                  = validity_sac_prim;
-    SAC_PRIM.inds                      = inds_sac_prim;
-    SAC_PRIM.ind_start                 = ind_sac_prim_start;
-    SAC_PRIM.ind_vmax                  = ind_sac_prim_vmax;
-    SAC_PRIM.ind_finish                = ind_sac_prim_finish;
-    
-    SAC_PRIM.time                      = TRIAL.time_1K( SAC_PRIM.inds);
-    SAC_PRIM.eye_r_px                  = TRIAL.eye_r_px(SAC_PRIM.inds);
-    SAC_PRIM.eye_r_py                  = TRIAL.eye_r_py(SAC_PRIM.inds);
-    SAC_PRIM.eye_r_vx                  = TRIAL.eye_r_vx(SAC_PRIM.inds);
-    SAC_PRIM.eye_r_vy                  = TRIAL.eye_r_vy(SAC_PRIM.inds);
-    SAC_PRIM.eye_r_vm                  = TRIAL.eye_r_vm(SAC_PRIM.inds);
-    SAC_PRIM.eye_r_vm_max              = TRIAL.eye_r_vm(SAC_PRIM.ind_vmax);
-    SAC_PRIM.eye_r_px_centered         = SAC_PRIM.eye_r_px - TRIAL.start_x;
-    SAC_PRIM.eye_r_py_centered         = SAC_PRIM.eye_r_py - TRIAL.start_y;
-    
-    SAC_PRIM.eye_r_px_start            = TRIAL.eye_r_px(SAC_PRIM.ind_start);
-    SAC_PRIM.eye_r_px_finish           = TRIAL.eye_r_px(SAC_PRIM.ind_finish);
-    SAC_PRIM.eye_r_py_start            = TRIAL.eye_r_py(SAC_PRIM.ind_start);
-    SAC_PRIM.eye_r_py_finish           = TRIAL.eye_r_py(SAC_PRIM.ind_finish);
-    SAC_PRIM.eye_r_px_start_centered   = SAC_PRIM.eye_r_px_start  - TRIAL.start_x;
-    SAC_PRIM.eye_r_px_finish_centered  = SAC_PRIM.eye_r_px_finish - TRIAL.start_x;
-    SAC_PRIM.eye_r_py_start_centered   = SAC_PRIM.eye_r_py_start  - TRIAL.start_y;
-    SAC_PRIM.eye_r_py_finish_centered  = SAC_PRIM.eye_r_py_finish - TRIAL.start_y;
-    SAC_PRIM.eye_r_amp_x               = (SAC_PRIM.eye_r_px_finish - SAC_PRIM.eye_r_px_start);
-    SAC_PRIM.eye_r_amp_y               = (SAC_PRIM.eye_r_py_finish - SAC_PRIM.eye_r_py_start);
-    SAC_PRIM.eye_r_amp_m               = (sqrt(SAC_PRIM.eye_r_amp_x^2+SAC_PRIM.eye_r_amp_y^2));
-    SAC_PRIM.reaction                  = SAC_PRIM.ind_start - TRIAL.ind_state_cue_present;
-    
-    %% Extract Corrective Sac
-    clearvars -except counter_file EXPERIMENT_PARAMS ...
-        TRIALS_DATA_ALL SACS_PRIM_DATA_ALL SACS_CORR_DATA_ALL ...
-        TRIALS SACS_PRIM SACS_CORR data counter_trial ...
-        TRIAL SAC_PRIM SAC_CORR
-    
-    trial_eye_velocity_trace       = TRIAL.eye_r_vm_filt;
-    ind_search_begin_sac_corr      = SAC_PRIM.ind_finish + 20;
-    ind_search_end_sac_corr        = TRIAL.ind_state_iti;
-    
-    params_corr.MinPeakHeight      = 110.0; % deg/s
-    params_corr.MinPeakProminence  = 80; % data points
-    params_corr.rough_threshold    = 50.0; % deg/s
-    params_corr.fine_threshold     = 20.0; % deg/s
-    params_corr.sampling_freq      = 1000.0; % Hz
-    params_corr.cutoff_freq        = 75.0; % Hz
-    params_corr.window_half_length = 4; % data points
-    params_corr.prominence_or_first = 'first'; % which peak to select, 'prominent' or 'first'
-    
-    output_ = ESN_Sac_Finder(trial_eye_velocity_trace, ...
-        ind_search_begin_sac_corr, ind_search_end_sac_corr, params_corr);
-    
-    validity_sac_corr   = output_.validity;
-    inds_sac_corr       = output_.inds;
-    ind_sac_corr_start  = output_.ind_start;
-    ind_sac_corr_vmax   = output_.ind_vmax;
-    ind_sac_corr_finish = output_.ind_finish;
-    
-    %% Save Corrective Sac data to SAC_CORR
-    SAC_CORR.validity                  = validity_sac_corr;
-    SAC_CORR.inds                      = inds_sac_corr;
-    SAC_CORR.ind_start                 = ind_sac_corr_start;
-    SAC_CORR.ind_vmax                  = ind_sac_corr_vmax;
-    SAC_CORR.ind_finish                = ind_sac_corr_finish;
-    
-    SAC_CORR.time                      = TRIAL.time_1K( SAC_CORR.inds);
-    SAC_CORR.eye_r_px                  = TRIAL.eye_r_px(SAC_CORR.inds);
-    SAC_CORR.eye_r_py                  = TRIAL.eye_r_py(SAC_CORR.inds);
-    SAC_CORR.eye_r_vx                  = TRIAL.eye_r_vx(SAC_CORR.inds);
-    SAC_CORR.eye_r_vy                  = TRIAL.eye_r_vy(SAC_CORR.inds);
-    SAC_CORR.eye_r_vm                  = TRIAL.eye_r_vm(SAC_CORR.inds);
-    SAC_CORR.eye_r_vm_max              = TRIAL.eye_r_vm(SAC_CORR.ind_vmax);
-    SAC_CORR.eye_r_px_centered         = SAC_CORR.eye_r_px - TRIAL.start_x;
-    SAC_CORR.eye_r_py_centered         = SAC_CORR.eye_r_py - TRIAL.start_y;
-    
-    SAC_CORR.eye_r_px_start            = TRIAL.eye_r_px(SAC_CORR.ind_start);
-    SAC_CORR.eye_r_px_finish           = TRIAL.eye_r_px(SAC_CORR.ind_finish);
-    SAC_CORR.eye_r_py_start            = TRIAL.eye_r_py(SAC_CORR.ind_start);
-    SAC_CORR.eye_r_py_finish           = TRIAL.eye_r_py(SAC_CORR.ind_finish);
-    SAC_CORR.eye_r_px_start_centered   = SAC_CORR.eye_r_px_start  - TRIAL.start_x;
-    SAC_CORR.eye_r_px_finish_centered  = SAC_CORR.eye_r_px_finish - TRIAL.start_x;
-    SAC_CORR.eye_r_py_start_centered   = SAC_CORR.eye_r_py_start  - TRIAL.start_y;
-    SAC_CORR.eye_r_py_finish_centered  = SAC_CORR.eye_r_py_finish - TRIAL.start_y;
-    SAC_CORR.eye_r_amp_x               = (SAC_CORR.eye_r_px_finish - SAC_CORR.eye_r_px_start);
-    SAC_CORR.eye_r_amp_y               = (SAC_CORR.eye_r_py_finish - SAC_CORR.eye_r_py_start);
-    SAC_CORR.eye_r_amp_m               = (sqrt(SAC_CORR.eye_r_amp_x^2+SAC_CORR.eye_r_amp_y^2));
-    SAC_CORR.reaction                  = SAC_CORR.ind_start - SAC_PRIM.ind_finish;
-    
-    %% Compute the start position Bias
-    inds_start_fixation = TRIAL.ind_state_cue_present - round(TRIAL.time_fixation * 1000) : 1 : TRIAL.ind_state_cue_present;
-    state_start_eye_r_px_start_fixation = TRIAL.eye_l_px_filt(inds_start_fixation);
-    state_start_eye_r_py_start_fixation = TRIAL.eye_l_py_filt(inds_start_fixation);
-    tgt_start_x = TRIAL.start_x;
-    tgt_start_y = TRIAL.start_y;
-    start_x_bias = mean(state_start_eye_r_px_start_fixation) - tgt_start_x;
-    start_y_bias = mean(state_start_eye_r_py_start_fixation) - tgt_start_y;
-    TRIAL.start_x_bias = start_x_bias;
-    TRIAL.start_y_bias = start_y_bias;
-    
-    %% Build TRIALS, SACS_PRIM, SACS_CORR
+    %% Build TRIALS
     TRIALS(counter_trial) = TRIAL;
-    SACS_PRIM(counter_trial) = SAC_PRIM;
-    SACS_CORR(counter_trial) = SAC_CORR;
     
-    % print a dot every 20 trials
+    %% print a dot every 20 trials
     if rem(counter_trial, 20) == 0
         fprintf('.');
     end
@@ -300,9 +171,9 @@ fprintf(' --> Completed. \n')
 
 %% Arrange 'TRIALS_DATA'
 clearvars -except EXPERIMENT_PARAMS ...
-    TRIALS_DATA_ALL SACS_PRIM_DATA_ALL SACS_CORR_DATA_ALL ...
-    TRIALS SACS_PRIM SACS_CORR ...
-    TRIALS_DATA SACS_PRIM_DATA SACS_CORR_DATA
+    TRIALS_DATA_ALL ...
+    TRIALS ...
+    TRIALS_DATA 
 fprintf([EXPERIMENT_PARAMS.file_name ': Arranging TRIALS_DATA ...'])
 clearvars('TRIALS_DATA'); TRIALS_DATA = struct;
 field_names_TRIALS = fieldnames(TRIALS);
@@ -356,53 +227,13 @@ for counter_fields = 1 : 1 : length(field_names_TRIALS)
 end
 fprintf(' --> Completed. \n')
 
-%% Arrange 'SACS_PRIM_DATA'
-clearvars -except EXPERIMENT_PARAMS ...
-    TRIALS_DATA_ALL SACS_PRIM_DATA_ALL SACS_CORR_DATA_ALL ...
-    TRIALS SACS_PRIM SACS_CORR ...
-    TRIALS_DATA SACS_PRIM_DATA SACS_CORR_DATA
-fprintf([EXPERIMENT_PARAMS.file_name ': Arranging SACS_PRIM_DATA ...'])
-clearvars('SACS_PRIM_DATA'); SACS_PRIM_DATA = struct;
-field_names_SACS_PRIM_DATA = fieldnames(SACS_PRIM);
-SACS_PRIM_DATA_cell = struct2cell(SACS_PRIM);
-for counter_fields = 1 : 1 : length(field_names_SACS_PRIM_DATA)
-    SACS_PRIM_DATA_field_cell = SACS_PRIM_DATA_cell(counter_fields,:,:);
-    SACS_PRIM_DATA_field_cell = reshape(SACS_PRIM_DATA_field_cell, 1, []);
-    nz = max(cellfun(@numel,SACS_PRIM_DATA_field_cell));
-    SACS_PRIM_DATA_field_mat = cell2mat(cellfun(@(x) vertcat(double(x(:)),NaN(nz-numel(x), 1)),SACS_PRIM_DATA_field_cell,'uni',false));
-    SACS_PRIM_DATA.(field_names_SACS_PRIM_DATA{counter_fields}) = SACS_PRIM_DATA_field_mat;
-end
-SACS_PRIM_DATA.validity  = logical(SACS_PRIM_DATA.validity);
-fprintf(' --> Completed. \n')
-
-%% Arrange 'SACS_CORR_DATA'
-clearvars -except EXPERIMENT_PARAMS ...
-    TRIALS_DATA_ALL SACS_PRIM_DATA_ALL SACS_CORR_DATA_ALL ...
-    TRIALS SACS_PRIM SACS_CORR ...
-    TRIALS_DATA SACS_PRIM_DATA SACS_CORR_DATA
-fprintf([EXPERIMENT_PARAMS.file_name ': Arranging SACS_CORR_DATA ...'])
-clearvars('SACS_CORR_DATA'); SACS_CORR_DATA = struct;
-field_names_SACS_CORR_DATA = fieldnames(SACS_CORR);
-SACS_CORR_DATA_cell = struct2cell(SACS_CORR);
-for counter_fields = 1 : 1 : length(field_names_SACS_CORR_DATA)
-    SACS_CORR_DATA_field_cell = SACS_CORR_DATA_cell(counter_fields,:,:);
-    SACS_CORR_DATA_field_cell = reshape(SACS_CORR_DATA_field_cell, 1, []);
-    nz = max(cellfun(@numel,SACS_CORR_DATA_field_cell));
-    SACS_CORR_DATA_field_mat = cell2mat(cellfun(@(x) vertcat(double(x(:)),NaN(nz-numel(x), 1)),SACS_CORR_DATA_field_cell,'uni',false));
-    SACS_CORR_DATA.(field_names_SACS_CORR_DATA{counter_fields}) = SACS_CORR_DATA_field_mat;
-end
-SACS_CORR_DATA.validity  = logical(SACS_CORR_DATA.validity);
-fprintf(' --> Completed. \n')
-
-%% Build TRIALS_DATA_ALL, SACS_PRIM_DATA_ALL, SACS_CORR_DATA_ALL
+%% Build TRIALS_DATA_ALL
 TRIALS_DATA_ALL    = TRIALS_DATA;
-SACS_PRIM_DATA_ALL = SACS_PRIM_DATA;
-SACS_CORR_DATA_ALL = SACS_CORR_DATA;
 
 %% Arrange 'TRIALS_DATA'
 clearvars -except EXPERIMENT_PARAMS ...
-    TRIALS_DATA_ALL SACS_PRIM_DATA_ALL SACS_CORR_DATA_ALL ...
-    TRIALS_DATA SACS_PRIM_DATA SACS_CORR_DATA
+    TRIALS_DATA_ALL ...
+    TRIALS_DATA 
 fprintf('Arranging TRIALS_DATA ...')
 clearvars('TRIALS_DATA'); TRIALS_DATA = struct;
 field_names_TRIALS_DATA_ALL = fieldnames(TRIALS_DATA_ALL);
@@ -421,57 +252,15 @@ for counter_fields = 1 : 1 : length(field_names_TRIALS_DATA_ALL)
 end
 fprintf(' --> Completed. \n')
 
-%% Arrange 'SACS_PRIM_DATA'
-clearvars -except EXPERIMENT_PARAMS ...
-    TRIALS_DATA_ALL SACS_PRIM_DATA_ALL SACS_CORR_DATA_ALL ...
-    TRIALS_DATA SACS_PRIM_DATA SACS_CORR_DATA
-fprintf('Arranging SACS_PRIM_DATA ...')
-clearvars('SACS_PRIM_DATA'); SACS_PRIM_DATA = struct;
-field_names_SACS_PRIM_DATA_ALL = fieldnames(SACS_PRIM_DATA_ALL);
-for counter_fields = 1 : 1 : length(field_names_SACS_PRIM_DATA_ALL)
-    for counter_files = 1 : 1 : length(SACS_PRIM_DATA_ALL)
-        variable_SACS_PRIM_DATA_ALL_ = SACS_PRIM_DATA_ALL(counter_files).(field_names_SACS_PRIM_DATA_ALL{counter_fields});
-        % the field does not exist in SACS_PRIM_DATA
-        if ~isfield(SACS_PRIM_DATA, field_names_SACS_PRIM_DATA_ALL{counter_fields})
-            SACS_PRIM_DATA.(field_names_SACS_PRIM_DATA_ALL{counter_fields}) = [];
-        end
-        variable_SACS_PRIM_DATA_ = SACS_PRIM_DATA.(field_names_SACS_PRIM_DATA_ALL{counter_fields});
-        variable_SACS_PRIM_DATA_ = horzcat(variable_SACS_PRIM_DATA_, variable_SACS_PRIM_DATA_ALL_);
-        SACS_PRIM_DATA.(field_names_SACS_PRIM_DATA_ALL{counter_fields}) = variable_SACS_PRIM_DATA_;
-    end
-    fprintf('.');
-end
-SACS_PRIM_DATA.validity  = logical(SACS_PRIM_DATA.validity);
-fprintf(' --> Completed. \n')
-
-%% Arrange 'SACS_CORR_DATA'
-clearvars -except EXPERIMENT_PARAMS ...
-    TRIALS_DATA_ALL SACS_PRIM_DATA_ALL SACS_CORR_DATA_ALL ...
-    TRIALS_DATA SACS_PRIM_DATA SACS_CORR_DATA
-fprintf('Arranging SACS_CORR_DATA ...')
-clearvars('SACS_CORR_DATA'); SACS_CORR_DATA = struct;
-field_names_SACS_CORR_DATA_ALL = fieldnames(SACS_CORR_DATA_ALL);
-for counter_fields = 1 : 1 : length(field_names_SACS_CORR_DATA_ALL)
-    for counter_files = 1 : 1 : length(SACS_CORR_DATA_ALL)
-        variable_SACS_CORR_DATA_ALL_ = SACS_CORR_DATA_ALL(counter_files).(field_names_SACS_CORR_DATA_ALL{counter_fields});
-        % the field does not exist in SACS_CORR_DATA
-        if ~isfield(SACS_CORR_DATA, field_names_SACS_CORR_DATA_ALL{counter_fields})
-            SACS_CORR_DATA.(field_names_SACS_CORR_DATA_ALL{counter_fields}) = [];
-        end
-        variable_SACS_CORR_DATA_ = SACS_CORR_DATA.(field_names_SACS_CORR_DATA_ALL{counter_fields});
-        variable_SACS_CORR_DATA_ = horzcat(variable_SACS_CORR_DATA_, variable_SACS_CORR_DATA_ALL_);
-        SACS_CORR_DATA.(field_names_SACS_CORR_DATA_ALL{counter_fields}) = variable_SACS_CORR_DATA_;
-    end
-    fprintf('.');
-end
-SACS_CORR_DATA.validity  = logical(SACS_CORR_DATA.validity);
-fprintf(' --> Completed. \n')
+%% Build SACS_ALL_DATA using ESN_Sac_Sorter
+flag_session_figure = true;
+[SACS_ALL_DATA, TRIALS_DATA, EXPERIMENT_PARAMS] = ESN_Sac_Sorter(TRIALS_DATA, EXPERIMENT_PARAMS, flag_session_figure);
 
 %% Save _ANALYZED.mat Data to disk
-clearvars -except EXPERIMENT_PARAMS TRIALS_DATA SACS_PRIM_DATA SACS_CORR_DATA;
+clearvars -except EXPERIMENT_PARAMS TRIALS_DATA SACS_ALL_DATA;
 fprintf([EXPERIMENT_PARAMS.file_name ': Saving _ANALYZED.mat ...'])
 save([EXPERIMENT_PARAMS.mat_PathName EXPERIMENT_PARAMS.file_name '_ANALYZED.mat'], ...
-    'EXPERIMENT_PARAMS', 'TRIALS_DATA', 'SACS_PRIM_DATA', 'SACS_CORR_DATA', '-v7.3');
+    'EXPERIMENT_PARAMS', 'TRIALS_DATA', 'SACS_ALL_DATA', '-v7.3');
 fprintf(' --> Completed. \n')
 
 %% Save _REDUCED.mat Data to disk
@@ -483,11 +272,20 @@ rmfields_list = {'eye_l_vm_filt', 'eye_l_vy_filt', 'eye_l_vx_filt', 'eye_l_py_fi
 
 TRIALS_DATA = rmfield(TRIALS_DATA,rmfields_list);
 
-clearvars -except EXPERIMENT_PARAMS TRIALS_DATA SACS_PRIM_DATA SACS_CORR_DATA;
+clearvars -except EXPERIMENT_PARAMS TRIALS_DATA SACS_ALL_DATA;
 fprintf([EXPERIMENT_PARAMS.file_name ': Saving _REDUCED.mat ...'])
 save([EXPERIMENT_PARAMS.mat_PathName EXPERIMENT_PARAMS.file_name '_REDUCED.mat'], ...
-    'EXPERIMENT_PARAMS', 'TRIALS_DATA', 'SACS_PRIM_DATA', 'SACS_CORR_DATA', '-v7.3');
+    'EXPERIMENT_PARAMS', 'TRIALS_DATA', 'SACS_ALL_DATA', '-v7.3');
 fprintf(' --> Completed. \n')
 
-
+%% Save Fig
+hFig_ = gcf;
+file_name_plot_ = EXPERIMENT_PARAMS.file_name;
+file_path_plot_ = EXPERIMENT_PARAMS.mat_PathName;
+fprintf(['Saving ' file_name_plot_ ' ...'])
+% saveas(hFig_,[file_path_plot_ file_name_plot_ '_sac_summary'], 'pdf');
+saveas(hFig_,[file_path_plot_ file_name_plot_ '_sac_summary'], 'png');
+close(hFig_)
+fprintf(' --> Completed. \n')
+end
 

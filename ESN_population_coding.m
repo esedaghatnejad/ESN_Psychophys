@@ -18,9 +18,12 @@ path_data_monkey_sorted = uigetdir;
 % pCell_list_1 = build_pCell_list_Mirza_post201906(); pCell_list_2 = build_pCell_list_Ramon();
 % pCell_list = vertcat(pCell_list_1, pCell_list_2);
 
-pCell_list_1 = build_pCell_list_Mirza_pre201906(); pCell_list_2 = build_pCell_list_Mirza_post201906(); pCell_list_3 = build_pCell_list_Ramon();
-pCell_list = vertcat(pCell_list_1, pCell_list_2, pCell_list_3);
-%
+pCell_list_1 = build_pCell_list_Mirza_pre201906(); 
+pCell_list_2 = build_pCell_list_Mirza_post201906(); 
+pCell_list_3 = build_pCell_list_Ramon();
+pCell_list_4 = build_pCell_list_Mirza_post202011();
+pCell_list = vertcat(pCell_list_1, pCell_list_2, pCell_list_3, pCell_list_4);
+%%
 % build ALL_PCELL_COMPRESSED_DATA, open plot data and put them together
 ALL_PCELL_COMPRESSED_DATA = build_ALL_PCELL_COMPRESSED_DATA(pCell_list, path_data_monkey_sorted);
 
@@ -119,21 +122,56 @@ function pCell_list_Mirza_post201906 = build_pCell_list_Mirza_post201906()
 pCell_list_Mirza_post201906 = cell(0,10);
 
 % pCell_list(0) = {'', '', '', '', '', '', '', '', '', ''};
-pCell_list_Mirza_post201906( 1, 1:5) = {'190724_141024_04_sorted_PGH', '190724_142939_05_sorted_PGH', '190724_145556_06_sorted_PGH', '190724_151910_06_sorted_PGH', '190724_154019_06_sorted_PGH'};
-pCell_list_Mirza_post201906( 2, 1:4) = {'190730_143843_01_sorted_PGH', '190730_150548_01_sorted_PGH', '190730_154007_01_sorted_PGH', '190730_161519_01_sorted_PGH'};
-pCell_list_Mirza_post201906( 3, 1:1) = {'190801_144133_05_sorted_RSh'};
-pCell_list_Mirza_post201906( 4, 1:1) = {'190801_151921_04_sorted_RSh'};
-pCell_list_Mirza_post201906( 5, 1:1) = {'190801_161911_05_sorted_RSh'};
-pCell_list_Mirza_post201906( 6, 1:2) = {'190812_140139_03_sorted_RSh', '190812_142255_03_sorted_RSh'};
-pCell_list_Mirza_post201906( 7, 1:3) = {'190812_153354_02_sorted_RSh', '190812_160450_02_sorted_RSh', '190812_163649_02_sorted_RSh'};
-pCell_list_Mirza_post201906( 8, 1:3) = {'190815_161258_08_sorted_PGH', '190815_165738_08_sorted_PGH', '190815_171400_08_sorted_PGH'};
-pCell_list_Mirza_post201906( 9, 1:2) = {'190918_115126_04_sorted_RSh', '190918_122153_04_sorted_RSh'};
-pCell_list_Mirza_post201906(10, 1:2) = {'190919_095155_02_sorted_RSh', '190919_100229_02_sorted_RSh'};
+pCell_list_Mirza_post201906( 1, 1:1) = {'190722_154305_03_sorted_RSh'};
+pCell_list_Mirza_post201906( 2, 1:1) = {'190722_154305_07_sorted_PGH'};
+pCell_list_Mirza_post201906( 3, 1:5) = {'190724_141024_04_sorted_PGH', '190724_142939_05_sorted_PGH', '190724_145556_06_sorted_PGH', '190724_151910_06_sorted_PGH', '190724_154019_06_sorted_PGH'};
+pCell_list_Mirza_post201906( 4, 1:4) = {'190730_143843_01_sorted_PGH', '190730_150548_01_sorted_PGH', '190730_154007_01_sorted_PGH', '190730_161519_01_sorted_PGH'};
+pCell_list_Mirza_post201906( 5, 1:1) = {'190801_144133_05_sorted_RSh'};
+pCell_list_Mirza_post201906( 6, 1:1) = {'190801_151921_04_sorted_RSh'};
+pCell_list_Mirza_post201906( 7, 1:1) = {'190801_161911_05_sorted_RSh'};
+pCell_list_Mirza_post201906( 8, 1:2) = {'190812_140139_03_sorted_RSh', '190812_142255_03_sorted_RSh'};
+pCell_list_Mirza_post201906( 9, 1:3) = {'190812_153354_02_sorted_RSh', '190812_160450_02_sorted_RSh', '190812_163649_02_sorted_RSh'};
+pCell_list_Mirza_post201906(10, 1:3) = {'190815_161258_08_sorted_PGH', '190815_165738_08_sorted_PGH', '190815_171400_08_sorted_PGH'};
 
-pCell_list_Mirza_post201906(11, 1:3) = {'190923_143725_02_sorted_PGH', '190923_150658_02_sorted_PGH', '190923_154446_02_sorted_PGH'};
-pCell_list_Mirza_post201906(12, 1:3) = {'190925_145115_02_sorted_PGH', '190925_152228_02_sorted_PGH', '190925_155449_02_sorted_PGH'};
-pCell_list_Mirza_post201906(13, 1:1) = {'190927_135905_01_sorted_RSh'};
-pCell_list_Mirza_post201906(14, 1:1) = {'190927_135905_03_sorted_RSh'};
+pCell_list_Mirza_post201906(11, 1:2) = {'190918_115126_04_sorted_RSh', '190918_122153_04_sorted_RSh'};
+pCell_list_Mirza_post201906(12, 1:2) = {'190919_095155_02_sorted_RSh', '190919_100229_02_sorted_RSh'};
+pCell_list_Mirza_post201906(13, 1:3) = {'190923_143725_02_sorted_PGH', '190923_150658_02_sorted_PGH', '190923_154446_02_sorted_PGH'};
+pCell_list_Mirza_post201906(14, 1:3) = {'190925_145115_02_sorted_PGH', '190925_152228_02_sorted_PGH', '190925_155449_02_sorted_PGH'};
+pCell_list_Mirza_post201906(15, 1:1) = {'190927_135905_01_sorted_RSh'};
+pCell_list_Mirza_post201906(16, 1:1) = {'190927_135905_03_sorted_RSh'};
+
+end
+
+%% function build_pCell_list_Mirza_post202011
+function pCell_list_Mirza_post202011 = build_pCell_list_Mirza_post202011()
+%% build pCell_list
+pCell_list_Mirza_post202011 = cell(0,10);
+
+% pCell_list(0) = {'', '', '', '', '', '', '', '', '', ''};
+pCell_list_Mirza_post202011( 1, 1:2) = {'201223_131532_07_sorted_RSh', '201223_134248_07_sorted_RSh'};
+pCell_list_Mirza_post202011( 2, 1:1) = {'201223_131532_03_sorted_RSh'};
+pCell_list_Mirza_post202011( 3, 1:2) = {'201223_134248_05_sorted_RSh', '201223_142804_05_sorted_RSh'};
+pCell_list_Mirza_post202011( 4, 1:3) = {'201229_160007_04_sorted_RSh', '201229_161147_04_sorted_RSh', '201229_163338_04_sorted_RSh'};
+pCell_list_Mirza_post202011( 5, 1:1) = {'201229_170800_03_sorted_RSh'};
+pCell_list_Mirza_post202011( 6, 1:3) = {'201230_145929_04_sorted_RSh', '201230_151857_04_sorted_RSh', '201230_154916_04_sorted_RSh'};
+pCell_list_Mirza_post202011( 7, 1:1) = {'201230_171821_04_sorted_RSh'};
+pCell_list_Mirza_post202011( 8, 1:3) = {'210104_133940_04_sorted_RSh', '210104_135712_03_sorted_RSh', '210104_142745_03_sorted_RSh'};
+pCell_list_Mirza_post202011( 9, 1:2) = {'210104_151914_01_sorted_RSh', '210104_153305_01_sorted_RSh'};
+pCell_list_Mirza_post202011(10, 1:2) = {'210104_151914_02_sorted_RSh', '210104_153305_02_sorted_RSh'};
+
+pCell_list_Mirza_post202011(11, 1:5) = {'210106_141642_03_sorted_RSh', '210106_142808_03_sorted_RSh', '210106_145826_03_sorted_RSh', '210106_150439_03_sorted_RSh', '210106_153603_03_sorted_RSh'};
+pCell_list_Mirza_post202011(12, 1:5) = {'210106_141642_05_sorted_RSh', '210106_142808_05_sorted_RSh', '210106_145826_05_sorted_RSh', '210106_150439_05_sorted_RSh', '210106_153603_05_sorted_RSh'};
+pCell_list_Mirza_post202011(13, 1:3) = {'210107_141037_04_sorted_RSh', '210107_143610_04_sorted_RSh', '210107_145924_04_sorted_RSh'};
+pCell_list_Mirza_post202011(14, 1:1) = {'210107_154500_03_sorted_RSh'};
+pCell_list_Mirza_post202011(15, 1:1) = {'210107_154500_06_sorted_RSh'};
+pCell_list_Mirza_post202011(16, 1:1) = {'210107_154500_07_sorted_RSh'};
+pCell_list_Mirza_post202011(17, 1:2) = {'210108_151142_06_sorted_RSh', '210108_153618_06_sorted_RSh'};
+pCell_list_Mirza_post202011(18, 1:2) = {'210108_151142_07_sorted_RSh', '210108_153618_07_sorted_RSh'};
+pCell_list_Mirza_post202011(19, 1:1) = {'210122_133338_04_sorted_RSh'};
+pCell_list_Mirza_post202011(20, 1:5) = {'210122_142609_05_sorted_RSh', '210122_144322_05_sorted_RSh', '210122_145740_05_sorted_RSh', '210122_154050_05_sorted_RSh', '210122_161215_05_sorted_RSh'};
+
+pCell_list_Mirza_post202011(21, 1:2) = {'210122_144322_06_sorted_RSh', '210122_145740_06_sorted_RSh'};
+pCell_list_Mirza_post202011(22, 1:5) = {'210129_135158_04_sorted_RSh', '210129_142058_04_sorted_RSh', '210129_145659_04_sorted_RSh', '210129_151717_04_sorted_RSh', '210129_153949_04_sorted_RSh'};
 
 end
 
@@ -144,8 +182,8 @@ pCell_list_Ramon = cell(0,10);
 
 % pCell_list(0) = {'', '', '', '', '', '', '', '', '', ''};
 pCell_list_Ramon( 1, 1:3) = {'190829_131625_04_sorted_ESN', '190829_132447_04_sorted_ESN', '190829_133438_04_sorted_ESN'};
-pCell_list_Ramon( 2, 1:2) = {'190830_114101_02_sorted_ESN', '190830_114850_04_sorted_ESN'};
-pCell_list_Ramon( 3, 1:2) = {'190830_114101_04_sorted_ESN', '190830_114850_02_sorted_ESN'};
+pCell_list_Ramon( 2, 1:2) = {'190830_114101_02_sorted_ESN', '190830_114850_02_sorted_ESN'};
+pCell_list_Ramon( 3, 1:2) = {'190830_114101_04_sorted_ESN', '190830_114850_04_sorted_ESN'};
 pCell_list_Ramon( 4, 1:2) = {'190903_160127_04_sorted_ESN', '190903_163920_04_sorted_ESN'};
 pCell_list_Ramon( 5, 1:2) = {'190903_160127_01_sorted_ESN', '190903_163920_01_sorted_ESN'};
 pCell_list_Ramon( 6, 1:1) = {'190905_154933_03_sorted_ESN'};
@@ -177,21 +215,25 @@ pCell_list_Ramon(29, 1:3) = {'191120_141613_02_sorted_RSh', '191120_144254_02_so
 pCell_list_Ramon(30, 1:1) = {'191204_115824_03_sorted_RSh'};
 
 pCell_list_Ramon(31, 1:1) = {'191204_131009_01_sorted_RSh'};
-pCell_list_Ramon(32, 1:2) = {'200109_110904_04_sorted_RSh', '200109_112601_04_sorted_RSh'};
-pCell_list_Ramon(33, 1:1) = {'200109_125642_03_sorted_RSh'};
-pCell_list_Ramon(34, 1:3) = {'200122_125828_07_sorted_RSh', '200122_133020_07_sorted_RSh', '200122_135404_07_sorted_RSh'};
-pCell_list_Ramon(35, 1:2) = {'200122_133020_04_sorted_RSh', '200122_135404_04_sorted_RSh'};
-pCell_list_Ramon(36, 1:4) = {'200123_124808_07_sorted_PGH', '200123_131422_07_sorted_PGH', '200123_133835_07_sorted_PGH', '200123_140924_07_sorted_PGH'};
-pCell_list_Ramon(37, 1:4) = {'200128_151251_04_sorted_RSh', '200128_151937_06_sorted_RSh', '200128_153045_06_sorted_RSh', '200128_154444_01_sorted_RSh'};
-pCell_list_Ramon(38, 1:1) = {'200128_163856_04_sorted_RSh'};
-pCell_list_Ramon(39, 1:4) = {'200129_094755_04_sorted_PGH', '200129_124934_04_sorted_PGH', '200129_131018_04_sorted_PGH', '200129_133230_04_sorted_PGH'};
-pCell_list_Ramon(40, 1:3) = {'200204_162413_04_sorted_RSh', '200204_163427_04_sorted_RSh', '200204_164913_03_sorted_RSh'};
+pCell_list_Ramon(32, 1:1) = {'191209_141244_03_sorted_JSP'};
+pCell_list_Ramon(33, 1:1) = {'191209_141244_04_sorted_RSh'};
+pCell_list_Ramon(34, 1:2) = {'200109_110904_04_sorted_RSh', '200109_112601_04_sorted_RSh'};
+pCell_list_Ramon(35, 1:1) = {'200109_125642_03_sorted_RSh'};
+pCell_list_Ramon(36, 1:3) = {'200122_125828_07_sorted_RSh', '200122_133020_07_sorted_RSh', '200122_135404_07_sorted_RSh'};
+pCell_list_Ramon(37, 1:2) = {'200122_133020_04_sorted_RSh', '200122_135404_04_sorted_RSh'};
+pCell_list_Ramon(38, 1:4) = {'200123_124808_07_sorted_PGH', '200123_131422_07_sorted_PGH', '200123_133835_07_sorted_PGH', '200123_140924_07_sorted_PGH'};
+pCell_list_Ramon(39, 1:4) = {'200128_151251_04_sorted_RSh', '200128_151937_06_sorted_RSh', '200128_153045_06_sorted_RSh', '200128_154444_01_sorted_RSh'};
+pCell_list_Ramon(40, 1:1) = {'200128_163856_04_sorted_RSh'};
 
-pCell_list_Ramon(41, 1:1) = {'200211_162022_03_sorted_RSh'};
-pCell_list_Ramon(42, 1:5) = {'200303_153615_03_sorted_RSh', '200303_155436_03_sorted_RSh', '200303_163555_03_sorted_RSh', '200303_165850_03_sorted_RSh', '200303_172913_03_sorted_RSh'};
-pCell_list_Ramon(43, 1:3) = {'200814_113452_05_sorted_RSh', '200814_114000_05_sorted_RSh', '200814_114425_05_sorted_RSh'};
-pCell_list_Ramon(44, 1:3) = {'200914_122203_04_sorted_RSh', '200914_124954_04_sorted_RSh', '200914_132356_04_sorted_RSh'};
-pCell_list_Ramon(45, 1:3) = {'200916_130045_02_sorted_PGH', '200916_133908_02_sorted_PGH', '200916_142429_02_sorted_PGH'};
+pCell_list_Ramon(41, 1:4) = {'200129_094755_04_sorted_PGH', '200129_124934_04_sorted_PGH', '200129_131018_04_sorted_PGH', '200129_133230_04_sorted_PGH'};
+pCell_list_Ramon(42, 1:3) = {'200204_162413_04_sorted_RSh', '200204_163427_04_sorted_RSh', '200204_164913_03_sorted_RSh'};
+pCell_list_Ramon(43, 1:1) = {'200211_162022_03_sorted_RSh'};
+pCell_list_Ramon(44, 1:5) = {'200303_153615_03_sorted_RSh', '200303_155436_03_sorted_RSh', '200303_163555_03_sorted_RSh', '200303_165850_03_sorted_RSh', '200303_172913_03_sorted_RSh'};
+pCell_list_Ramon(45, 1:3) = {'200814_113452_05_sorted_RSh', '200814_114000_05_sorted_RSh', '200814_114425_05_sorted_RSh'};
+pCell_list_Ramon(46, 1:3) = {'200914_122203_04_sorted_RSh', '200914_124954_04_sorted_RSh', '200914_132356_04_sorted_RSh'};
+pCell_list_Ramon(47, 1:3) = {'200916_130045_02_sorted_PGH', '200916_133908_02_sorted_PGH', '200916_142429_02_sorted_PGH'};
+pCell_list_Ramon(48, 1:1) = {'200923_133039_03_sorted_PGH'};
+pCell_list_Ramon(49, 1:4) = {'201007_132359_04_sorted_PGH', '201007_133319_02_sorted_PGH', '201007_134353_02_sorted_PGH', '201007_135402_04_sorted_PGH'};
 
 end
 
@@ -532,6 +574,7 @@ train_data_dirs  = {'_right', '_top', '_left', '_down'};
 for counter_ALL_PCELL = 1 : length(ALL_PCELL_COMPRESSED_DATA)
     field_names_ALL_PCELL = fieldnames(ALL_PCELL_COMPRESSED_DATA(counter_ALL_PCELL));
     field_names_ALL_PCELL = field_names_ALL_PCELL(contains(field_names_ALL_PCELL, 'raster_data_'));
+    % Implement the CS-on direction with maximum CS probability
     overall_prob_tuning = ALL_PCELL_COMPRESSED_DATA(counter_ALL_PCELL).CS_Tuning.overall_prob_tuning;% 1:8;% 
     for counter_field_names_ALL_PCELL = 1 : 1 : length(field_names_ALL_PCELL)
         field_name_ALL_PCELL = field_names_ALL_PCELL{counter_field_names_ALL_PCELL};
@@ -736,6 +779,7 @@ primSac_offset_prob_ALL_PCELL = nan(length(ALL_PCELL_COMPRESSED_DATA), 8);
 corrSac_onset_prob_ALL_PCELL  = nan(length(ALL_PCELL_COMPRESSED_DATA), 8);
 numTrials_ALL_PCELL = nan(length(ALL_PCELL_COMPRESSED_DATA), 1);
 for counter_ALL_PCELL_COMPRESSED_DATA = 1 : 1 : length(ALL_PCELL_COMPRESSED_DATA)
+    % Implement the CS-on direction with maximum CS probability
     overall_prob_tuning = ALL_PCELL_COMPRESSED_DATA(counter_ALL_PCELL_COMPRESSED_DATA).CS_Tuning.overall_prob_tuning;% 1:8;% 
     cue_present_prob_ALL_PCELL(counter_ALL_PCELL_COMPRESSED_DATA, :) = ...
         ALL_PCELL_COMPRESSED_DATA(counter_ALL_PCELL_COMPRESSED_DATA).CS_Tuning.cue_present_prob( overall_prob_tuning );
@@ -1026,7 +1070,133 @@ plot([(CS_firing_pCells_mean),                       (CS_firing_pCells_mean)], y
 xlabel('CS Firing Rate (Hz)')
 ylabel('Count (#)')
 title(['mean= ' num2str(CS_firing_pCells_mean,2)])
-ESN_Beautify_Plot(hFig, [6, 4])
+ESN_Beautify_Plot(hFig, [4, 2], 8)
+
+end
+
+%% function plot_waveforms
+function plot_waveforms()
+clearvars -except path_data_monkey_sorted pCell_list ALL_PCELL_COMPRESSED_DATA RASTER_DATA_ALL_PCELL_TUNED
+%%
+num_pCells = length(ALL_PCELL_COMPRESSED_DATA);
+numTrials_pCells = nan(num_pCells, 1);
+SS_waveform_pCells = nan(num_pCells, 180);
+CS_waveform_pCells = nan(num_pCells, 180);
+SS_xprob_pCells = nan(num_pCells, 100);
+CS_xprob_pCells = nan(num_pCells, 100);
+SS_firing_pCells = nan(num_pCells, 1);
+for counter_pCell = 1 : 1 : num_pCells
+    Neural_Properties_data = ALL_PCELL_COMPRESSED_DATA(counter_pCell).Neural_Properties_data;
+    SS_waveform_pCells(counter_pCell, :) = Neural_Properties_data.SS_waveform;
+    CS_waveform_pCells(counter_pCell, :) = Neural_Properties_data.CS_waveform;
+    SS_xprob_pCells(counter_pCell, :) = Neural_Properties_data.Corr_data.SS_SSxSS_AUTO;
+    CS_xprob_pCells(counter_pCell, :) = Neural_Properties_data.Corr_data.CS_CSxSS_AUTO;
+    SS_firing_pCells(counter_pCell, 1) = Neural_Properties_data.SS_firing_rate;
+end
+SS_waveform_pCells_max = max([max(SS_waveform_pCells, [], 2), abs(min(SS_waveform_pCells, 2))], [], 2);
+SS_waveform_pCells_norm = SS_waveform_pCells ./ SS_waveform_pCells_max;
+CS_waveform_pCells_norm = CS_waveform_pCells ./ SS_waveform_pCells_max;
+SS_xprob_pCells_norm = SS_xprob_pCells ./ (SS_firing_pCells./1000);
+SS_xprob_pCells_norm(:,50) = 0;
+CS_xprob_pCells_norm = CS_xprob_pCells ./ (SS_firing_pCells./1000);
+
+SS_waveform_mean = nanmean(SS_waveform_pCells_norm);
+SS_waveform_stdv = nanstd( SS_waveform_pCells_norm);%./sqrt(num_pCells);
+SS_waveform_stdv_p = SS_waveform_mean + SS_waveform_stdv;
+SS_waveform_stdv_m = SS_waveform_mean - SS_waveform_stdv;
+
+CS_waveform_mean = nanmean(CS_waveform_pCells_norm);
+CS_waveform_stdv = nanstd( CS_waveform_pCells_norm);%./sqrt(num_pCells);
+CS_waveform_stdv_p = CS_waveform_mean + CS_waveform_stdv;
+CS_waveform_stdv_m = CS_waveform_mean - CS_waveform_stdv;
+
+SS_xprob_mean = nanmean(SS_xprob_pCells_norm);
+SS_xprob_stdv = nanstd( SS_xprob_pCells_norm);%./sqrt(num_pCells);
+SS_xprob_stdv_p = SS_xprob_mean + SS_xprob_stdv;
+SS_xprob_stdv_m = SS_xprob_mean - SS_xprob_stdv;
+
+CS_xprob_mean = nanmean(CS_xprob_pCells_norm);
+CS_xprob_stdv = nanstd( CS_xprob_pCells_norm);%./sqrt(num_pCells);
+CS_xprob_stdv_p = CS_xprob_mean + CS_xprob_stdv;
+CS_xprob_stdv_m = CS_xprob_mean - CS_xprob_stdv;
+
+time_waveform = (-59:1:120)./30;
+time_xprob = (-49:1:50);
+
+hFig = figure(105);
+clf(hFig)
+subplot(1,2,1)
+hold on
+% plot(time_waveform, SS_waveform_pCells_norm, '-k', 'LineWidth', 0.5)
+plot(time_waveform, SS_waveform_stdv_m, '-b', 'LineWidth', 0.5)
+plot(time_waveform, SS_waveform_stdv_p, '-b', 'LineWidth', 0.5)
+plot(time_waveform, SS_waveform_mean, '-b', 'LineWidth', 1.5)
+% ylabel('SS waveform')
+% xlabel('Time (ms)')
+
+% subplot(2,2,2)
+% hold on
+% plot(time_waveform, CS_waveform_pCells_norm, '-k', 'LineWidth', 0.5)
+plot(time_waveform, CS_waveform_stdv_m, '-r', 'LineWidth', 0.5)
+plot(time_waveform, CS_waveform_stdv_p, '-r', 'LineWidth', 0.5)
+plot(time_waveform, CS_waveform_mean, '-r', 'LineWidth', 1.5)
+ylabel('waveform')
+xlabel('Time (ms)')
+
+
+subplot(1,2,2)
+hold on
+% plot(time_xprob, SS_xprob_pCells_norm, '-k', 'LineWidth', 0.5)
+plot(time_xprob, SS_xprob_stdv_p, '-b', 'LineWidth', 0.5)
+plot(time_xprob, SS_xprob_stdv_m, '-b', 'LineWidth', 0.5)
+plot(time_xprob, SS_xprob_mean, '-b', 'LineWidth', 1.5)
+% ylabel('SS prob')
+% xlabel('Time (ms)')
+
+% subplot(2,2,4)
+% hold on
+% plot(time_xprob, CS_xprob_pCells_norm, '-k', 'LineWidth', 0.5)
+plot(time_xprob, CS_xprob_stdv_p, '-r', 'LineWidth', 0.5)
+plot(time_xprob, CS_xprob_stdv_m, '-r', 'LineWidth', 0.5)
+plot(time_xprob, CS_xprob_mean, '-r', 'LineWidth', 1.5)
+ylabel('prob')
+xlabel('Time (ms)')
+
+ESN_Beautify_Plot(hFig, [4, 2], 8)
+
+%%
+hFig = figure(106);
+clf(hFig)
+% time_xprob = (-49:1:50);
+CS_xprob_pCells_norm = CS_xprob_pCells ./ nanmean(CS_xprob_pCells(:,20:50), 2);
+% CS_xprob_pCells_norm = smoothdata(CS_xprob_pCells_norm, 2, 'sgolay', 5, 'omitnan', 'Degree', 2);
+[~,idx] = max(CS_xprob_pCells_norm(:,56:end)>0.63, [], 2);
+suppression_ = idx+5;
+hold on
+edges_ = 5.5: 1 : 25.5;
+histogram(suppression_, edges_,  'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'r')
+histogram(suppression_, edges_,  'DisplayStyle', 'stairs', 'EdgeColor', 'r', 'FaceColor', 'none', 'linewidth', 2)
+xline(nanmean(suppression_), 'r', 'linewidth', 1)
+ylabel('Count')
+xlabel('CS suppression (ms)')
+ESN_Beautify_Plot(hFig, [2, 1.5], 8)
+
+end
+
+%% function generate_pCell_id_for_excel
+function generate_pCell_id_for_excel
+%%
+num_pCells = length(ALL_PCELL_COMPRESSED_DATA);
+pCell_id_for_excel = cell(0,1);
+for counter_pCell = 1 : 1 : num_pCells
+    id_ = ALL_PCELL_COMPRESSED_DATA(counter_pCell).id;
+    if length(id_) == 1
+        name_ = id_{1};
+    else
+        name_ = [id_{1} '_combined_' num2str(length(id_))];
+    end
+    pCell_id_for_excel(counter_pCell, 1) = {name_};
+end
 
 end
 
@@ -1373,113 +1543,6 @@ end
 
 end
 
-%% function plot_waveforms
-function plot_waveforms()
-clearvars -except path_data_monkey_sorted pCell_list ALL_PCELL_COMPRESSED_DATA RASTER_DATA_ALL_PCELL_TUNED
-%%
-num_pCells = length(ALL_PCELL_COMPRESSED_DATA);
-numTrials_pCells = nan(num_pCells, 1);
-SS_waveform_pCells = nan(num_pCells, 180);
-CS_waveform_pCells = nan(num_pCells, 180);
-SS_xprob_pCells = nan(num_pCells, 100);
-CS_xprob_pCells = nan(num_pCells, 100);
-SS_firing_pCells = nan(num_pCells, 1);
-for counter_pCell = 1 : 1 : num_pCells
-    Neural_Properties_data = ALL_PCELL_COMPRESSED_DATA(counter_pCell).Neural_Properties_data;
-    SS_waveform_pCells(counter_pCell, :) = Neural_Properties_data.SS_waveform;
-    CS_waveform_pCells(counter_pCell, :) = Neural_Properties_data.CS_waveform;
-    SS_xprob_pCells(counter_pCell, :) = Neural_Properties_data.Corr_data.SS_SSxSS_AUTO;
-    CS_xprob_pCells(counter_pCell, :) = Neural_Properties_data.Corr_data.CS_CSxSS_AUTO;
-    SS_firing_pCells(counter_pCell, 1) = Neural_Properties_data.SS_firing_rate;
-end
-SS_waveform_pCells_max = max([max(SS_waveform_pCells, [], 2), abs(min(SS_waveform_pCells, 2))], [], 2);
-SS_waveform_pCells_norm = SS_waveform_pCells ./ SS_waveform_pCells_max;
-CS_waveform_pCells_norm = CS_waveform_pCells ./ SS_waveform_pCells_max;
-SS_xprob_pCells_norm = SS_xprob_pCells ./ (SS_firing_pCells./1000);
-SS_xprob_pCells_norm(:,50) = 0;
-CS_xprob_pCells_norm = CS_xprob_pCells ./ (SS_firing_pCells./1000);
-
-SS_waveform_mean = nanmean(SS_waveform_pCells_norm);
-SS_waveform_stdv = nanstd( SS_waveform_pCells_norm);%./sqrt(num_pCells);
-SS_waveform_stdv_p = SS_waveform_mean + SS_waveform_stdv;
-SS_waveform_stdv_m = SS_waveform_mean - SS_waveform_stdv;
-
-CS_waveform_mean = nanmean(CS_waveform_pCells_norm);
-CS_waveform_stdv = nanstd( CS_waveform_pCells_norm);%./sqrt(num_pCells);
-CS_waveform_stdv_p = CS_waveform_mean + CS_waveform_stdv;
-CS_waveform_stdv_m = CS_waveform_mean - CS_waveform_stdv;
-
-SS_xprob_mean = nanmean(SS_xprob_pCells_norm);
-SS_xprob_stdv = nanstd( SS_xprob_pCells_norm);%./sqrt(num_pCells);
-SS_xprob_stdv_p = SS_xprob_mean + SS_xprob_stdv;
-SS_xprob_stdv_m = SS_xprob_mean - SS_xprob_stdv;
-
-CS_xprob_mean = nanmean(CS_xprob_pCells_norm);
-CS_xprob_stdv = nanstd( CS_xprob_pCells_norm);%./sqrt(num_pCells);
-CS_xprob_stdv_p = CS_xprob_mean + CS_xprob_stdv;
-CS_xprob_stdv_m = CS_xprob_mean - CS_xprob_stdv;
-
-time_waveform = (-59:1:120)./30;
-time_xprob = (-49:1:50);
-
-hFig = figure(105);
-clf(hFig)
-subplot(1,2,1)
-hold on
-% plot(time_waveform, SS_waveform_pCells_norm, '-k', 'LineWidth', 0.5)
-plot(time_waveform, SS_waveform_stdv_m, '-b', 'LineWidth', 0.5)
-plot(time_waveform, SS_waveform_stdv_p, '-b', 'LineWidth', 0.5)
-plot(time_waveform, SS_waveform_mean, '-b', 'LineWidth', 1.5)
-% ylabel('SS waveform')
-% xlabel('Time (ms)')
-
-% subplot(2,2,2)
-% hold on
-% plot(time_waveform, CS_waveform_pCells_norm, '-k', 'LineWidth', 0.5)
-plot(time_waveform, CS_waveform_stdv_m, '-r', 'LineWidth', 0.5)
-plot(time_waveform, CS_waveform_stdv_p, '-r', 'LineWidth', 0.5)
-plot(time_waveform, CS_waveform_mean, '-r', 'LineWidth', 1.5)
-ylabel('waveform')
-xlabel('Time (ms)')
-
-
-subplot(1,2,2)
-hold on
-% plot(time_xprob, SS_xprob_pCells_norm, '-k', 'LineWidth', 0.5)
-plot(time_xprob, SS_xprob_stdv_p, '-b', 'LineWidth', 0.5)
-plot(time_xprob, SS_xprob_stdv_m, '-b', 'LineWidth', 0.5)
-plot(time_xprob, SS_xprob_mean, '-b', 'LineWidth', 1.5)
-% ylabel('SS prob')
-% xlabel('Time (ms)')
-
-% subplot(2,2,4)
-% hold on
-% plot(time_xprob, CS_xprob_pCells_norm, '-k', 'LineWidth', 0.5)
-plot(time_xprob, CS_xprob_stdv_p, '-r', 'LineWidth', 0.5)
-plot(time_xprob, CS_xprob_stdv_m, '-r', 'LineWidth', 0.5)
-plot(time_xprob, CS_xprob_mean, '-r', 'LineWidth', 1.5)
-ylabel('prob')
-xlabel('Time (ms)')
-
-ESN_Beautify_Plot(hFig, [6, 4])
-
-%%
-hFig = figure(106);
-clf(hFig)
-% time_xprob = (-49:1:50);
-CS_xprob_pCells_norm = CS_xprob_pCells ./ nanmean(CS_xprob_pCells(:,20:50), 2);
-% CS_xprob_pCells_norm = smoothdata(CS_xprob_pCells_norm, 2, 'sgolay', 5, 'omitnan', 'Degree', 2);
-[~,idx] = max(CS_xprob_pCells_norm(:,56:end)>0.63, [], 2);
-suppression_ = idx+5;
-hold on
-edges_ = 6.5: 1 : 31.5;
-histogram(suppression_, edges_,  'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'r')
-histogram(suppression_, edges_,  'DisplayStyle', 'stairs', 'EdgeColor', 'r', 'FaceColor', 'none', 'linewidth', 2)
-ylabel('Count')
-xlabel('CS suppression (ms)')
-ESN_Beautify_Plot(hFig, [6, 4])
-end
-
 %% function plot_CS_on_two_bump
 function plot_CS_on_two_bump
 clearvars -except path_data_monkey_sorted pCell_list ALL_PCELL_COMPRESSED_DATA RASTER_DATA_ALL_PCELL_TUNED
@@ -1729,4 +1792,52 @@ ind(ind<1) = 1;
 ind(ind>length(data)) = length(data);
 waveform = data(ind);
 span = span_int / double(sample_rate);
+end
+
+%% copy plot_data file
+function copy_plot_data()
+%% build and save ALL_PCELL_COMPRESSED_DATA
+path_data_monkey_sorted = uigetdir;
+
+% build pCell_list, this is a hard coded cell with the id of all of the pCells and the bundles
+pCell_list_1 = build_pCell_list_Mirza_pre201906();
+pCell_list_2 = build_pCell_list_Mirza_post201906();
+pCell_list_3 = build_pCell_list_Ramon();
+pCell_list_4 = build_pCell_list_Mirza_post202011();
+pCell_list = vertcat(pCell_list_1, pCell_list_2, pCell_list_3, pCell_list_4);
+%% init vars
+if ~strcmp(path_data_monkey_sorted(end), filesep);path_data_monkey_sorted = [path_data_monkey_sorted filesep];end
+pCell_list_isstr = arrayfun(@iscellstr,pCell_list);
+num_pCells = size(pCell_list, 1);
+%% Loop over pCells
+for counter_pCell = 1 : 1 : num_pCells
+    fprintf(['Analyzing pCell no. ', num2str(counter_pCell), ' / ' num2str(num_pCells) ' ... ']);
+    num_recording = sum(pCell_list_isstr(counter_pCell, :));
+    plot_data_cell = struct();
+    counter_recording = 1;
+    %% build plot_data address
+    file_name = pCell_list{counter_pCell, counter_recording}; % '190423_142023_01_sorted_ESN';
+    year_ = file_name(1:2);
+    month_ = file_name(3:4);
+    day_ = file_name(5:6);
+    hour_ = file_name(8:9);
+    minute_ = file_name(10:11);
+    second_ = file_name(12:13);
+    subFolder_month = ['20' year_ '-' month_ filesep];
+    subFolder_day = ['20' year_ '-' month_ '-' day_ filesep];
+    subFolder_recording = ['20' year_ '-' month_ '-' day_ '_' hour_ '-' minute_ '-' second_ filesep];
+    if num_recording < 2
+        subFolder_figs = ['analyzed_figs' filesep];
+        file_name = [file_name '_plot_data' '.mat']; % '190423_142023_01_sorted_ESN_plot_data';
+    else
+        subFolder_figs = ['bundle_figs' filesep];
+        file_name = [file_name '_combine_' num2str(num_recording) '_plot_data' '.mat']; % '190326_180641_03_sorted_RSh_combine_2_plot_data'
+    end
+    file_path = [path_data_monkey_sorted subFolder_month subFolder_day subFolder_recording subFolder_figs];
+    file_full_path = [file_path file_name];
+    file_full_destination = [path_data_monkey_sorted 'pCell_properties' filesep file_name];
+    
+    copyfile(file_full_path, file_full_destination)
+    fprintf(' --> Completed. \n')
+end
 end

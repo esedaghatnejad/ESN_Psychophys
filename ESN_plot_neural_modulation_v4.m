@@ -1,11 +1,13 @@
 %% function ESN_plot_neural_modulation_v3(num_data_set)
 function ESN_plot_neural_modulation_v4(num_data_set, params)
+%% check nargin
 if nargin < 1
     num_data_set = 1;
 end
 if nargin < 2
     params.auto = false;
 end
+
 %% Build EPHYS_ and BEHAVE_ for each single dataset
 clearvars EPHYS BEHAVE
 for counter_dataset = 1 : 1 : num_data_set
@@ -939,6 +941,25 @@ train_data_logic_corrSac_onset_  = train_data_logic_corrSac_onset_000;
 train_data_logic_corrSac_vmax_   = train_data_logic_corrSac_vmax_000;
 train_data_logic_corrSac_offset_ = train_data_logic_corrSac_offset_000;
 
+trial_num = 1 : size(train_data_logic_cue_present_, 1);
+[~,ind_cue_present_] = max(train_data_logic_cue_present_,[],2);
+ind_cue_present_shift_200 = ind_cue_present_-100;
+ind_cue_present_shift_200(ind_cue_present_shift_200>0) = 0;
+plot(ind_cue_present_(ind_cue_present_~=1)-300, trial_num(ind_cue_present_~=1), 'Color', color_cue_present);
+plot(ind_cue_present_shift_200(ind_cue_present_~=1), trial_num(ind_cue_present_~=1), 'Color', color_cue_present);
+[~,ind_primSac_onset_] = max(train_data_logic_primSac_onset_,[],2);
+plot(ind_primSac_onset_(ind_primSac_onset_~=1)-300, trial_num(ind_primSac_onset_~=1), 'Color', color_primSac_onset);
+[~,ind_primSac_vmax_] = max(train_data_logic_primSac_vmax_,[],2);
+plot(ind_primSac_vmax_(ind_primSac_vmax_~=1)-300, trial_num(ind_primSac_vmax_~=1), 'Color', color_primSac_vmax);
+[~,ind_primSac_offset_] = max(train_data_logic_primSac_offset_,[],2);
+plot(ind_primSac_offset_(ind_primSac_offset_~=1)-300, trial_num(ind_primSac_offset_~=1), 'Color', color_primSac_offset);
+[~,ind_corrSac_onset_] = max(train_data_logic_corrSac_onset_,[],2);
+plot(ind_corrSac_onset_(ind_corrSac_onset_~=1)-300, trial_num(ind_corrSac_onset_~=1), 'Color', color_corrSac_onset);
+[~,ind_corrSac_vmax_] = max(train_data_logic_corrSac_vmax_,[],2);
+plot(ind_corrSac_vmax_(ind_corrSac_vmax_~=1)-300, trial_num(ind_corrSac_vmax_~=1), 'Color', color_corrSac_vmax);
+[~,ind_corrSac_offset_] = max(train_data_logic_corrSac_offset_,[],2);
+plot(ind_corrSac_offset_(ind_corrSac_offset_~=1)-300, trial_num(ind_corrSac_offset_~=1), 'Color', color_corrSac_offset);
+
 [x_axis_SS_, y_axis_SS_] = ESN_raster_plot_axes(train_data_logic_SS_, inds_span, 0.5);
 plot(x_axis_SS_(:), y_axis_SS_(:), 'LineWidth', 1, 'Color', color_SS)
 [x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_CS_, inds_span, 1);
@@ -983,6 +1004,25 @@ train_data_logic_corrSac_onset_  = train_data_logic_corrSac_onset_045;
 train_data_logic_corrSac_vmax_   = train_data_logic_corrSac_vmax_045;
 train_data_logic_corrSac_offset_ = train_data_logic_corrSac_offset_045;
 
+trial_num = 1 : size(train_data_logic_cue_present_, 1);
+[~,ind_cue_present_] = max(train_data_logic_cue_present_,[],2);
+ind_cue_present_shift_200 = ind_cue_present_-100;
+ind_cue_present_shift_200(ind_cue_present_shift_200>0) = 0;
+plot(ind_cue_present_(ind_cue_present_~=1)-300, trial_num(ind_cue_present_~=1), 'Color', color_cue_present);
+plot(ind_cue_present_shift_200(ind_cue_present_~=1), trial_num(ind_cue_present_~=1), 'Color', color_cue_present);
+[~,ind_primSac_onset_] = max(train_data_logic_primSac_onset_,[],2);
+plot(ind_primSac_onset_(ind_primSac_onset_~=1)-300, trial_num(ind_primSac_onset_~=1), 'Color', color_primSac_onset);
+[~,ind_primSac_vmax_] = max(train_data_logic_primSac_vmax_,[],2);
+plot(ind_primSac_vmax_(ind_primSac_vmax_~=1)-300, trial_num(ind_primSac_vmax_~=1), 'Color', color_primSac_vmax);
+[~,ind_primSac_offset_] = max(train_data_logic_primSac_offset_,[],2);
+plot(ind_primSac_offset_(ind_primSac_offset_~=1)-300, trial_num(ind_primSac_offset_~=1), 'Color', color_primSac_offset);
+[~,ind_corrSac_onset_] = max(train_data_logic_corrSac_onset_,[],2);
+plot(ind_corrSac_onset_(ind_corrSac_onset_~=1)-300, trial_num(ind_corrSac_onset_~=1), 'Color', color_corrSac_onset);
+[~,ind_corrSac_vmax_] = max(train_data_logic_corrSac_vmax_,[],2);
+plot(ind_corrSac_vmax_(ind_corrSac_vmax_~=1)-300, trial_num(ind_corrSac_vmax_~=1), 'Color', color_corrSac_vmax);
+[~,ind_corrSac_offset_] = max(train_data_logic_corrSac_offset_,[],2);
+plot(ind_corrSac_offset_(ind_corrSac_offset_~=1)-300, trial_num(ind_corrSac_offset_~=1), 'Color', color_corrSac_offset);
+
 [x_axis_SS_, y_axis_SS_] = ESN_raster_plot_axes(train_data_logic_SS_, inds_span, 0.5);
 plot(x_axis_SS_(:), y_axis_SS_(:), 'LineWidth', 1, 'Color', color_SS)
 [x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_CS_, inds_span, 1);
@@ -1025,6 +1065,25 @@ train_data_logic_primSac_offset_ = train_data_logic_primSac_offset_090;
 train_data_logic_corrSac_onset_  = train_data_logic_corrSac_onset_090;
 train_data_logic_corrSac_vmax_   = train_data_logic_corrSac_vmax_090;
 train_data_logic_corrSac_offset_ = train_data_logic_corrSac_offset_090;
+
+trial_num = 1 : size(train_data_logic_cue_present_, 1);
+[~,ind_cue_present_] = max(train_data_logic_cue_present_,[],2);
+ind_cue_present_shift_200 = ind_cue_present_-100;
+ind_cue_present_shift_200(ind_cue_present_shift_200>0) = 0;
+plot(ind_cue_present_(ind_cue_present_~=1)-300, trial_num(ind_cue_present_~=1), 'Color', color_cue_present);
+plot(ind_cue_present_shift_200(ind_cue_present_~=1), trial_num(ind_cue_present_~=1), 'Color', color_cue_present);
+[~,ind_primSac_onset_] = max(train_data_logic_primSac_onset_,[],2);
+plot(ind_primSac_onset_(ind_primSac_onset_~=1)-300, trial_num(ind_primSac_onset_~=1), 'Color', color_primSac_onset);
+[~,ind_primSac_vmax_] = max(train_data_logic_primSac_vmax_,[],2);
+plot(ind_primSac_vmax_(ind_primSac_vmax_~=1)-300, trial_num(ind_primSac_vmax_~=1), 'Color', color_primSac_vmax);
+[~,ind_primSac_offset_] = max(train_data_logic_primSac_offset_,[],2);
+plot(ind_primSac_offset_(ind_primSac_offset_~=1)-300, trial_num(ind_primSac_offset_~=1), 'Color', color_primSac_offset);
+[~,ind_corrSac_onset_] = max(train_data_logic_corrSac_onset_,[],2);
+plot(ind_corrSac_onset_(ind_corrSac_onset_~=1)-300, trial_num(ind_corrSac_onset_~=1), 'Color', color_corrSac_onset);
+[~,ind_corrSac_vmax_] = max(train_data_logic_corrSac_vmax_,[],2);
+plot(ind_corrSac_vmax_(ind_corrSac_vmax_~=1)-300, trial_num(ind_corrSac_vmax_~=1), 'Color', color_corrSac_vmax);
+[~,ind_corrSac_offset_] = max(train_data_logic_corrSac_offset_,[],2);
+plot(ind_corrSac_offset_(ind_corrSac_offset_~=1)-300, trial_num(ind_corrSac_offset_~=1), 'Color', color_corrSac_offset);
 
 [x_axis_SS_, y_axis_SS_] = ESN_raster_plot_axes(train_data_logic_SS_, inds_span, 0.5);
 plot(x_axis_SS_(:), y_axis_SS_(:), 'LineWidth', 1, 'Color', color_SS)
@@ -1069,6 +1128,25 @@ train_data_logic_corrSac_onset_  = train_data_logic_corrSac_onset_135;
 train_data_logic_corrSac_vmax_   = train_data_logic_corrSac_vmax_135;
 train_data_logic_corrSac_offset_ = train_data_logic_corrSac_offset_135;
 
+trial_num = 1 : size(train_data_logic_cue_present_, 1);
+[~,ind_cue_present_] = max(train_data_logic_cue_present_,[],2);
+ind_cue_present_shift_200 = ind_cue_present_-100;
+ind_cue_present_shift_200(ind_cue_present_shift_200>0) = 0;
+plot(ind_cue_present_(ind_cue_present_~=1)-300, trial_num(ind_cue_present_~=1), 'Color', color_cue_present);
+plot(ind_cue_present_shift_200(ind_cue_present_~=1), trial_num(ind_cue_present_~=1), 'Color', color_cue_present);
+[~,ind_primSac_onset_] = max(train_data_logic_primSac_onset_,[],2);
+plot(ind_primSac_onset_(ind_primSac_onset_~=1)-300, trial_num(ind_primSac_onset_~=1), 'Color', color_primSac_onset);
+[~,ind_primSac_vmax_] = max(train_data_logic_primSac_vmax_,[],2);
+plot(ind_primSac_vmax_(ind_primSac_vmax_~=1)-300, trial_num(ind_primSac_vmax_~=1), 'Color', color_primSac_vmax);
+[~,ind_primSac_offset_] = max(train_data_logic_primSac_offset_,[],2);
+plot(ind_primSac_offset_(ind_primSac_offset_~=1)-300, trial_num(ind_primSac_offset_~=1), 'Color', color_primSac_offset);
+[~,ind_corrSac_onset_] = max(train_data_logic_corrSac_onset_,[],2);
+plot(ind_corrSac_onset_(ind_corrSac_onset_~=1)-300, trial_num(ind_corrSac_onset_~=1), 'Color', color_corrSac_onset);
+[~,ind_corrSac_vmax_] = max(train_data_logic_corrSac_vmax_,[],2);
+plot(ind_corrSac_vmax_(ind_corrSac_vmax_~=1)-300, trial_num(ind_corrSac_vmax_~=1), 'Color', color_corrSac_vmax);
+[~,ind_corrSac_offset_] = max(train_data_logic_corrSac_offset_,[],2);
+plot(ind_corrSac_offset_(ind_corrSac_offset_~=1)-300, trial_num(ind_corrSac_offset_~=1), 'Color', color_corrSac_offset);
+
 [x_axis_SS_, y_axis_SS_] = ESN_raster_plot_axes(train_data_logic_SS_, inds_span, 0.5);
 plot(x_axis_SS_(:), y_axis_SS_(:), 'LineWidth', 1, 'Color', color_SS)
 [x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_CS_, inds_span, 1);
@@ -1111,6 +1189,25 @@ train_data_logic_primSac_offset_ = train_data_logic_primSac_offset_180;
 train_data_logic_corrSac_onset_  = train_data_logic_corrSac_onset_180;
 train_data_logic_corrSac_vmax_   = train_data_logic_corrSac_vmax_180;
 train_data_logic_corrSac_offset_ = train_data_logic_corrSac_offset_180;
+
+trial_num = 1 : size(train_data_logic_cue_present_, 1);
+[~,ind_cue_present_] = max(train_data_logic_cue_present_,[],2);
+ind_cue_present_shift_200 = ind_cue_present_-100;
+ind_cue_present_shift_200(ind_cue_present_shift_200>0) = 0;
+plot(ind_cue_present_(ind_cue_present_~=1)-300, trial_num(ind_cue_present_~=1), 'Color', color_cue_present);
+plot(ind_cue_present_shift_200(ind_cue_present_~=1), trial_num(ind_cue_present_~=1), 'Color', color_cue_present);
+[~,ind_primSac_onset_] = max(train_data_logic_primSac_onset_,[],2);
+plot(ind_primSac_onset_(ind_primSac_onset_~=1)-300, trial_num(ind_primSac_onset_~=1), 'Color', color_primSac_onset);
+[~,ind_primSac_vmax_] = max(train_data_logic_primSac_vmax_,[],2);
+plot(ind_primSac_vmax_(ind_primSac_vmax_~=1)-300, trial_num(ind_primSac_vmax_~=1), 'Color', color_primSac_vmax);
+[~,ind_primSac_offset_] = max(train_data_logic_primSac_offset_,[],2);
+plot(ind_primSac_offset_(ind_primSac_offset_~=1)-300, trial_num(ind_primSac_offset_~=1), 'Color', color_primSac_offset);
+[~,ind_corrSac_onset_] = max(train_data_logic_corrSac_onset_,[],2);
+plot(ind_corrSac_onset_(ind_corrSac_onset_~=1)-300, trial_num(ind_corrSac_onset_~=1), 'Color', color_corrSac_onset);
+[~,ind_corrSac_vmax_] = max(train_data_logic_corrSac_vmax_,[],2);
+plot(ind_corrSac_vmax_(ind_corrSac_vmax_~=1)-300, trial_num(ind_corrSac_vmax_~=1), 'Color', color_corrSac_vmax);
+[~,ind_corrSac_offset_] = max(train_data_logic_corrSac_offset_,[],2);
+plot(ind_corrSac_offset_(ind_corrSac_offset_~=1)-300, trial_num(ind_corrSac_offset_~=1), 'Color', color_corrSac_offset);
 
 [x_axis_SS_, y_axis_SS_] = ESN_raster_plot_axes(train_data_logic_SS_, inds_span, 0.5);
 plot(x_axis_SS_(:), y_axis_SS_(:), 'LineWidth', 1, 'Color', color_SS)
@@ -1155,6 +1252,25 @@ train_data_logic_corrSac_onset_  = train_data_logic_corrSac_onset_225;
 train_data_logic_corrSac_vmax_   = train_data_logic_corrSac_vmax_225;
 train_data_logic_corrSac_offset_ = train_data_logic_corrSac_offset_225;
 
+trial_num = 1 : size(train_data_logic_cue_present_, 1);
+[~,ind_cue_present_] = max(train_data_logic_cue_present_,[],2);
+ind_cue_present_shift_200 = ind_cue_present_-100;
+ind_cue_present_shift_200(ind_cue_present_shift_200>0) = 0;
+plot(ind_cue_present_(ind_cue_present_~=1)-300, trial_num(ind_cue_present_~=1), 'Color', color_cue_present);
+plot(ind_cue_present_shift_200(ind_cue_present_~=1), trial_num(ind_cue_present_~=1), 'Color', color_cue_present);
+[~,ind_primSac_onset_] = max(train_data_logic_primSac_onset_,[],2);
+plot(ind_primSac_onset_(ind_primSac_onset_~=1)-300, trial_num(ind_primSac_onset_~=1), 'Color', color_primSac_onset);
+[~,ind_primSac_vmax_] = max(train_data_logic_primSac_vmax_,[],2);
+plot(ind_primSac_vmax_(ind_primSac_vmax_~=1)-300, trial_num(ind_primSac_vmax_~=1), 'Color', color_primSac_vmax);
+[~,ind_primSac_offset_] = max(train_data_logic_primSac_offset_,[],2);
+plot(ind_primSac_offset_(ind_primSac_offset_~=1)-300, trial_num(ind_primSac_offset_~=1), 'Color', color_primSac_offset);
+[~,ind_corrSac_onset_] = max(train_data_logic_corrSac_onset_,[],2);
+plot(ind_corrSac_onset_(ind_corrSac_onset_~=1)-300, trial_num(ind_corrSac_onset_~=1), 'Color', color_corrSac_onset);
+[~,ind_corrSac_vmax_] = max(train_data_logic_corrSac_vmax_,[],2);
+plot(ind_corrSac_vmax_(ind_corrSac_vmax_~=1)-300, trial_num(ind_corrSac_vmax_~=1), 'Color', color_corrSac_vmax);
+[~,ind_corrSac_offset_] = max(train_data_logic_corrSac_offset_,[],2);
+plot(ind_corrSac_offset_(ind_corrSac_offset_~=1)-300, trial_num(ind_corrSac_offset_~=1), 'Color', color_corrSac_offset);
+
 [x_axis_SS_, y_axis_SS_] = ESN_raster_plot_axes(train_data_logic_SS_, inds_span, 0.5);
 plot(x_axis_SS_(:), y_axis_SS_(:), 'LineWidth', 1, 'Color', color_SS)
 [x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_CS_, inds_span, 1);
@@ -1197,6 +1313,25 @@ train_data_logic_primSac_offset_ = train_data_logic_primSac_offset_270;
 train_data_logic_corrSac_onset_  = train_data_logic_corrSac_onset_270;
 train_data_logic_corrSac_vmax_   = train_data_logic_corrSac_vmax_270;
 train_data_logic_corrSac_offset_ = train_data_logic_corrSac_offset_270;
+
+trial_num = 1 : size(train_data_logic_cue_present_, 1);
+[~,ind_cue_present_] = max(train_data_logic_cue_present_,[],2);
+ind_cue_present_shift_200 = ind_cue_present_-100;
+ind_cue_present_shift_200(ind_cue_present_shift_200>0) = 0;
+plot(ind_cue_present_(ind_cue_present_~=1)-300, trial_num(ind_cue_present_~=1), 'Color', color_cue_present);
+plot(ind_cue_present_shift_200(ind_cue_present_~=1), trial_num(ind_cue_present_~=1), 'Color', color_cue_present);
+[~,ind_primSac_onset_] = max(train_data_logic_primSac_onset_,[],2);
+plot(ind_primSac_onset_(ind_primSac_onset_~=1)-300, trial_num(ind_primSac_onset_~=1), 'Color', color_primSac_onset);
+[~,ind_primSac_vmax_] = max(train_data_logic_primSac_vmax_,[],2);
+plot(ind_primSac_vmax_(ind_primSac_vmax_~=1)-300, trial_num(ind_primSac_vmax_~=1), 'Color', color_primSac_vmax);
+[~,ind_primSac_offset_] = max(train_data_logic_primSac_offset_,[],2);
+plot(ind_primSac_offset_(ind_primSac_offset_~=1)-300, trial_num(ind_primSac_offset_~=1), 'Color', color_primSac_offset);
+[~,ind_corrSac_onset_] = max(train_data_logic_corrSac_onset_,[],2);
+plot(ind_corrSac_onset_(ind_corrSac_onset_~=1)-300, trial_num(ind_corrSac_onset_~=1), 'Color', color_corrSac_onset);
+[~,ind_corrSac_vmax_] = max(train_data_logic_corrSac_vmax_,[],2);
+plot(ind_corrSac_vmax_(ind_corrSac_vmax_~=1)-300, trial_num(ind_corrSac_vmax_~=1), 'Color', color_corrSac_vmax);
+[~,ind_corrSac_offset_] = max(train_data_logic_corrSac_offset_,[],2);
+plot(ind_corrSac_offset_(ind_corrSac_offset_~=1)-300, trial_num(ind_corrSac_offset_~=1), 'Color', color_corrSac_offset);
 
 [x_axis_SS_, y_axis_SS_] = ESN_raster_plot_axes(train_data_logic_SS_, inds_span, 0.5);
 plot(x_axis_SS_(:), y_axis_SS_(:), 'LineWidth', 1, 'Color', color_SS)
@@ -1241,6 +1376,25 @@ train_data_logic_corrSac_onset_  = train_data_logic_corrSac_onset_315;
 train_data_logic_corrSac_vmax_   = train_data_logic_corrSac_vmax_315;
 train_data_logic_corrSac_offset_ = train_data_logic_corrSac_offset_315;
 
+trial_num = 1 : size(train_data_logic_cue_present_, 1);
+[~,ind_cue_present_] = max(train_data_logic_cue_present_,[],2);
+ind_cue_present_shift_200 = ind_cue_present_-100;
+ind_cue_present_shift_200(ind_cue_present_shift_200>0) = 0;
+plot(ind_cue_present_(ind_cue_present_~=1)-300, trial_num(ind_cue_present_~=1), 'Color', color_cue_present);
+plot(ind_cue_present_shift_200(ind_cue_present_~=1), trial_num(ind_cue_present_~=1), 'Color', color_cue_present);
+[~,ind_primSac_onset_] = max(train_data_logic_primSac_onset_,[],2);
+plot(ind_primSac_onset_(ind_primSac_onset_~=1)-300, trial_num(ind_primSac_onset_~=1), 'Color', color_primSac_onset);
+[~,ind_primSac_vmax_] = max(train_data_logic_primSac_vmax_,[],2);
+plot(ind_primSac_vmax_(ind_primSac_vmax_~=1)-300, trial_num(ind_primSac_vmax_~=1), 'Color', color_primSac_vmax);
+[~,ind_primSac_offset_] = max(train_data_logic_primSac_offset_,[],2);
+plot(ind_primSac_offset_(ind_primSac_offset_~=1)-300, trial_num(ind_primSac_offset_~=1), 'Color', color_primSac_offset);
+[~,ind_corrSac_onset_] = max(train_data_logic_corrSac_onset_,[],2);
+plot(ind_corrSac_onset_(ind_corrSac_onset_~=1)-300, trial_num(ind_corrSac_onset_~=1), 'Color', color_corrSac_onset);
+[~,ind_corrSac_vmax_] = max(train_data_logic_corrSac_vmax_,[],2);
+plot(ind_corrSac_vmax_(ind_corrSac_vmax_~=1)-300, trial_num(ind_corrSac_vmax_~=1), 'Color', color_corrSac_vmax);
+[~,ind_corrSac_offset_] = max(train_data_logic_corrSac_offset_,[],2);
+plot(ind_corrSac_offset_(ind_corrSac_offset_~=1)-300, trial_num(ind_corrSac_offset_~=1), 'Color', color_corrSac_offset);
+
 [x_axis_SS_, y_axis_SS_] = ESN_raster_plot_axes(train_data_logic_SS_, inds_span, 0.5);
 plot(x_axis_SS_(:), y_axis_SS_(:), 'LineWidth', 1, 'Color', color_SS)
 [x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_CS_, inds_span, 1);
@@ -1283,6 +1437,15 @@ x_axis = [cosd(0) cosd(45) cosd(90) cosd(135) cosd(180) cosd(225) cosd(270) cosd
 y_axis = [sind(0) sind(45) sind(90) sind(135) sind(180) sind(225) sind(270) sind(315) sind(0)] .* prob_amplitude;
 x_axis = x_axis(~isnan(x_axis)); y_axis = y_axis(~isnan(y_axis));
 plot(x_axis(:), y_axis(:), 'LineWidth', 3, 'Color', color_CS)
+
+CS_prob_avg = prob_amplitude(1:end-1);
+dir_angles = deg2rad([0, 45, 90, 135, 180, 225, 270, 315]);
+r = nansum(CS_prob_avg.* exp(1i*dir_angles) , 2); % compute weighted sum of cos and sin of angles
+CS_ang_avg = rad2deg(angle(r)); % Computes the mean direction for circular data.
+CS_prob_sum = nansum(CS_prob_avg,2); % sum of weights
+CS_rho_avg = abs(r) ./ CS_prob_sum; % Computes mean resultant vector length for circular data.
+plot([0 CS_rho_avg*cosd(CS_ang_avg)], [0 CS_rho_avg*sind(CS_ang_avg)], 'LineWidth', 3, 'Color', color_CS)
+
 axis equal
 set(gca, 'YColor', color_CS)
 set(gca, 'XColor', color_CS)

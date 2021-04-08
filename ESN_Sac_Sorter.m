@@ -158,22 +158,24 @@ for counter_trial = 1 : 1 : num_trials
             ((TRIAL.eye_r_py_filt(all_sac_ind_offset_) - TRIAL.eye_r_py_filt(all_sac_ind_onset_)).^2) );
         all_sac_eye_r_amp_m_ = reshape(all_sac_eye_r_amp_m_, 1, []);
         
-        all_sac_validity_( max(all_sac_eye_r_vm_) > 1200 ) = false; % invalidate if saccade trace has velocity > 1000 deg/s
-        all_sac_validity_( max(all_sac_eye_r_vm_(1:40,:)) > 300 ) = false; % invalidate if saccade trace during 1-40ms has velocity > 300 deg/s
-        all_sac_validity_( max(all_sac_eye_r_vm_(100:end,:)) > 300 ) = false; % invalidate if saccade trace during 100-150ms has velocity > 300 deg/s
+        all_sac_validity_( max(all_sac_eye_r_vm_) > 1200 ) = false;           % invalidate if saccade trace has velocity > 1000 deg/s
+        all_sac_validity_( max(all_sac_eye_r_vm_(1:40,:)) > 300 ) = false;    % invalidate if saccade trace during 1-40ms has velocity > 300 deg/s
+        all_sac_validity_( max(all_sac_eye_r_vm_(100:150,:)) > 300 ) = false; % invalidate if saccade trace during 100-150ms has velocity > 300 deg/s
+        all_sac_validity_( max(all_sac_eye_r_vm_(1:50,:)) > all_sac_eye_r_vm_(60,:) ) = false;   % invalidate if saccade trace during 1-50ms has velocity > vmax (10ms buffer before vmax)
+        all_sac_validity_( max(all_sac_eye_r_vm_(80:150,:)) > all_sac_eye_r_vm_(60,:) ) = false; % invalidate if saccade trace during 80-150ms has velocity > vmax (20ms buffer after vmax)
         all_sac_validity_( all_sac_eye_r_vm_max_ < threshold ) = false; % invalidate if vm_max < threshold deg/s
-        all_sac_validity_( all_sac_duration_ > 100 ) = false; % invalidate if saccades duration > 100 ms
-        all_sac_validity_( all_sac_ind_offset_-all_sac_ind_vmax_ > 90 ) = false; % invalidate if deceleration > 90 ms
-        all_sac_validity_( all_sac_ind_vmax_-all_sac_ind_onset_ > 60 ) = false; % invalidate if acceleration > 60 ms
-        all_sac_validity_( all_sac_ind_offset_-all_sac_ind_vmax_ < 1 ) = false; % invalidate if deceleration < 1 ms
-        all_sac_validity_( all_sac_ind_vmax_-all_sac_ind_onset_ < 1 ) = false; % invalidate if acceleration < 1 ms
+        all_sac_validity_( all_sac_duration_ > 100 ) = false;           % invalidate if saccades duration > 100 ms
+        all_sac_validity_( all_sac_ind_offset_-all_sac_ind_vmax_ > 70 ) = false; % invalidate if deceleration > 70 ms
+        all_sac_validity_( all_sac_ind_vmax_-all_sac_ind_onset_ > 50 ) = false;  % invalidate if acceleration > 50 ms
+        all_sac_validity_( all_sac_ind_offset_-all_sac_ind_vmax_ < 2 ) = false;  % invalidate if deceleration < 2 ms
+        all_sac_validity_( all_sac_ind_vmax_-all_sac_ind_onset_ < 2 ) = false;   % invalidate if acceleration < 2 ms
         all_sac_validity_( all_sac_eye_r_amp_m_ > 20 ) = false;  % invalidate if saccade amplitude > 20 deg
-%         all_sac_validity_( all_sac_eye_r_amp_m_ < 0.5 ) = false;  % invalidate if saccade amplitude < 0.5 deg
+        all_sac_validity_( all_sac_eye_r_amp_m_ < 0.2 ) = false; % invalidate if saccade amplitude < 0.2 deg
         all_sac_validity_( max(abs(all_sac_eye_r_px_)) > 20 ) = false;   % invalidate if abs of eye position > 20 deg
         all_sac_validity_( max(abs(all_sac_eye_r_py_)) > 20 ) = false;   % invalidate if abs of eye position > 20 deg
         
-        all_sac_validity_( [(abs(diff(all_sac_ind_vmax_)) < 5) false] ) = false; % invalidate if ind_vmax is the same
-        all_sac_validity_( [(abs(diff(all_sac_ind_onset_)) < 5) false] ) = false; % invalidate if ind_onset is the same
+        all_sac_validity_( [(abs(diff(all_sac_ind_vmax_)) < 5) false] ) = false;   % invalidate if ind_vmax is the same
+        all_sac_validity_( [(abs(diff(all_sac_ind_onset_)) < 5) false] ) = false;  % invalidate if ind_onset is the same
         all_sac_validity_( [(abs(diff(all_sac_ind_offset_)) < 5) false] ) = false; % invalidate if ind_offset is the same
         
         all_sac_ind_onset  = all_sac_ind_onset_(:,all_sac_validity_);
@@ -252,10 +254,10 @@ for counter_trial = 1 : 1 : num_trials
         diff_finish_tgt_end = sqrt( ...
             ((SACS_ALL_TRIAL.eye_r_px_offset(idx_sac) - TRIAL.end_x).^2) + ...
             ((SACS_ALL_TRIAL.eye_r_py_offset(idx_sac) - TRIAL.end_y).^2) );
-        SACS_ALL_TRIAL.diff_ang(idx_sac) = acosd( ...
+        SACS_ALL_TRIAL.diff_ang(idx_sac) = abs(acosd( ...
             ( (SACS_ALL_TRIAL.eye_r_amp_x(idx_sac) * SACS_ALL_TRIAL.visual_amp_x(idx_sac)) + ...
               (SACS_ALL_TRIAL.eye_r_amp_y(idx_sac) * SACS_ALL_TRIAL.visual_amp_y(idx_sac)) ) ...
-            / (SACS_ALL_TRIAL.eye_r_amp_m(idx_sac)) / (SACS_ALL_TRIAL.visual_amp_m(idx_sac)) );
+            / (SACS_ALL_TRIAL.eye_r_amp_m(idx_sac)) / (SACS_ALL_TRIAL.visual_amp_m(idx_sac)) ));
         validity_sac = true;
         validity_sac = validity_sac && (SACS_ALL_TRIAL.diff_start( idx_sac) < threshold_pos);
         validity_sac = validity_sac && ( (SACS_ALL_TRIAL.diff_finish(idx_sac) < threshold_pos) || (diff_finish_tgt_end < threshold_pos) );
@@ -265,7 +267,7 @@ for counter_trial = 1 : 1 : num_trials
             SACS_ALL_TRIAL.tag(idx_sac) = 1; % 'prim_success' tag 1
         elseif ( SACS_ALL_TRIAL.diff_ang(idx_sac) < threshold_ang ) && (SACS_ALL_TRIAL.diff_start( idx_sac) < threshold_pos)
             SACS_ALL_TRIAL.tag(idx_sac) = 2; % 'prim_attempt' tag 2
-        else
+        elseif ( SACS_ALL_TRIAL.diff_ang(idx_sac) >= threshold_ang ) && (SACS_ALL_TRIAL.diff_start( idx_sac) < threshold_pos)
             SACS_ALL_TRIAL.tag(idx_sac) = 3; % 'prim_fail' tag 3
         end
     end
@@ -299,10 +301,10 @@ for counter_trial = 1 : 1 : num_trials
             diff_finish_tgt_end = sqrt( ...
                 ((SACS_ALL_TRIAL.eye_r_px_offset(idx_sac) - TRIAL.end_x).^2) + ...
                 ((SACS_ALL_TRIAL.eye_r_py_offset(idx_sac) - TRIAL.end_y).^2) );
-            SACS_ALL_TRIAL.diff_ang(idx_sac) = acosd( ...
+            SACS_ALL_TRIAL.diff_ang(idx_sac) = abs(acosd( ...
                 ( (SACS_ALL_TRIAL.eye_r_amp_x(idx_sac) .* SACS_ALL_TRIAL.visual_amp_x(idx_sac)) + ...
                   (SACS_ALL_TRIAL.eye_r_amp_y(idx_sac) .* SACS_ALL_TRIAL.visual_amp_y(idx_sac)) ) ...
-                ./ (SACS_ALL_TRIAL.eye_r_amp_m(idx_sac)) ./ (SACS_ALL_TRIAL.visual_amp_m(idx_sac)) );
+                ./ (SACS_ALL_TRIAL.eye_r_amp_m(idx_sac)) ./ (SACS_ALL_TRIAL.visual_amp_m(idx_sac)) ));
             validity_sac = true;
             validity_sac = validity_sac && (SACS_ALL_TRIAL.diff_start( idx_sac) < threshold_pos);
             validity_sac = validity_sac && ( (SACS_ALL_TRIAL.diff_finish(idx_sac) < threshold_pos) || (diff_finish_tgt_end < threshold_pos) );
@@ -312,7 +314,7 @@ for counter_trial = 1 : 1 : num_trials
                 SACS_ALL_TRIAL.tag(idx_sac) = 1; % 'prim_success' tag 1
             elseif ( SACS_ALL_TRIAL.diff_ang(idx_sac) < threshold_ang ) && (SACS_ALL_TRIAL.diff_start( idx_sac) < threshold_pos)
                 SACS_ALL_TRIAL.tag(idx_sac) = 2; % 'prim_attempt' tag 2
-            else
+            elseif ( SACS_ALL_TRIAL.diff_ang(idx_sac) >= threshold_ang ) && (SACS_ALL_TRIAL.diff_start( idx_sac) < threshold_pos)
                 SACS_ALL_TRIAL.tag(idx_sac) = 3; % 'prim_fail' tag 3
             end
         end
@@ -357,10 +359,10 @@ for counter_trial = 1 : 1 : num_trials
                 SACS_ALL_TRIAL.diff_finish(idx_sac) = sqrt( ...
                     ((SACS_ALL_TRIAL.eye_r_px_offset(idx_sac) - SACS_ALL_TRIAL.visual_px_offset(idx_sac)).^2) + ...
                     ((SACS_ALL_TRIAL.eye_r_py_offset(idx_sac) - SACS_ALL_TRIAL.visual_py_offset(idx_sac)).^2) );
-                SACS_ALL_TRIAL.diff_ang(idx_sac) = acosd( ...
+                SACS_ALL_TRIAL.diff_ang(idx_sac) = abs(acosd( ...
                     ( (SACS_ALL_TRIAL.eye_r_amp_x(idx_sac) .* visual_amp_x_prim) + ...
                       (SACS_ALL_TRIAL.eye_r_amp_y(idx_sac) .* visual_amp_y_prim) ) ...
-                    ./ (SACS_ALL_TRIAL.eye_r_amp_m(idx_sac)) ./ (visual_amp_m_prim) );
+                    ./ (SACS_ALL_TRIAL.eye_r_amp_m(idx_sac)) ./ (visual_amp_m_prim) ));
                 validity_sac = true;
                 validity_sac = validity_sac && (SACS_ALL_TRIAL.visual_amp_m(idx_sac) > eps);
                 validity_sac = validity_sac && (SACS_ALL_TRIAL.diff_start( idx_sac) < threshold_pos);
@@ -368,7 +370,7 @@ for counter_trial = 1 : 1 : num_trials
                 validity_sac = validity_sac && (SACS_ALL_TRIAL.diff_ang(   idx_sac) < threshold_ang);
                 if validity_sac
                     SACS_ALL_TRIAL.tag(idx_sac) = 4; % 'corr_success' tag 4
-                else
+                elseif (SACS_ALL_TRIAL.diff_start( idx_sac) < threshold_pos)
                     SACS_ALL_TRIAL.tag(idx_sac) = 5; % 'corr_fail' tag 5
                 end
             end
@@ -438,10 +440,10 @@ for counter_trial = 1 : 1 : num_trials
                 SACS_ALL_TRIAL.diff_finish(idx_sac) = sqrt( ...
                     ((SACS_ALL_TRIAL.eye_r_px_offset(idx_sac) - SACS_ALL_TRIAL.visual_px_offset(idx_sac)).^2) + ...
                     ((SACS_ALL_TRIAL.eye_r_py_offset(idx_sac) - SACS_ALL_TRIAL.visual_py_offset(idx_sac)).^2) );
-                SACS_ALL_TRIAL.diff_ang(idx_sac) = acosd( ...
+                SACS_ALL_TRIAL.diff_ang(idx_sac) = abs(acosd( ...
                     ( (SACS_ALL_TRIAL.eye_r_amp_x(idx_sac) .* SACS_ALL_TRIAL.visual_amp_x(idx_sac)) + ...
                       (SACS_ALL_TRIAL.eye_r_amp_y(idx_sac) .* SACS_ALL_TRIAL.visual_amp_y(idx_sac)) ) ...
-                    ./ (SACS_ALL_TRIAL.eye_r_amp_m(idx_sac)) ./ (SACS_ALL_TRIAL.visual_amp_m(idx_sac)) );
+                    ./ (SACS_ALL_TRIAL.eye_r_amp_m(idx_sac)) ./ (SACS_ALL_TRIAL.visual_amp_m(idx_sac)) ));
                 SACS_ALL_TRIAL.tag(idx_sac) = 6; % 'back_center_success' tag 6
                 continue;
             end
@@ -472,10 +474,10 @@ for counter_trial = 1 : 1 : num_trials
                 SACS_ALL_TRIAL.diff_finish(idx_sac) = sqrt( ...
                     ((SACS_ALL_TRIAL.eye_r_px_offset(idx_sac) - SACS_ALL_TRIAL.visual_px_offset(idx_sac)).^2) + ...
                     ((SACS_ALL_TRIAL.eye_r_py_offset(idx_sac) - SACS_ALL_TRIAL.visual_py_offset(idx_sac)).^2) );
-                SACS_ALL_TRIAL.diff_ang(idx_sac) = acosd( ...
+                SACS_ALL_TRIAL.diff_ang(idx_sac) = abs(acosd( ...
                     ( (SACS_ALL_TRIAL.eye_r_amp_x(idx_sac) .* SACS_ALL_TRIAL.visual_amp_x(idx_sac)) + ...
                       (SACS_ALL_TRIAL.eye_r_amp_y(idx_sac) .* SACS_ALL_TRIAL.visual_amp_y(idx_sac)) ) ...
-                    ./ (SACS_ALL_TRIAL.eye_r_amp_m(idx_sac)) ./ (SACS_ALL_TRIAL.visual_amp_m(idx_sac)) );
+                    ./ (SACS_ALL_TRIAL.eye_r_amp_m(idx_sac)) ./ (SACS_ALL_TRIAL.visual_amp_m(idx_sac)) ));
                 SACS_ALL_TRIAL.tag(idx_sac) = 7; % 'back_center_prim' tag 7
                 continue;
             end
@@ -529,10 +531,10 @@ for counter_trial = 1 : 1 : num_trials
                 SACS_ALL_TRIAL.diff_finish(idx_sac) = sqrt( ...
                     ((SACS_ALL_TRIAL.eye_r_px_offset(idx_sac) - SACS_ALL_TRIAL.visual_px_offset(idx_sac)).^2) + ...
                     ((SACS_ALL_TRIAL.eye_r_py_offset(idx_sac) - SACS_ALL_TRIAL.visual_py_offset(idx_sac)).^2) );
-                SACS_ALL_TRIAL.diff_ang(idx_sac) = acosd( ...
+                SACS_ALL_TRIAL.diff_ang(idx_sac) = abs(acosd( ...
                     ( (SACS_ALL_TRIAL.eye_r_amp_x(idx_sac) .* SACS_ALL_TRIAL.visual_amp_x(idx_sac)) + ...
                       (SACS_ALL_TRIAL.eye_r_amp_y(idx_sac) .* SACS_ALL_TRIAL.visual_amp_y(idx_sac)) ) ...
-                    ./ (SACS_ALL_TRIAL.eye_r_amp_m(idx_sac)) ./ (SACS_ALL_TRIAL.visual_amp_m(idx_sac)) );
+                    ./ (SACS_ALL_TRIAL.eye_r_amp_m(idx_sac)) ./ (SACS_ALL_TRIAL.visual_amp_m(idx_sac)) ));
                 SACS_ALL_TRIAL.tag(idx_sac) = 7; % 'back_center_prim' tag 7
             end
         end
@@ -568,10 +570,10 @@ for counter_trial = 1 : 1 : num_trials
     SACS_ALL_TRIAL.diff_start(idx_nan_visual_values)  = sqrt( ...
         ((SACS_ALL_TRIAL.eye_r_px_onset( idx_nan_visual_values) - SACS_ALL_TRIAL.visual_px_onset( idx_nan_visual_values)).^2) + ...
         ((SACS_ALL_TRIAL.eye_r_py_onset( idx_nan_visual_values) - SACS_ALL_TRIAL.visual_py_onset( idx_nan_visual_values)).^2) );
-    SACS_ALL_TRIAL.diff_ang(idx_nan_visual_values) = acosd( ...
+    SACS_ALL_TRIAL.diff_ang(idx_nan_visual_values) = abs(acosd( ...
         ( (SACS_ALL_TRIAL.eye_r_amp_x(idx_nan_visual_values) .* SACS_ALL_TRIAL.visual_amp_x(idx_nan_visual_values)) + ...
           (SACS_ALL_TRIAL.eye_r_amp_y(idx_nan_visual_values) .* SACS_ALL_TRIAL.visual_amp_y(idx_nan_visual_values)) ) ...
-        ./ (SACS_ALL_TRIAL.eye_r_amp_m(idx_nan_visual_values)) ./ (SACS_ALL_TRIAL.visual_amp_m(idx_nan_visual_values)) );
+        ./ (SACS_ALL_TRIAL.eye_r_amp_m(idx_nan_visual_values)) ./ (SACS_ALL_TRIAL.visual_amp_m(idx_nan_visual_values)) ));
     
     
     % Set the reaction time of target_irrelev and other_irrelev as the time
@@ -585,10 +587,40 @@ for counter_trial = 1 : 1 : num_trials
                 SACS_ALL_TRIAL.time_visual(idx_sac)      = TRIAL.time_start;
                 SACS_ALL_TRIAL.reaction(idx_sac)         = (SACS_ALL_TRIAL.time_onset(idx_sac) - SACS_ALL_TRIAL.time_visual(idx_sac)) * 1000.0;
             else
-                SACS_ALL_TRIAL.time_visual(idx_sac)      = SACS_ALL_TRIAL.time_onset(idx_sac-1);
+                SACS_ALL_TRIAL.time_visual(idx_sac)      = SACS_ALL_TRIAL.time_offset(idx_sac-1);
                 SACS_ALL_TRIAL.reaction(idx_sac)         = (SACS_ALL_TRIAL.time_onset(idx_sac) - SACS_ALL_TRIAL.time_visual(idx_sac)) * 1000.0;
             end
         end
+    end
+    
+    % Re-tag the 1st saccade as back_center_success if it landed at start
+    idx_sac = 1;
+    diff_finish  = sqrt( ...
+        ((SACS_ALL_TRIAL.eye_r_px_offset( idx_sac) - TRIAL.start_x).^2) + ...
+        ((SACS_ALL_TRIAL.eye_r_py_offset( idx_sac) - TRIAL.start_y).^2) );
+    if(diff_finish < threshold_pos)
+        % this is the 1st sac of the trial, i.e., back_center_success
+        SACS_ALL_TRIAL.time_visual(idx_sac)      = TRIAL.time_start;
+        SACS_ALL_TRIAL.visual_px_onset(idx_sac)  = SACS_ALL_TRIAL.eye_r_px_onset(idx_sac);
+        SACS_ALL_TRIAL.visual_py_onset(idx_sac)  = SACS_ALL_TRIAL.eye_r_py_onset(idx_sac);
+        SACS_ALL_TRIAL.visual_px_offset(idx_sac) = TRIAL.start_x;
+        SACS_ALL_TRIAL.visual_py_offset(idx_sac) = TRIAL.start_y;
+        SACS_ALL_TRIAL.reaction(idx_sac)         = (SACS_ALL_TRIAL.time_onset(idx_sac) - SACS_ALL_TRIAL.time_visual(idx_sac)) * 1000.0;
+        SACS_ALL_TRIAL.visual_amp_x(idx_sac)     = (SACS_ALL_TRIAL.visual_px_offset(idx_sac) - SACS_ALL_TRIAL.visual_px_onset(idx_sac));
+        SACS_ALL_TRIAL.visual_amp_y(idx_sac)     = (SACS_ALL_TRIAL.visual_py_offset(idx_sac) - SACS_ALL_TRIAL.visual_py_onset(idx_sac));
+        SACS_ALL_TRIAL.visual_amp_m(idx_sac)     = sqrt((SACS_ALL_TRIAL.visual_amp_x(idx_sac).^2) + (SACS_ALL_TRIAL.visual_amp_y(idx_sac).^2));
+        SACS_ALL_TRIAL.visual_ang(idx_sac)       = atan2d(SACS_ALL_TRIAL.visual_amp_y(idx_sac), SACS_ALL_TRIAL.visual_amp_x(idx_sac));
+        SACS_ALL_TRIAL.diff_start(idx_sac)  = sqrt( ...
+            ((SACS_ALL_TRIAL.eye_r_px_onset( idx_sac) - SACS_ALL_TRIAL.visual_px_onset( idx_sac)).^2) + ...
+            ((SACS_ALL_TRIAL.eye_r_py_onset( idx_sac) - SACS_ALL_TRIAL.visual_py_onset( idx_sac)).^2) );
+        SACS_ALL_TRIAL.diff_finish(idx_sac) = sqrt( ...
+            ((SACS_ALL_TRIAL.eye_r_px_offset(idx_sac) - SACS_ALL_TRIAL.visual_px_offset(idx_sac)).^2) + ...
+            ((SACS_ALL_TRIAL.eye_r_py_offset(idx_sac) - SACS_ALL_TRIAL.visual_py_offset(idx_sac)).^2) );
+        SACS_ALL_TRIAL.diff_ang(idx_sac) = abs(acosd( ...
+            ( (SACS_ALL_TRIAL.eye_r_amp_x(idx_sac) .* SACS_ALL_TRIAL.visual_amp_x(idx_sac)) + ...
+              (SACS_ALL_TRIAL.eye_r_amp_y(idx_sac) .* SACS_ALL_TRIAL.visual_amp_y(idx_sac)) ) ...
+            ./ (SACS_ALL_TRIAL.eye_r_amp_m(idx_sac)) ./ (SACS_ALL_TRIAL.visual_amp_m(idx_sac)) ));
+        SACS_ALL_TRIAL.tag(idx_sac) = 6; % 'back_center_success' tag 6
     end
     
     % Fill up the count values
@@ -717,7 +749,6 @@ fprintf(' --> Completed. \n')
 %% Arrange 'SACS_ALL_DATA'
 clearvars -except EXPERIMENT_PARAMS ...
     TRIALS_DATA SACS_ALL;
-fprintf([EXPERIMENT_PARAMS.file_name ': Arranging SACS_ALL_DATA ...']);
 clearvars('SACS_ALL_DATA'); SACS_ALL_DATA = struct;
 field_names_SACS_ALL_DATA = fieldnames(SACS_ALL);
 SACS_ALL_DATA_cell = struct2cell(SACS_ALL);
@@ -727,20 +758,20 @@ for counter_fields = 1 : 1 : length(field_names_SACS_ALL_DATA)
     SACS_ALL_DATA_field_mat = cell2mat(SACS_ALL_DATA_field_cell);
     SACS_ALL_DATA.(field_names_SACS_ALL_DATA{counter_fields}) = SACS_ALL_DATA_field_mat;
 end
-fprintf(' --> Completed. \n');
 
-%% Add saccade trajectory to the SACS_ALL_DATA
+%% Add saccade traces to the SACS_ALL_DATA
 clearvars -except EXPERIMENT_PARAMS TRIALS_DATA SACS_ALL_DATA;
-fprintf([EXPERIMENT_PARAMS.file_name ': Adding saccade trajectory ...']);
 num_sacs = length(SACS_ALL_DATA.validity);
 SACS_ALL_DATA.eye_r_px = nan(150, num_sacs);
 SACS_ALL_DATA.eye_r_py = nan(150, num_sacs);
+SACS_ALL_DATA.eye_r_vm = nan(150, num_sacs);
 for counter_sac = 1 : num_sacs
     sac_time_vmax = SACS_ALL_DATA.time_vmax(counter_sac);
     sac_trial_num = SACS_ALL_DATA.trial_num(counter_sac);
     trial_time_1K       = TRIALS_DATA.time_1K{      1,sac_trial_num};
     trial_eye_r_px_filt = TRIALS_DATA.eye_r_px_filt{1,sac_trial_num};
     trial_eye_r_py_filt = TRIALS_DATA.eye_r_py_filt{1,sac_trial_num};
+    trial_eye_r_vm_filt = TRIALS_DATA.eye_r_vm_filt{1,sac_trial_num};
     ind_vmax = find(trial_time_1K >= sac_time_vmax, 1, 'first');
     if isempty(ind_vmax)
         continue;
@@ -755,8 +786,8 @@ for counter_sac = 1 : num_sacs
     sac_inds = reshape(sac_inds,num_sac_datapoints, 1);
     SACS_ALL_DATA.eye_r_px(:,counter_sac) = reshape(trial_eye_r_px_filt(sac_inds), num_sac_datapoints, 1);
     SACS_ALL_DATA.eye_r_py(:,counter_sac) = reshape(trial_eye_r_py_filt(sac_inds), num_sac_datapoints, 1);
+    SACS_ALL_DATA.eye_r_vm(:,counter_sac) = reshape(trial_eye_r_vm_filt(sac_inds), num_sac_datapoints, 1);
 end
-fprintf(' --> Completed. \n');
 
 %% Plot SACS_ALL_DATA
 if ~EXPERIMENT_PARAMS.flag_session_figure
@@ -848,5 +879,10 @@ sgtitle([EXPERIMENT_PARAMS.file_name(1:13) ', ' ...
     ], ...
     'interpret', 'none');
 ESN_Beautify_Plot(hFig, [13 13], 8)
+
+%% Remove traces
+rmfields_list = {'eye_r_px', 'eye_r_py', 'eye_r_vm'};
+SACS_ALL_DATA = rmfield(SACS_ALL_DATA,rmfields_list);
+
 
 end

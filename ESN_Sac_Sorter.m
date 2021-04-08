@@ -263,7 +263,7 @@ for counter_trial = 1 : 1 : num_trials
         
         if validity_sac
             SACS_ALL_TRIAL.tag(idx_sac) = 1; % 'prim_success' tag 1
-        elseif ( SACS_ALL_TRIAL.diff_ang(idx_sac) < threshold_ang )
+        elseif ( SACS_ALL_TRIAL.diff_ang(idx_sac) < threshold_ang ) && (SACS_ALL_TRIAL.diff_start( idx_sac) < threshold_pos)
             SACS_ALL_TRIAL.tag(idx_sac) = 2; % 'prim_attempt' tag 2
         else
             SACS_ALL_TRIAL.tag(idx_sac) = 3; % 'prim_fail' tag 3
@@ -310,7 +310,7 @@ for counter_trial = 1 : 1 : num_trials
 
             if validity_sac
                 SACS_ALL_TRIAL.tag(idx_sac) = 1; % 'prim_success' tag 1
-            elseif ( SACS_ALL_TRIAL.diff_ang(idx_sac) < threshold_ang )
+            elseif ( SACS_ALL_TRIAL.diff_ang(idx_sac) < threshold_ang ) && (SACS_ALL_TRIAL.diff_start( idx_sac) < threshold_pos)
                 SACS_ALL_TRIAL.tag(idx_sac) = 2; % 'prim_attempt' tag 2
             else
                 SACS_ALL_TRIAL.tag(idx_sac) = 3; % 'prim_fail' tag 3

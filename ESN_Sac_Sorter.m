@@ -52,17 +52,28 @@ for counter_trial = 1 : 1 : num_trials
     
     TRIAL.time_start                 = TRIALS_DATA.time_start(               1,counter_trial);
     TRIAL.time_end                   = TRIALS_DATA.time_end(                 1,counter_trial);
-    TRIAL.time_state_str_pursuit     = TRIALS_DATA.time_state_str_pursuit{   1,counter_trial};
-    TRIAL.time_state_str_present     = TRIALS_DATA.time_state_str_present{   1,counter_trial};
-    TRIAL.time_state_str_fixation    = TRIALS_DATA.time_state_str_fixation{  1,counter_trial};
-    TRIAL.time_state_cue_present     = TRIALS_DATA.time_state_cue_present{   1,counter_trial};
-    TRIAL.time_state_sac_detect_on   = TRIALS_DATA.time_state_sac_detect_on{ 1,counter_trial};
-    TRIAL.time_state_sac_onset       = TRIALS_DATA.time_state_sac_onset{     1,counter_trial};
-    TRIAL.time_state_sac_detect_off  = TRIALS_DATA.time_state_sac_detect_off{1,counter_trial};
-    TRIAL.time_state_reward          = TRIALS_DATA.time_state_reward{        1,counter_trial};
-    TRIAL.time_state_end_fixation    = TRIALS_DATA.time_state_end_fixation(  1,counter_trial);
-    TRIAL.time_state_iti             = TRIALS_DATA.time_state_iti(           1,counter_trial);
-    TRIAL.time_state_next_trial      = TRIALS_DATA.time_state_next_trial(    1,counter_trial);
+    variable_list = {'time_state_str_pursuit','time_state_str_present','time_state_str_fixation','time_state_cue_present',...
+        'time_state_sac_detect_on','time_state_sac_onset','time_state_sac_detect_off',...
+        'time_state_reward','time_state_end_fixation','time_state_iti','time_state_next_trial'};
+    for counter_variable = 1 : length(variable_list)
+        variable_name = variable_list{counter_variable};
+        if isa(TRIALS_DATA.(variable_name),'double')
+            TRIAL.(variable_name)     = TRIALS_DATA.(variable_name)(   1,counter_trial);
+        elseif isa(TRIALS_DATA.(variable_name),'cell')
+            TRIAL.(variable_name)     = TRIALS_DATA.(variable_name){   1,counter_trial};
+        end
+    end
+%     TRIAL.time_state_str_pursuit     = TRIALS_DATA.time_state_str_pursuit{   1,counter_trial};
+%     TRIAL.time_state_str_present     = TRIALS_DATA.time_state_str_present{   1,counter_trial};
+%     TRIAL.time_state_str_fixation    = TRIALS_DATA.time_state_str_fixation{  1,counter_trial};
+%     TRIAL.time_state_cue_present     = TRIALS_DATA.time_state_cue_present{   1,counter_trial};
+%     TRIAL.time_state_sac_detect_on   = TRIALS_DATA.time_state_sac_detect_on{ 1,counter_trial};
+%     TRIAL.time_state_sac_onset       = TRIALS_DATA.time_state_sac_onset{     1,counter_trial};
+%     TRIAL.time_state_sac_detect_off  = TRIALS_DATA.time_state_sac_detect_off{1,counter_trial};
+%     TRIAL.time_state_reward          = TRIALS_DATA.time_state_reward{        1,counter_trial};
+%     TRIAL.time_state_end_fixation    = TRIALS_DATA.time_state_end_fixation(  1,counter_trial);
+%     TRIAL.time_state_iti             = TRIALS_DATA.time_state_iti(           1,counter_trial);
+%     TRIAL.time_state_next_trial      = TRIALS_DATA.time_state_next_trial(    1,counter_trial);
     TRIAL.time_iti                   = TRIALS_DATA.time_iti(                 1,counter_trial);
     TRIAL.time_punishment            = TRIALS_DATA.time_punishment(          1,counter_trial);
     TRIAL.time_fixation              = TRIALS_DATA.time_fixation(            1,counter_trial);
@@ -266,7 +277,7 @@ for counter_trial = 1 : 1 : num_trials
     if length_cue_presentation > 0
     for counter_cue_pres = 1 : length_cue_presentation
         time_start_search  = TRIAL.time_state_cue_present(counter_cue_pres);
-        time_finish_search = TRIAL.time_state_str_present( find(TRIAL.time_state_str_present > time_start_search, 1, 'first') );
+        time_finish_search = TRIAL.time_state_str_fixation( find(TRIAL.time_state_str_fixation > time_start_search, 1, 'first') );
         idx_sac = find((SACS_ALL_TRIAL.time_onset > time_start_search) & (SACS_ALL_TRIAL.time_onset < time_finish_search), 1, 'first');
         if ~isempty(idx_sac)
             SACS_ALL_TRIAL.time_visual(idx_sac)      = time_start_search;
@@ -318,7 +329,7 @@ for counter_trial = 1 : 1 : num_trials
             time_last_cue_pres = TRIAL.time_state_cue_present(end);
             time_start_search = SACS_ALL_TRIAL.time_offset(idx_prim);
             if time_start_search < time_last_cue_pres
-                time_finish_search = TRIAL.time_state_str_present( find(TRIAL.time_state_str_present > time_start_search, 1, 'first') );
+                time_finish_search = TRIAL.time_state_str_fixation( find(TRIAL.time_state_str_fixation > time_start_search, 1, 'first') );
             else
                 time_finish_search = TRIAL.time_state_next_trial(end);
             end
@@ -372,7 +383,7 @@ for counter_trial = 1 : 1 : num_trials
         if counter_cue_pres==1
             time_start_search = TRIAL.time_start;
         else
-            time_start_search = TRIAL.time_state_str_present( find(TRIAL.time_state_str_present < time_finish_search, 1, 'last') ) - TRIAL.time_pursuit; % str_pursuit is the shiftet version of str_present
+            time_start_search = TRIAL.time_state_str_fixation( find(TRIAL.time_state_str_fixation < time_finish_search, 1, 'last') ) - TRIAL.time_pursuit; % str_pursuit is the shiftet version of str_present
         end
         idx_sac = find((SACS_ALL_TRIAL.time_onset > time_start_search) & (SACS_ALL_TRIAL.time_onset < time_finish_search), 1, 'last');
         if ~isempty(idx_sac)
@@ -612,7 +623,7 @@ for counter_trial = 1 : 1 : num_trials
     plot(TRIAL.time_1K, TRIAL.tgt_px)
     plot(TRIAL.time_1K(all_sac_ind_onset(all_sac_validity)), TRIAL.eye_r_px_filt(all_sac_ind_onset(all_sac_validity)), 'ok')
     plot(TRIAL.time_1K(all_sac_ind_offset(all_sac_validity)), TRIAL.eye_r_px_filt(all_sac_ind_offset(all_sac_validity)), 'ob')
-    plot(TRIAL.time_state_str_present'-TRIAL.time_pursuit, zeros(size(TRIAL.time_state_str_present')), '*k')
+    plot(TRIAL.time_state_str_fixation'-TRIAL.time_pursuit, zeros(size(TRIAL.time_state_str_fixation')), '*k')
     plot(TRIAL.time_state_sac_detect_on', zeros(size(TRIAL.time_state_sac_detect_on')), '*r')
     plot(TRIAL.time_state_sac_detect_off', zeros(size(TRIAL.time_state_sac_detect_off')), '*m')
     plot(TRIAL.time_state_reward', zeros(size(TRIAL.time_state_reward')), '*b')
@@ -630,7 +641,7 @@ for counter_trial = 1 : 1 : num_trials
     plot(TRIAL.time_1K, TRIAL.tgt_py)
     plot(TRIAL.time_1K(all_sac_ind_onset(all_sac_validity)), TRIAL.eye_r_py_filt(all_sac_ind_onset(all_sac_validity)), 'ok')
     plot(TRIAL.time_1K(all_sac_ind_offset(all_sac_validity)), TRIAL.eye_r_py_filt(all_sac_ind_offset(all_sac_validity)), 'ob')
-    plot(TRIAL.time_state_str_present'-TRIAL.time_pursuit, zeros(size(TRIAL.time_state_str_present')), '*k')
+    plot(TRIAL.time_state_str_fixation'-TRIAL.time_pursuit, zeros(size(TRIAL.time_state_str_fixation')), '*k')
     plot(TRIAL.time_state_sac_detect_on', zeros(size(TRIAL.time_state_sac_detect_on')), '*r')
     plot(TRIAL.time_state_sac_detect_off', zeros(size(TRIAL.time_state_sac_detect_off')), '*m')
     plot(TRIAL.time_state_reward', zeros(size(TRIAL.time_state_reward')), '*b')
@@ -647,7 +658,7 @@ for counter_trial = 1 : 1 : num_trials
     plot(TRIAL.time_1K(all_sac_ind_onset(all_sac_validity)), TRIAL.eye_r_vm_filt(all_sac_ind_onset(all_sac_validity)), 'ok')
     plot(TRIAL.time_1K(all_sac_ind_vmax(all_sac_validity)), TRIAL.eye_r_vm_filt(all_sac_ind_vmax(all_sac_validity)), 'or')
     plot(TRIAL.time_1K(all_sac_ind_offset(all_sac_validity)), TRIAL.eye_r_vm_filt(all_sac_ind_offset(all_sac_validity)), 'ob')
-    plot(TRIAL.time_state_str_present'-TRIAL.time_pursuit, zeros(size(TRIAL.time_state_str_present')), '*k')
+    plot(TRIAL.time_state_str_fixation'-TRIAL.time_pursuit, zeros(size(TRIAL.time_state_str_fixation')), '*k')
     plot(TRIAL.time_state_sac_detect_on', zeros(size(TRIAL.time_state_sac_detect_on')), '*r')
     plot(TRIAL.time_state_sac_detect_off', zeros(size(TRIAL.time_state_sac_detect_off')), '*m')
     plot(TRIAL.time_state_reward', zeros(size(TRIAL.time_state_reward')), '*b')

@@ -2,11 +2,10 @@
 function ESN_population_coding_sac_sorter
 %% Steps to prepare the combined eye & neuro data
 % (1) re_run_ESN_sac_sorter(); % this func will re-analyze the _ANALYZED files and add the SACS_ALL_DATA with tags to them
-% (2) re_run_add_ephys_sac_sorter(); % this func will fuse the eye & neuro data and save the results with _sac_sorter name
-%%
+% (2) re_run_add_ephys_sac_sorter(); % this func will fuse the eye & neuro data and save the results with _sac name
+% (3) combine_sac_mat_files(); % combine the _sac files and form one file per cell. save the data in the ALL_PCELL_### folder.
 
 end
-
 
 %% function RE-RUN ESN_Sac_Sorter
 function re_run_ESN_sac_sorter()
@@ -79,7 +78,7 @@ if ~strcmp(path_data_monkey_sorted(end), filesep);path_data_monkey_sorted = [pat
 pCell_list_isstr = arrayfun(@iscellstr,pCell_list);
 num_pCells = size(pCell_list, 1);
 %% Loop over pCells
-for counter_pCell = 1 : 1 : num_pCells
+for counter_pCell = 68 : 1 : num_pCells
     fprintf(['Analyzing pCell no. ', num2str(counter_pCell), ' / ' num2str(num_pCells) ' ... ']);
     num_recording = sum(pCell_list_isstr(counter_pCell, :));
     for counter_recording = 1 : 1 : num_recording
@@ -251,11 +250,13 @@ for counter_sac = 1 : num_sacs
         event_time = BEHAVE.SACS_ALL_DATA.(['time' '_' event_type_name])(1,counter_sac);
         if isnan(event_time)
             % if the event_time is nan, then skip the event.
+            BEHAVE.SACS_ALL_DATA.validity(1, counter_sac) = false;
             continue;
         end
         event_ind = find(REFRENCE_TIME >= event_time, 1, 'first');
         if isempty(event_ind)
             % if the event_ind is empty, then skip the event.
+            BEHAVE.SACS_ALL_DATA.validity(1, counter_sac) = false;
             continue;
         end
         event_inds = repmat( event_ind, 1, length(inds_span_)) + repmat(inds_span_(:)', length(event_ind), 1);
@@ -278,11 +279,13 @@ for counter_sac = 1 : num_sacs
         event_time = BEHAVE.SACS_ALL_DATA.(['time' '_' event_type_name])(1,counter_sac);
         if isnan(event_time)
             % if the event_time is nan, then skip the event.
+            BEHAVE.SACS_ALL_DATA.validity(1, counter_sac) = false;
             continue;
         end
         event_ind = find(REFRENCE_TIME >= event_time, 1, 'first');
         if isempty(event_ind)
             % if the event_ind is empty, then skip the event.
+            BEHAVE.SACS_ALL_DATA.validity(1, counter_sac) = false;
             continue;
         end
         % set the event_ind_converted based on align_states
@@ -290,7 +293,7 @@ for counter_sac = 1 : num_sacs
         % re-write the event_ind_converted to be based on align_photodiode if
         % the event is a cue presentation
         if strcmp(event_type_name,'visual')
-            tag_ = BEHAVE.SACS_ALL_DATA.tag(counter_sac);
+            tag_ = BEHAVE.SACS_ALL_DATA.tag(1, counter_sac);
             if (tag_ == 1) || (tag_ == 2) || (tag_ == 3) || (tag_ == 6) || (tag_ == 7)
                 % 'prim_success' tag 1 % 'prim_attempt' tag 2 % 'prim_fail' tag 3 % 'back_center_success' tag 6 % 'back_center_prim' tag 7
                 event_ind_converted = EPHYS.CH_EVE.align_photodiode.EPHYS_PD_aligned_ind_1K(event_ind);
@@ -298,6 +301,7 @@ for counter_sac = 1 : num_sacs
         end
         if isempty(event_ind_converted)
             % if the event_ind_converted is empty, then skip the event.
+            BEHAVE.SACS_ALL_DATA.validity(1, counter_sac) = false;
             continue;
         end
         event_inds_converted = repmat( event_ind_converted, 1, length(inds_span_)) + repmat(inds_span_(:)', length(event_ind_converted), 1);
@@ -328,7 +332,7 @@ else
     EPHYS.Neural_Properties.SS_duration = EPHYS.CH_sorted.duration;
     EPHYS.Neural_Properties.SS_firing_rate = 0;
     EPHYS.Neural_Properties.SS_time = [];
-    EPHYS.Neural_Properties.SS_waveform = [];
+    EPHYS.Neural_Properties.SS_waveform = zeros(1, size(EPHYS.CH_sorted.CS_data.CS_waveform, 2));
 end
 
 if length(EPHYS.CH_sorted.CS_data.CS_time)>1
@@ -340,7 +344,7 @@ else
     EPHYS.Neural_Properties.CS_num = 0;
     EPHYS.Neural_Properties.CS_firing_rate = 0;
     EPHYS.Neural_Properties.CS_time = [];
-    EPHYS.Neural_Properties.CS_waveform = [];
+    EPHYS.Neural_Properties.CS_waveform = zeros(1, size(EPHYS.CH_sorted.SS_data.SS_waveform, 2));
 end
 EPHYS.Neural_Properties.Corr_data_CS_inds_span     = nanmean(EPHYS.CH_sorted.Corr_data.CS_inds_span);
 EPHYS.Neural_Properties.Corr_data_CS_bin_size_time = nanmean(EPHYS.CH_sorted.Corr_data.CS_bin_size_time);
@@ -356,3 +360,120 @@ EXPERIMENT_PARAMS = BEHAVE.EXPERIMENT_PARAMS;
 
 end
 
+%% function combine_sac_mat_files()
+function combine_sac_files()
+clc; close all;
+pCell_list = ESN_build_pCell_list();
+path_data_monkey_sorted = uigetdir;
+
+if ~strcmp(path_data_monkey_sorted(end), filesep);path_data_monkey_sorted = [path_data_monkey_sorted filesep];end
+pCell_list_isstr = arrayfun(@iscellstr,pCell_list);
+num_pCells = size(pCell_list, 1);
+%% Loop over pCells
+for counter_pCell = 1 : 1 : num_pCells
+    fprintf(['Analyzing pCell no. ', num2str(counter_pCell), ' / ' num2str(num_pCells) ' ... ']);
+    num_recording = sum(pCell_list_isstr(counter_pCell, :));
+    clearvars data_recordings
+    %% Loop over recordings
+    for counter_recording = 1 : 1 : num_recording
+        %% build plot_data address
+        file_name_cell = pCell_list{counter_pCell, counter_recording}; % '190423_142023_01_sorted_ESN_plot_data';
+        year_ = file_name_cell(1:2);
+        month_ = file_name_cell(3:4);
+        day_ = file_name_cell(5:6);
+        hour_ = file_name_cell(8:9);
+        minute_ = file_name_cell(10:11);
+        second_ = file_name_cell(12:13);
+        subFolder_month = ['20' year_ '-' month_ filesep];
+        subFolder_day = ['20' year_ '-' month_ '-' day_ filesep];
+        subFolder_recording = ['20' year_ '-' month_ '-' day_ '_' hour_ '-' minute_ '-' second_ filesep];
+        subFolder_figs = ['analyzed_data' filesep];
+        %% load recording data
+        file_path = [path_data_monkey_sorted subFolder_month subFolder_day subFolder_recording subFolder_figs];
+        if ~strcmp(file_path(end), filesep);file_path = [file_path filesep];end
+        data_recording = load([file_path file_name_cell(1:end-4) '_sac' file_name_cell(end-3:end) '.mat'], ...
+            'SACS_ALL_DATA', 'Neural_Properties', 'EXPERIMENT_PARAMS');
+        if file_name_cell(18) == 's'
+            data_recording.id          = file_name_cell(1:16);
+        elseif file_name_cell(18) == '2'
+            data_recording.id          = file_name_cell(1:18);
+        else
+            error('Build plot_data_compress: cell id does not follow the standards')
+        end
+        data_recordings(counter_recording) = data_recording;
+    end
+    %% Init data_cell
+    data_cell = struct;
+    %% id
+    data_cell.id = cell(num_recording, 1);
+    for counter_recording = 1 : 1 : num_recording
+        data_cell.id{counter_recording, 1} = data_recordings(counter_recording).id;
+    end
+    %% EXPERIMENT_PARAMS
+    field_names_EXPERIMENT_PARAMS = fieldnames(data_recordings(1).EXPERIMENT_PARAMS);
+    for counter_field = 1 : 1 : length(field_names_EXPERIMENT_PARAMS)
+        field_name_EXPERIMENT_PARAMS = field_names_EXPERIMENT_PARAMS{counter_field};
+        data_cell.EXPERIMENT_PARAMS.(field_name_EXPERIMENT_PARAMS) = cell(num_recording, 1);
+        for counter_recording = 1 : 1 : num_recording
+            data_cell.EXPERIMENT_PARAMS.(field_name_EXPERIMENT_PARAMS){counter_recording, 1} = data_recordings(counter_recording).EXPERIMENT_PARAMS.(field_name_EXPERIMENT_PARAMS);
+        end
+    end
+    %% Neural_Properties
+    % Init variables
+    data_cell.Neural_Properties.SS_num = 0;
+    data_cell.Neural_Properties.SS_duration = 0;
+    data_cell.Neural_Properties.SS_firing_rate = 0;
+    data_cell.Neural_Properties.CS_num = 0;
+    data_cell.Neural_Properties.CS_firing_rate = 0;
+    data_cell.Neural_Properties.SS_time = [];
+    data_cell.Neural_Properties.CS_time = [];
+    variable_names = {'SS_waveform', 'CS_waveform', ...
+        'Corr_data_CS_inds_span', 'Corr_data_CS_bin_size_time', 'Corr_data_SS_inds_span', 'Corr_data_SS_bin_size_time', ...
+        'Corr_data_SS_SSxSS_AUTO','Corr_data_CS_CSxSS_AUTO'};
+    for counter_variable = 1 : length(variable_names)
+        variable_name = variable_names{counter_variable};
+        data_cell.Neural_Properties.(variable_name) = zeros(size(data_recordings(1).Neural_Properties.(variable_name)));
+    end
+    % Loop over recordings
+    for counter_recording = 1 : 1 : num_recording
+        data_cell.Neural_Properties.SS_num = data_cell.Neural_Properties.SS_num + ...
+            data_recordings(counter_recording).Neural_Properties.SS_num;
+        data_cell.Neural_Properties.SS_duration = data_cell.Neural_Properties.SS_duration + ...
+            data_recordings(counter_recording).Neural_Properties.SS_duration;
+        data_cell.Neural_Properties.CS_num = data_cell.Neural_Properties.CS_num + ...
+            data_recordings(counter_recording).Neural_Properties.CS_num;
+        
+        data_cell.Neural_Properties.SS_time = vertcat(data_cell.Neural_Properties.SS_time ,...
+            data_recordings(counter_recording).Neural_Properties.SS_time);
+        data_cell.Neural_Properties.CS_time = vertcat(data_cell.Neural_Properties.CS_time, ...
+            data_recordings(counter_recording).Neural_Properties.CS_time);
+        % compute weighted average for these variables
+        for counter_variable = 1 : length(variable_names)
+            variable_name = variable_names{counter_variable};
+            if contains(variable_name, 'Corr_data_SS') || contains(variable_name, 'SS_waveform')
+                num_spike = data_recordings(counter_recording).Neural_Properties.SS_num;
+            elseif contains(variable_name, 'Corr_data_CS') || contains(variable_name, 'CS_waveform')
+                num_spike = data_recordings(counter_recording).Neural_Properties.CS_num;
+            end
+            data_cell.Neural_Properties.(variable_name) = data_cell.Neural_Properties.(variable_name) + ...
+                ( data_recordings(counter_recording).Neural_Properties.(variable_name) .* num_spike);
+        end
+    end
+    data_cell.Neural_Properties.SS_firing_rate = ...
+            data_cell.Neural_Properties.SS_num ./ data_cell.Neural_Properties.SS_duration;
+    data_cell.Neural_Properties.CS_firing_rate = ...
+            data_cell.Neural_Properties.CS_num ./ data_cell.Neural_Properties.SS_duration;
+    % devide by number of events to compute the weigted average
+    for counter_variable = 1 : length(variable_names)
+        variable_name = variable_names{counter_variable};
+        if contains(variable_name, 'Corr_data_SS') || contains(variable_name, 'SS_waveform')
+            num_spike = data_cell.Neural_Properties.SS_num;
+        elseif contains(variable_name, 'Corr_data_CS') || contains(variable_name, 'CS_waveform')
+            num_spike = data_cell.Neural_Properties.CS_num;
+        end
+        data_cell.Neural_Properties.(variable_name) = data_cell.Neural_Properties.(variable_name) ./ num_spike;
+    end
+
+end
+
+end

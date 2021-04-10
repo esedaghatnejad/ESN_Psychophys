@@ -191,12 +191,13 @@ for counter_trial = 1 : 1 : num_trials
     SACS_ALL_TRIAL.trial_num   = reshape(ones(size(all_sac_validity))*counter_trial, 1, []);
     SACS_ALL_TRIAL.tag         = nan(size(all_sac_validity));
     SACS_ALL_TRIAL.count       = nan(size(all_sac_validity));
+    SACS_ALL_TRIAL.flag_last_cue = false(size(all_sac_validity));
     SACS_ALL_TRIAL.time_onset  = reshape(TRIAL.time_1K(all_sac_ind_onset), 1, []);
     SACS_ALL_TRIAL.time_vmax   = reshape(TRIAL.time_1K(all_sac_ind_vmax),  1, []);
     SACS_ALL_TRIAL.time_offset = reshape(TRIAL.time_1K(all_sac_ind_offset),1, []);
     
     SACS_ALL_TRIAL.time_visual      = nan(size(all_sac_validity));
-    SACS_ALL_TRIAL.time_visual_2    = nan(size(all_sac_validity)); % this is a special scenario and applies to back_center_prim tag 7
+    SACS_ALL_TRIAL.time_auditory    = nan(size(all_sac_validity));
     SACS_ALL_TRIAL.visual_px_onset  = nan(size(all_sac_validity));
     SACS_ALL_TRIAL.visual_px_offset = nan(size(all_sac_validity));
     SACS_ALL_TRIAL.visual_py_onset  = nan(size(all_sac_validity));
@@ -236,6 +237,7 @@ for counter_trial = 1 : 1 : num_trials
     idx_sac = find((SACS_ALL_TRIAL.time_onset > time_start_search) & (SACS_ALL_TRIAL.time_onset < time_finish_search), 1, 'first');
     if ~isempty(idx_sac)
         SACS_ALL_TRIAL.time_visual(idx_sac)      = time_start_search;
+        SACS_ALL_TRIAL.time_auditory(idx_sac)    = time_start_search; % neutral beep at the cue presentation
         SACS_ALL_TRIAL.visual_px_onset(idx_sac)  = TRIAL.start_x;
         SACS_ALL_TRIAL.visual_py_onset(idx_sac)  = TRIAL.start_y;
         SACS_ALL_TRIAL.visual_px_offset(idx_sac) = TRIAL.cue_x;
@@ -270,6 +272,8 @@ for counter_trial = 1 : 1 : num_trials
         elseif ( SACS_ALL_TRIAL.diff_ang(idx_sac) >= threshold_ang ) && (SACS_ALL_TRIAL.diff_start( idx_sac) < threshold_pos)
             SACS_ALL_TRIAL.tag(idx_sac) = 3; % 'prim_fail' tag 3
         end
+        flag_last_cue = true;
+        SACS_ALL_TRIAL.flag_last_cue(idx_sac) = flag_last_cue;
     end
     
     % Tag the prim_fail
@@ -283,6 +287,7 @@ for counter_trial = 1 : 1 : num_trials
         idx_sac = find((SACS_ALL_TRIAL.time_onset > time_start_search) & (SACS_ALL_TRIAL.time_onset < time_finish_search), 1, 'first');
         if ~isempty(idx_sac)
             SACS_ALL_TRIAL.time_visual(idx_sac)      = time_start_search;
+            SACS_ALL_TRIAL.time_auditory(idx_sac)    = time_start_search; % neutral beep at the cue presentation
             SACS_ALL_TRIAL.visual_px_onset(idx_sac)  = TRIAL.start_x;
             SACS_ALL_TRIAL.visual_py_onset(idx_sac)  = TRIAL.start_y;
             SACS_ALL_TRIAL.visual_px_offset(idx_sac) = TRIAL.cue_x;
@@ -331,13 +336,18 @@ for counter_trial = 1 : 1 : num_trials
             time_last_cue_pres = TRIAL.time_state_cue_present(end);
             time_start_search = SACS_ALL_TRIAL.time_offset(idx_prim);
             if time_start_search < time_last_cue_pres
+                % search from prim sac offset till the next str presentation
                 time_finish_search = TRIAL.time_state_str_fixation( find(TRIAL.time_state_str_fixation > time_start_search, 1, 'first') );
+                flag_last_cue = false;
             else
+                % search from prim sac offset till end of trial
                 time_finish_search = TRIAL.time_state_next_trial(end);
+                flag_last_cue = true;
             end
             idx_sac = find((SACS_ALL_TRIAL.time_onset > time_start_search) & (SACS_ALL_TRIAL.time_onset < time_finish_search), 1, 'first');
             if ~isempty(idx_sac)
                 SACS_ALL_TRIAL.time_visual(idx_sac)      = time_start_search;
+                SACS_ALL_TRIAL.time_auditory(idx_sac)    = time_start_search; % good beep at the end of prim success
                 % we will use tgt_cue and tgt_end for visual params, but we will use
                 % the prim offset for diff values
                 SACS_ALL_TRIAL.visual_px_onset(idx_sac)  = TRIAL.cue_x;
@@ -370,8 +380,10 @@ for counter_trial = 1 : 1 : num_trials
                 validity_sac = validity_sac && (SACS_ALL_TRIAL.diff_ang(   idx_sac) < threshold_ang);
                 if validity_sac
                     SACS_ALL_TRIAL.tag(idx_sac) = 4; % 'corr_success' tag 4
+                    SACS_ALL_TRIAL.flag_last_cue(idx_sac) = flag_last_cue;
                 elseif (SACS_ALL_TRIAL.diff_start( idx_sac) < threshold_pos)
                     SACS_ALL_TRIAL.tag(idx_sac) = 5; % 'corr_fail' tag 5
+                    SACS_ALL_TRIAL.flag_last_cue(idx_sac) = flag_last_cue;
                 end
             end
         end
@@ -452,8 +464,8 @@ for counter_trial = 1 : 1 : num_trials
                 % If the previous sac is a prim or corr saccade, then this is a back_center_prim.
                 % The time_visual in case of back_center_prim, can be considered as when the animal observes the target
                 % after the str_pursuit which is the time_visual. However, another definition can be when the boop got played 
-                % at the end of prim saccade. To cover this scenario we added time_visual_2.
-                SACS_ALL_TRIAL.time_visual_2(idx_sac)      = SACS_ALL_TRIAL.time_offset(idx_sac-1);
+                % at the end of prim saccade. To cover this scenario we added time_auditory.
+                SACS_ALL_TRIAL.time_auditory(idx_sac)      = SACS_ALL_TRIAL.time_offset(idx_sac-1); % bad boop at the the end of prim attempt/fail
                 % In case of corrective saccades the time_visual should be set to the offset of corr sac and not str_pursuit
                 if (SACS_ALL_TRIAL.tag(idx_sac-1) >= 4) && (SACS_ALL_TRIAL.tag(idx_sac-1) <= 5)
                     % 'corr_success' tag 4 % 'cord_fail' tag 5
@@ -506,12 +518,11 @@ for counter_trial = 1 : 1 : num_trials
             if diff_finish < threshold_pos
                 % this is a missed back_center_prim and should be tagged.
                 
-                
                 % The time_visual in case of back_center_prim, can be considered as when the animal observes the target
                 % after the str_pursuit which is the time_visual. However, another definition can be when the boop got played 
-                % at the end of prim saccade. To cover this scenario we added time_visual_2.
+                % at the end of prim saccade. To cover this scenario we added time_auditory.
                 SACS_ALL_TRIAL.time_visual(idx_sac)      = SACS_ALL_TRIAL.time_offset(idx_sac-1);
-                SACS_ALL_TRIAL.time_visual_2(idx_sac)    = SACS_ALL_TRIAL.time_offset(idx_sac-1);
+                SACS_ALL_TRIAL.time_auditory(idx_sac)    = SACS_ALL_TRIAL.time_offset(idx_sac-1); % bad boop at the the end of prim attempt/fail
                 if (SACS_ALL_TRIAL.tag(idx_sac-1) >= 1) && (SACS_ALL_TRIAL.tag(idx_sac-1) <= 3)
                     % 'prim_success' tag 1 % 'prim_attempt' tag 2 % 'prim_fail' tag 3
                     SACS_ALL_TRIAL.time_visual(idx_sac)      = SACS_ALL_TRIAL.time_offset(idx_sac-1) + TRIAL.time_punishment;
@@ -643,7 +654,8 @@ for counter_trial = 1 : 1 : num_trials
     end
     
     %% Plot trial
-    %{
+    flag_plot_trial = 0;
+    if flag_plot_trial
     trial_num = counter_trial;
     
     hFig_ = figure(1);
@@ -733,7 +745,7 @@ for counter_trial = 1 : 1 : num_trials
     end
     w = waitforbuttonpress;
 %     ESN_Beautify_Plot(hFig_, [8,4], 12)
-    %}
+    end
     
     %% Save Saccades
     SACS_ALL(counter_trial) = SACS_ALL_TRIAL;
@@ -822,7 +834,7 @@ end
 
 axes_minor_nums = reshape(1:num_row*num_col, num_row, num_col)';
 axes_main_row = floor((counter_tag - 1) / 3)+1;
-axes_main_col = mod(counter_tag, 3); if (axes_main_col==0); axes_main_col=3; end;
+axes_main_col = mod(counter_tag, 3); if (axes_main_col==0); axes_main_col=3; end
 row1_ = ((axes_main_row-1)*3)+1;
 row2_ = ((axes_main_row-1)*3)+2;
 row3_ = ((axes_main_row-1)*3)+3;
@@ -879,10 +891,5 @@ sgtitle([EXPERIMENT_PARAMS.file_name(1:13) ', ' ...
     ], ...
     'interpret', 'none');
 ESN_Beautify_Plot(hFig, [13 13], 8)
-
-%% Remove traces
-rmfields_list = {'eye_r_px', 'eye_r_py', 'eye_r_vm'};
-SACS_ALL_DATA = rmfield(SACS_ALL_DATA,rmfields_list);
-
 
 end

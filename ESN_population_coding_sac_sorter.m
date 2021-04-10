@@ -2,7 +2,7 @@
 function ESN_population_coding_sac_sorter
 %% Global variables
 global data_type_eye_list data_type_BEHAVE_list data_type_neuro_list data_type_EPHYS_list event_type_list ...
-    length_trace inds_span ...
+    waveform_inds_span length_trace inds_span ...
     ang_step ang_edges ang_values amp_edges vel_edges ...
     range_cell_with_4dir_behave
 data_type_eye_list    = {'eye_vx', 'eye_vy'};
@@ -10,6 +10,7 @@ data_type_BEHAVE_list = {'eye_r_vx_filt', 'eye_r_vy_filt'};
 data_type_neuro_list  = {'neuro_SS', 'neuro_CS'};
 data_type_EPHYS_list  = {'EPHYS_SS_train_1K', 'EPHYS_CS_train_1K'};
 event_type_list       = {'visual', 'onset', 'vmax', 'offset', 'auditory'};
+waveform_inds_span = ((-60+1) : 1 : (120));
 length_trace = 500;
 inds_span    = ((-(length_trace/2)+1) : 1 : (length_trace/2))';
 ang_step     = 45;
@@ -26,9 +27,12 @@ tic
 % (2) re_run_add_ephys_sac_sorter(); % this func will fuse the eye & neuro data and save the results with _sac name
 % (3) combine_sac_files(); % combine the _sac files and form one file per cell. save the data in the ALL_PCELL_### folder.
 % (4) CS_on_analysis(); % load cell_data files (_combine_) and add the CS_on_analysis  to them.
-% (5) 
-build_population_data(); % load cell_data files (_combine_) and form population data.
+% (6) build_neural_properties(); % load cell_data files (_combine_) and form properties data.
+% (5) build_population_data(); % load cell_data files (_combine_) and form population data.
 toc
+%% Plot functions
+% (1) plot_neural_properties(); % load population_neural_properties and plot neural_properties
+% (2) plot_CS_on_properties(); % load population_neural_properties and plot CS_on properties
 end
 
 %% function RE-RUN ESN_Sac_Sorter
@@ -161,6 +165,7 @@ BEHAVE.EXPERIMENT_PARAMS.EPHYS_file_name = EPHYS.CH_sorted_file_name;
 BEHAVE.EXPERIMENT_PARAMS.EPHYS_file_path = EPHYS.CH_sorted_file_path;
 
 %% build EPHYS.CH_sorted from DATA_PSORT
+global waveform_inds_span
 ch_data = double(DATA_PSORT.topLevel_data.ch_data);
 ch_time = double(DATA_PSORT.topLevel_data.ch_time);
 SS_index = find(logical(double(DATA_PSORT.topLevel_data.ss_index)));
@@ -168,7 +173,6 @@ CS_index = find(logical(double(DATA_PSORT.topLevel_data.cs_index)));
 SS_time = ch_time(SS_index);
 CS_time = ch_time(CS_index);
 
-waveform_inds_span = ((-60+1) : 1 : (120));
 SS_inds = repmat(waveform_inds_span(:)', length(SS_index), 1) + repmat(SS_index(:), 1, length(waveform_inds_span));
 SS_inds(SS_inds < 1) = 1;
 SS_inds(SS_inds > length(ch_data)) = length(ch_data);
@@ -736,24 +740,400 @@ for counter_pCell = 1 : num_pCells
     
     idx_ = idx_CS_on_dir - 1; % make it 0-index format
     if (idx_ == 8); idx_ = 0; end
-    idx_CS_tuning = mod((idx_ : 1 : idx_+7), 8) + 1;
+    idx_CS_tuned = mod((idx_ : 1 : idx_+7), 8) + 1;
+    CS_prob_avg_tuned = CS_prob_avg(idx_CS_tuned);
+    
+    %% Von Mises
+    if CS_rho_avg < 0.53
+        vonMises_kappa = 2*CS_rho_avg + CS_rho_avg^3 + 5*CS_rho_avg^5/6;
+    elseif CS_rho_avg>=0.53 && CS_rho_avg<0.85
+        vonMises_kappa = -.4 + 1.39*CS_rho_avg + 0.43/(1-CS_rho_avg);
+    else
+        vonMises_kappa = 1/(CS_rho_avg^3 - 4*CS_rho_avg^2 + 3*CS_rho_avg);
+    end
+    
+    % evaluate pdf
+    vonMises_C = 1/(2*pi*besseli(0,vonMises_kappa));
+    vonMises_pdf = vonMises_C * exp(vonMises_kappa*cosd(ang_values-CS_ang_avg));
+    vonMises_var = 1 - (besseli(1,vonMises_kappa) / besseli(0,vonMises_kappa));
+    vonMises_std = wrapTo360(rad2deg(sqrt(vonMises_var)));
     
     %% Build CS_on_data
     CS_on_data.CS_prob = CS_prob;
     CS_on_data.CS_ang  = CS_ang;
     CS_on_data.CS_rho  = CS_rho;
     CS_on_data.CS_prob_avg = CS_prob_avg;
+    CS_on_data.CS_prob_avg_tuned = CS_prob_avg_tuned;
     CS_on_data.CS_ang_avg  = CS_ang_avg;
     CS_on_data.CS_rho_avg  = CS_rho_avg;
+    CS_on_data.vonMises_kappa  = vonMises_kappa;
+    CS_on_data.vonMises_var  = vonMises_var;
+    CS_on_data.vonMises_std  = vonMises_std;
+    CS_on_data.vonMises_pdf  = vonMises_pdf;
     CS_on_data.idx_CS_on_dir  = idx_CS_on_dir;
-    CS_on_data.idx_CS_tuning  = idx_CS_tuning;
+    CS_on_data.idx_CS_tuned   = idx_CS_tuned;
     CS_on_data.visual_ang_bin       = visual_ang_bin;
-    CS_on_data.visual_ang_bin_tuned = idx_CS_tuning(visual_ang_bin);
+    CS_on_data.visual_ang_bin_tuned = idx_CS_tuned(visual_ang_bin);
     
     %% Append CS_on_data to cell_data
     save([path_cell_data cell_file_name], 'CS_on_data', '-append');
 end
 fprintf('### ALL DONE. ###\n')
+end
+
+%% function build_neural_properties()
+function build_neural_properties()
+clc; close all;
+path_cell_data = uigetdir;
+if ~strcmp(path_cell_data(end), filesep);path_cell_data = [path_cell_data filesep];end
+cell_file_names = dir([path_cell_data '*_combine_*.mat']);
+num_pCells = length(cell_file_names);
+
+%% Init variables
+cell_file_name = cell_file_names(1).name;
+load([path_cell_data cell_file_name], 'Neural_Properties', 'CS_on_data');
+population_neural_properties = struct;
+field_names_Neural_Properties = fieldnames(Neural_Properties);
+for counter_field_Neural_Properties = 1 : length(field_names_Neural_Properties)
+    field_name_Neural_Properties = field_names_Neural_Properties{counter_field_Neural_Properties};
+    if strcmp(field_name_Neural_Properties, 'SS_time') || strcmp(field_name_Neural_Properties, 'CS_time')
+        % skip the SS_time and CS_time since their size are varibale
+        continue;
+    end
+    population_neural_properties.(field_name_Neural_Properties) = nan(num_pCells, size(Neural_Properties.(field_name_Neural_Properties), 2) );
+end
+field_names_CS_on = fieldnames(CS_on_data);
+for counter_field_CS_on = 1 : length(field_names_CS_on)
+    field_name_CS_on = field_names_CS_on{counter_field_CS_on};
+    if strcmp(field_name_CS_on, 'visual_ang_bin') || strcmp(field_name_CS_on, 'visual_ang_bin_tuned')
+        % skip the visual_ang_bin and visual_ang_bin_tuned since their size are varibale
+        continue;
+    end
+    if size(CS_on_data.(field_name_CS_on), 1) > 1
+        population_neural_properties.(field_name_CS_on) = nan(num_pCells, size(CS_on_data.(field_name_CS_on), 2), size(CS_on_data.(field_name_CS_on), 1));
+    elseif size(CS_on_data.(field_name_CS_on), 1) == 1
+        population_neural_properties.(field_name_CS_on) = nan(num_pCells, size(CS_on_data.(field_name_CS_on), 2));
+    end
+end
+
+%% Loop over pCells
+for counter_pCell = 1 : num_pCells
+    fprintf(['### ' 'Analyzing pCell no. ', num2str(counter_pCell), ' / ' num2str(num_pCells) ' ###' '\n']);
+    %% load SACS_ALL_DATA
+    cell_file_name = cell_file_names(counter_pCell).name;
+    load([path_cell_data cell_file_name], 'Neural_Properties', 'CS_on_data');
+    %%
+    for counter_field_Neural_Properties = 1 : length(field_names_Neural_Properties)
+        field_name_Neural_Properties = field_names_Neural_Properties{counter_field_Neural_Properties};
+        if strcmp(field_name_Neural_Properties, 'SS_time') || strcmp(field_name_Neural_Properties, 'CS_time')
+            % skip the SS_time and CS_time since their size are varibale
+            continue;
+        end
+        population_neural_properties.(field_name_Neural_Properties)(counter_pCell, :) = ...
+            Neural_Properties.(field_name_Neural_Properties);
+    end
+    for counter_field_CS_on = 1 : length(field_names_CS_on)
+        field_name_CS_on = field_names_CS_on{counter_field_CS_on};
+        if strcmp(field_name_CS_on, 'visual_ang_bin') || strcmp(field_name_CS_on, 'visual_ang_bin_tuned')
+            % skip the visual_ang_bin and visual_ang_bin_tuned since their size are varibale
+            continue;
+        end
+        if size(CS_on_data.(field_name_CS_on), 1) > 1
+            population_neural_properties.(field_name_CS_on)(counter_pCell, :, :) = ...
+                CS_on_data.(field_name_CS_on)';
+        elseif size(CS_on_data.(field_name_CS_on), 1) == 1
+            population_neural_properties.(field_name_CS_on)(counter_pCell, :) = ...
+                CS_on_data.(field_name_CS_on);
+        end
+    end
+end
+
+%% Add CS_suupersion_time
+CS_xprob_pCells = population_neural_properties.Corr_data_CS_CSxSS_AUTO;
+CS_xprob_suppression = CS_xprob_pCells ./ nanmean(CS_xprob_pCells(:,20:50), 2);
+[~,idx] = max(CS_xprob_suppression(:,56:end)>0.63, [], 2);
+population_neural_properties.CS_suppression_time = idx+5;
+
+%% Save data
+fprintf(['Saving .mat files' ' ...'])
+save([path_cell_data '..' filesep 'population_neural_properties' '.mat'], 'population_neural_properties', '-v7.3');
+fprintf(' --> Completed. \n')
+
+end
+
+%% function plot_neural_properties
+function plot_neural_properties()
+%% Load population_neural_properties
+[file_name,file_path] = uigetfile([pwd filesep 'population_neural_properties.mat'], 'Select population_neural_properties file');
+load([file_path, file_name], 'population_neural_properties');
+
+%% Init plot
+hFig = figure(1);
+clf(hFig)
+num_row_fig = 1;
+num_col_fig = 5;
+SS_firing_edges = 5:10:135;
+CS_firing_edges = 0.25:0.1:1.55;
+CS_suppression_edges = 5.5: 1 : 25.5;
+
+%% Calc variables
+global waveform_inds_span
+num_pCells          = size(population_neural_properties.SS_firing_rate, 1);
+% XProb
+SS_firing_pCells    = population_neural_properties.SS_firing_rate;
+CS_firing_pCells    = population_neural_properties.CS_firing_rate;
+SS_waveform_pCells  = population_neural_properties.SS_waveform;
+CS_waveform_pCells  = population_neural_properties.CS_waveform;
+SS_xprob_pCells     = population_neural_properties.Corr_data_SS_SSxSS_AUTO;
+CS_xprob_pCells     = population_neural_properties.Corr_data_CS_CSxSS_AUTO;
+CS_suppression_time = population_neural_properties.CS_suppression_time;
+SS_waveform_pCells_norm = SS_waveform_pCells ./ repmat(max(abs(SS_waveform_pCells), [],2), 1, size(SS_waveform_pCells, 2));
+CS_waveform_pCells_norm = CS_waveform_pCells ./ repmat(max(abs(SS_waveform_pCells), [],2), 1, size(CS_waveform_pCells, 2)); % normalize to SS max and not CS max
+SS_xprob_pCells_norm    = SS_xprob_pCells ./ repmat(SS_firing_pCells, 1, size(SS_xprob_pCells, 2)) .* 1000;
+CS_xprob_pCells_norm    = CS_xprob_pCells ./ repmat(SS_firing_pCells, 1, size(CS_xprob_pCells, 2)) .* 1000; % normalize to SS firing and not CS firing
+time_waveform = (waveform_inds_span ./ 30e3) * 1000;
+time_xprob = nanmean(population_neural_properties.Corr_data_SS_inds_span .* ...
+    repmat(population_neural_properties.Corr_data_SS_bin_size_time, 1, size(population_neural_properties.Corr_data_SS_inds_span, 2))) * 1000;
+
+% Firing rate
+SS_firing_pCells_mean = nanmean(SS_firing_pCells);
+SS_firing_pCells_stdv = nanstd( SS_firing_pCells);
+SS_firing_pCells_sem  = nanstd( SS_firing_pCells)./sqrt(num_pCells);
+CS_firing_pCells_mean = nanmean(CS_firing_pCells);
+CS_firing_pCells_stdv = nanstd( CS_firing_pCells);
+CS_firing_pCells_sem  = nanstd( CS_firing_pCells)./sqrt(num_pCells);
+
+stat_SS = ['SS_firing, ', 'mean: ', num2str(mean(SS_firing_pCells)), ', SEM: ', num2str(std(SS_firing_pCells)./sqrt(num_pCells)), ', std: ', num2str(std(SS_firing_pCells))];
+stat_CS = ['CS_firing, ', 'mean: ', num2str(mean(CS_firing_pCells)), ', SEM: ', num2str(std(CS_firing_pCells)./sqrt(num_pCells)), ', std: ', num2str(std(CS_firing_pCells))];
+fprintf([stat_SS '\n']);
+fprintf([stat_CS '\n'])
+
+% Waveform
+SS_waveform_mean = nanmean(SS_waveform_pCells_norm);
+SS_waveform_stdv = nanstd( SS_waveform_pCells_norm);%./sqrt(num_pCells);
+SS_waveform_stdv_p = SS_waveform_mean + SS_waveform_stdv;
+SS_waveform_stdv_m = SS_waveform_mean - SS_waveform_stdv;
+SS_waveform_stdv_y_axes = [(SS_waveform_stdv_p) flip(SS_waveform_stdv_m)];
+SS_waveform_stdv_x_axes = [(time_waveform) flip(time_waveform)];
+
+CS_waveform_mean = nanmean(CS_waveform_pCells_norm);
+CS_waveform_stdv = nanstd( CS_waveform_pCells_norm);%./sqrt(num_pCells);
+CS_waveform_stdv_p = CS_waveform_mean + CS_waveform_stdv;
+CS_waveform_stdv_m = CS_waveform_mean - CS_waveform_stdv;
+CS_waveform_stdv_y_axes = [(CS_waveform_stdv_p) flip(CS_waveform_stdv_m)];
+CS_waveform_stdv_x_axes = [(time_waveform) flip(time_waveform)];
+
+SS_xprob_mean = nanmean(SS_xprob_pCells_norm);
+SS_xprob_stdv = nanstd( SS_xprob_pCells_norm);%./sqrt(num_pCells);
+SS_xprob_stdv_p = SS_xprob_mean + SS_xprob_stdv;
+SS_xprob_stdv_m = SS_xprob_mean - SS_xprob_stdv;
+SS_xprob_stdv_y_axes = [(SS_xprob_stdv_p) flip(SS_xprob_stdv_m)];
+SS_xprob_stdv_x_axes = [(time_xprob) flip(time_xprob)];
+
+CS_xprob_mean = nanmean(CS_xprob_pCells_norm);
+CS_xprob_stdv = nanstd( CS_xprob_pCells_norm);%./sqrt(num_pCells);
+CS_xprob_stdv_p = CS_xprob_mean + CS_xprob_stdv;
+CS_xprob_stdv_m = CS_xprob_mean - CS_xprob_stdv;
+CS_xprob_stdv_y_axes = [(CS_xprob_stdv_p) flip(CS_xprob_stdv_m)];
+CS_xprob_stdv_x_axes = [(time_xprob) flip(time_xprob)];
+
+%% Firing rate
+subplot(num_row_fig,num_col_fig, 1)
+hold on
+histogram(SS_firing_pCells, SS_firing_edges, 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'b')
+histogram(SS_firing_pCells, SS_firing_edges, 'DisplayStyle', 'stairs', 'EdgeColor', 'b', 'FaceColor', 'none', 'linewidth', 2)
+yl_ = ylim;
+plot([(SS_firing_pCells_mean+SS_firing_pCells_stdv), (SS_firing_pCells_mean+SS_firing_pCells_stdv)], yl_, '-b', 'LineWidth', 0.5);
+plot([(SS_firing_pCells_mean-SS_firing_pCells_stdv), (SS_firing_pCells_mean-SS_firing_pCells_stdv)], yl_, '-b', 'LineWidth', 0.5);
+% plot([(SS_firing_pCells_mean+SS_firing_pCells_sem), (SS_firing_pCells_mean+SS_firing_pCells_sem)], yl_, '--b', 'LineWidth', 1);
+% plot([(SS_firing_pCells_mean-SS_firing_pCells_sem), (SS_firing_pCells_mean-SS_firing_pCells_sem)], yl_, '--b', 'LineWidth', 1);
+plot([(SS_firing_pCells_mean), (SS_firing_pCells_mean)], yl_, '-b', 'LineWidth', 1.0);
+xlabel('SS Firing Rate (Hz)')
+ylabel('Count (#)')
+% title(stat_SS, 'interpreter', 'none')
+
+subplot(num_row_fig,num_col_fig, 2)
+hold on
+histogram(CS_firing_pCells, CS_firing_edges, 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'r')
+histogram(CS_firing_pCells, CS_firing_edges, 'DisplayStyle', 'stairs', 'EdgeColor', 'r', 'FaceColor', 'none', 'linewidth', 2)
+yl_ = ylim;
+plot([(CS_firing_pCells_mean+CS_firing_pCells_stdv), (CS_firing_pCells_mean+CS_firing_pCells_stdv)], yl_, '-r', 'LineWidth', 0.5);
+plot([(CS_firing_pCells_mean-CS_firing_pCells_stdv), (CS_firing_pCells_mean-CS_firing_pCells_stdv)], yl_, '-r', 'LineWidth', 0.5);
+% plot([(CS_firing_pCells_mean+CS_firing_pCells_sem),  (CS_firing_pCells_mean+CS_firing_pCells_sem)],  yl_, '--r', 'LineWidth', 1);
+% plot([(CS_firing_pCells_mean-CS_firing_pCells_sem),  (CS_firing_pCells_mean-CS_firing_pCells_sem)],  yl_, '--r', 'LineWidth', 1);
+plot([(CS_firing_pCells_mean),                       (CS_firing_pCells_mean)], yl_, '-r', 'LineWidth', 1.0);
+xlabel('CS Firing Rate (Hz)')
+ylabel('Count (#)')
+% title(stat_CS,  'interpreter', 'none')
+
+%% Waveform
+subplot(num_row_fig,num_col_fig, 3)
+hold on
+% plot(time_waveform, SS_waveform_stdv_m, '-b', 'LineWidth', 0.5)
+% plot(time_waveform, SS_waveform_stdv_p, '-b', 'LineWidth', 0.5)
+plot(SS_waveform_stdv_x_axes, SS_waveform_stdv_y_axes, '-b', 'LineWidth', 0.5)
+plot(time_waveform, SS_waveform_mean, '-b', 'LineWidth', 1.0)
+
+% plot(time_waveform, CS_waveform_stdv_m, '-r', 'LineWidth', 0.5)
+% plot(time_waveform, CS_waveform_stdv_p, '-r', 'LineWidth', 0.5)
+plot(CS_waveform_stdv_x_axes, CS_waveform_stdv_y_axes, '-r', 'LineWidth', 0.5)
+plot(time_waveform, CS_waveform_mean, '-r', 'LineWidth', 1.0)
+ylabel('waveform')
+xlabel('Time (ms)')
+ylim([-1.3 +1.2])
+
+subplot(num_row_fig,num_col_fig, 4)
+hold on
+% plot(time_xprob, SS_xprob_stdv_p, '-b', 'LineWidth', 0.5)
+% plot(time_xprob, SS_xprob_stdv_m, '-b', 'LineWidth', 0.5)
+plot(SS_xprob_stdv_x_axes, SS_xprob_stdv_y_axes, '-b', 'LineWidth', 0.5)
+plot(time_xprob, SS_xprob_mean, '-b', 'LineWidth', 1.0)
+
+% plot(time_xprob, CS_xprob_stdv_p, '-r', 'LineWidth', 0.5)
+% plot(time_xprob, CS_xprob_stdv_m, '-r', 'LineWidth', 0.5)
+plot(CS_xprob_stdv_x_axes, CS_xprob_stdv_y_axes, '-r', 'LineWidth', 0.5)
+plot(time_xprob, CS_xprob_mean, '-r', 'LineWidth', 1.0)
+ylabel('prob')
+xlabel('Time (ms)')
+ylim([-0.2 +1.6])
+
+%% Suppression
+subplot(num_row_fig,num_col_fig, 5)
+hold on
+histogram(CS_suppression_time, CS_suppression_edges,  'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', [0.5 0.5 0.5])
+histogram(CS_suppression_time, CS_suppression_edges,  'DisplayStyle', 'stairs', 'EdgeColor', 'r', 'FaceColor', 'none', 'linewidth', 2)
+ylabel('Count')
+xlabel('CS suppression (ms)')
+%% ESN_Beautify_Plot
+ESN_Beautify_Plot(hFig, [8, 2], 8)
+
+end
+
+%% function plot_CS_on_properties
+function plot_CS_on_properties()
+%% Load population_neural_properties
+[file_name,file_path] = uigetfile([pwd filesep 'population_neural_properties.mat'], 'Select population_neural_properties file');
+load([file_path, file_name], 'population_neural_properties');
+
+%% Init plot
+hFig = figure(1);
+clf(hFig)
+num_row_fig = 2;
+num_col_fig = 4;
+num_pCells          = size(population_neural_properties.CS_ang_avg, 1);
+step_size_ = 22.5;
+ang_edges = 0-(step_size_/2):step_size_:360-(step_size_/2);
+sig_edges = 35:2:61;
+
+CS_ang_avg = population_neural_properties.CS_ang_avg;
+vonMises_std = population_neural_properties.vonMises_std;
+CS_prob_avg_tuned = population_neural_properties.CS_prob_avg_tuned;
+overall_prob_TUNED_mean = nanmean(CS_prob_avg_tuned, 1);
+overall_prob_TUNED_stdv = nanstd(CS_prob_avg_tuned, 0, 1) ./ sqrt(num_pCells);
+overall_prob_TUNED_stdv_p = overall_prob_TUNED_mean + overall_prob_TUNED_stdv;
+overall_prob_TUNED_stdv_m = overall_prob_TUNED_mean - overall_prob_TUNED_stdv;
+
+%% Plot CS-on distribution
+subplot(num_row_fig, num_col_fig, 1);
+idx_pCells = 1:num_pCells; % All
+polarhistogram(deg2rad(CS_ang_avg(idx_pCells)), deg2rad(ang_edges), 'DisplayStyle', 'bar','FaceColor',[0.6 0.6 0.6], 'EdgeColor', 'none')
+hold on
+polarhistogram(deg2rad(CS_ang_avg(idx_pCells)), deg2rad(ang_edges), 'DisplayStyle', 'stairs','FaceColor','none', 'EdgeColor', 'r', 'linewidth', 1)
+rlim([0 25])
+set(gca, 'ThetaTick', 0:45:315, 'RTick', 0:5:25,...
+    'RTickLabel', {'', '', '10', '', '20', ''}, 'ThetaTickLabel', {'0','','90','', '180','','270', ''})
+title('CS-on mean Dist.')
+
+%% Plot std distribution
+subplot(num_row_fig, num_col_fig, 2);
+histogram(vonMises_std, sig_edges, 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', [0.6 0.6 0.6])
+hold on
+histogram(vonMises_std, sig_edges, 'DisplayStyle', 'stairs', 'EdgeColor', 'r', 'FaceColor', 'none', 'linewidth', 1)
+xline(nanmean(vonMises_std),'Color', 'r', 'linewidth', 1)
+ylabel('count')
+xlabel('Circular std. (deg)')
+title('CS-on stdv Dist.')
+
+%% Plot CS tuning circular
+global ang_values
+
+plot_data_amp_mean = [overall_prob_TUNED_mean, overall_prob_TUNED_mean(1), nan]';
+plot_data_deg_mean = [ang_values, ang_values(1), nan]';
+
+plot_data_amp_stdv_p = [overall_prob_TUNED_stdv_p, overall_prob_TUNED_stdv_p(1), nan]';
+plot_data_deg_stdv_p = [ang_values, ang_values(1), nan]';
+
+plot_data_amp_stdv_m = [overall_prob_TUNED_stdv_m, overall_prob_TUNED_stdv_m(1), nan]';
+plot_data_deg_stdv_m = [ang_values, ang_values(1), nan]';
+
+subplot(num_row_fig, num_col_fig, 3);
+polarplot(deg2rad(plot_data_deg_stdv_p),plot_data_amp_stdv_m, '-k', 'LineWidth', 0.5)
+hold on
+polarplot(deg2rad(plot_data_deg_stdv_m),plot_data_amp_stdv_p, '-k', 'LineWidth', 0.5)
+polarplot(deg2rad(plot_data_deg_mean),plot_data_amp_mean, '-k', 'LineWidth', 1)
+rlim([0 0.25])
+set(gca, 'ThetaTick', 0:45:315, 'RTick', 0:0.05:0.25, ...
+    'RTickLabel', {'', '', '0.1', '', '0.2', ''}, 'ThetaTickLabel', {'0','','90','', '180','','270', ''})
+title('CS Tuning', 'Interpreter', 'none');
+
+%% Plot CS tuning linear, CS-on at center
+subplot(num_row_fig, num_col_fig, 4);
+hold on
+% plot_order_ = [6 7 8 1 2 3 4 5 6];
+plot_order_ = [5 6 7 8 1 2 3 4 5];
+plot(overall_prob_TUNED_stdv_p(plot_order_), '-k', 'LineWidth', 0.5)
+plot(overall_prob_TUNED_stdv_m(plot_order_), '-k', 'LineWidth', 0.5)
+plot(overall_prob_TUNED_mean(plot_order_), '-k', 'LineWidth', 1)
+ylabel('CS probability');
+xlabel('Direction')
+% set(gca, 'XTick', 1:1:8, 'XTickLabel', {'', '-90','','ON','','90','','180',''})
+set(gca, 'XTick', 1:1:9, 'XTickLabel', {'-180', '', '-90','','ON','','90','','180'})
+
+avg_prob_TUNED_mean = nanmean(nanmean(CS_prob_avg_tuned, 2));
+avg_prob_TUNED_stdv = nanstd(nanmean(CS_prob_avg_tuned, 2), 0, 1) ./ sqrt(num_pCells);
+avg_prob_TUNED_mean = repmat(avg_prob_TUNED_mean, 1, size(CS_prob_avg_tuned,2));
+avg_prob_TUNED_stdv = repmat(avg_prob_TUNED_stdv, 1, size(CS_prob_avg_tuned,2));
+avg_prob_TUNED_stdv_p = avg_prob_TUNED_mean + avg_prob_TUNED_stdv;
+avg_prob_TUNED_stdv_m = avg_prob_TUNED_mean - avg_prob_TUNED_stdv;
+
+plot(avg_prob_TUNED_stdv_p(plot_order_), '-k', 'LineWidth', 0.5)
+plot(avg_prob_TUNED_stdv_m(plot_order_), '-k', 'LineWidth', 0.5)
+plot(avg_prob_TUNED_mean(plot_order_), '-k', 'LineWidth', 1)
+ylim([0.05 0.25])
+title('CS Tuning', 'Interpreter', 'none');
+
+%% Plot CS tuning linear, CS-on on side
+subplot(num_row_fig, num_col_fig, 8);
+hold on
+plot_order_ = [6 7 8 1 2 3 4 5 6];
+% plot_order_ = [5 6 7 8 1 2 3 4 5];
+plot(overall_prob_TUNED_stdv_p(plot_order_), '-k', 'LineWidth', 0.5)
+plot(overall_prob_TUNED_stdv_m(plot_order_), '-k', 'LineWidth', 0.5)
+plot(overall_prob_TUNED_mean(plot_order_), '-k', 'LineWidth', 1)
+ylabel('CS probability');
+xlabel('Direction')
+set(gca, 'XTick', 1:1:8, 'XTickLabel', {'', '-90','','ON','','90','','180',''})
+% set(gca, 'XTick', 1:1:9, 'XTickLabel', {'-180', '', '-90','','ON','','90','','180'})
+
+avg_prob_TUNED_mean = nanmean(nanmean(CS_prob_avg_tuned, 2));
+avg_prob_TUNED_stdv = nanstd(nanmean(CS_prob_avg_tuned, 2), 0, 1) ./ sqrt(num_pCells);
+avg_prob_TUNED_mean = repmat(avg_prob_TUNED_mean, 1, size(CS_prob_avg_tuned,2));
+avg_prob_TUNED_stdv = repmat(avg_prob_TUNED_stdv, 1, size(CS_prob_avg_tuned,2));
+avg_prob_TUNED_stdv_p = avg_prob_TUNED_mean + avg_prob_TUNED_stdv;
+avg_prob_TUNED_stdv_m = avg_prob_TUNED_mean - avg_prob_TUNED_stdv;
+
+plot(avg_prob_TUNED_stdv_p(plot_order_), '-k', 'LineWidth', 0.5)
+plot(avg_prob_TUNED_stdv_m(plot_order_), '-k', 'LineWidth', 0.5)
+plot(avg_prob_TUNED_mean(plot_order_), '-k', 'LineWidth', 1)
+ylim([0.05 0.25])
+title('CS Tuning', 'Interpreter', 'none');
+
+
+
+%% ESN_Beautify_Plot
+ESN_Beautify_Plot(hFig, [8, 4], 8)
+
+
 end
 
 %% function build_population_data()

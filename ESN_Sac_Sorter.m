@@ -93,11 +93,13 @@ for counter_trial = 1 : 1 : num_trials
     
     %% Extract Saccades
     clearvars -except EXPERIMENT_PARAMS TRIALS_DATA counter_trial num_trials TRIAL SACS_ALL
-    
+    if counter_trial ==3
+        disp('e');
+    end
     threshold = 75; % deg/s
     eye_vm_ = TRIAL.eye_r_vm_filt;
-    eye_vm_ = [eye_vm_; eye_vm_(end)];
-    idx_bool_rise_threshold = (eye_vm_(2:end)-threshold > 0) & (eye_vm_(1:end-1)-threshold <= 0);
+    eye_vm_ = [eye_vm_; eye_vm_(end)]; % why?
+    idx_bool_rise_threshold = (eye_vm_(2:end)-threshold > 0) & (eye_vm_(1:end-1)-threshold <= 0); % why?
     idx_int_rise_threshold = find(idx_bool_rise_threshold);
     num_saccades = length(idx_int_rise_threshold);
     eye_velocity_trace     = TRIAL.eye_r_vm_filt;
@@ -139,7 +141,7 @@ for counter_trial = 1 : 1 : num_trials
     all_sac_inds( all_sac_inds < 1 ) = 1;
     all_sac_inds( all_sac_inds > length_time_ ) = length_time_;
     all_sac_inds = all_sac_inds';
-    %
+    % why repeat multiple times?
     for counter_iteration = 1 : 5
         all_sac_ind_onset_  = all_sac_ind_onset(:,all_sac_validity);
         all_sac_ind_vmax_   = all_sac_ind_vmax(:,all_sac_validity);
@@ -259,23 +261,26 @@ for counter_trial = 1 : 1 : num_trials
         SACS_ALL_TRIAL.diff_ang(idx_sac) = abs(acosd( ...
             ( (SACS_ALL_TRIAL.eye_r_amp_x(idx_sac) * SACS_ALL_TRIAL.visual_amp_x(idx_sac)) + ...
               (SACS_ALL_TRIAL.eye_r_amp_y(idx_sac) * SACS_ALL_TRIAL.visual_amp_y(idx_sac)) ) ...
-            / (SACS_ALL_TRIAL.eye_r_amp_m(idx_sac)) / (SACS_ALL_TRIAL.visual_amp_m(idx_sac)) ));
+            / (SACS_ALL_TRIAL.eye_r_amp_m(idx_sac)) / (SACS_ALL_TRIAL.visual_amp_m(idx_sac)) )); % x dot y = |x||y|cos(diff_ang)
+        % perhaps comparing eye trajectory with direction of cue from starting eye position is more correct?
         validity_sac = true;
         validity_sac = validity_sac && (SACS_ALL_TRIAL.diff_start( idx_sac) < threshold_pos);
-        validity_sac = validity_sac && ( (SACS_ALL_TRIAL.diff_finish(idx_sac) < threshold_pos) || (diff_finish_tgt_end < threshold_pos) );
+        validity_sac = validity_sac && ( (SACS_ALL_TRIAL.diff_finish(idx_sac) < threshold_pos) || (diff_finish_tgt_end < threshold_pos) ); % ? need to include reasoning behind allowing saccade to end tgt, as we talked about
         validity_sac = validity_sac && (SACS_ALL_TRIAL.diff_ang(   idx_sac) < threshold_ang);
         
         if validity_sac
             SACS_ALL_TRIAL.tag(idx_sac) = 1; % 'prim_success' tag 1
-        elseif ( SACS_ALL_TRIAL.diff_ang(idx_sac) < threshold_ang ) && (SACS_ALL_TRIAL.diff_start( idx_sac) < threshold_pos)
+        elseif ( SACS_ALL_TRIAL.diff_ang(idx_sac) < threshold_ang ) && (SACS_ALL_TRIAL.diff_start( idx_sac) < threshold_pos) % code unclear; this represents sacOffset too far from cue or end tgt. bc of validity statements;
+                                                                                                                             % more clear to just have 3 ifs, instead of above validity statments? same comment for all below
             SACS_ALL_TRIAL.tag(idx_sac) = 2; % 'prim_attempt' tag 2
-        elseif ( SACS_ALL_TRIAL.diff_ang(idx_sac) >= threshold_ang ) && (SACS_ALL_TRIAL.diff_start( idx_sac) < threshold_pos)
+        elseif ( SACS_ALL_TRIAL.diff_ang(idx_sac) >= threshold_ang ) && (SACS_ALL_TRIAL.diff_start( idx_sac) < threshold_pos) % saccade that is not going twrd the cue tgt.
             SACS_ALL_TRIAL.tag(idx_sac) = 3; % 'prim_fail' tag 3
         end
         flag_last_cue = true;
         SACS_ALL_TRIAL.flag_last_cue(idx_sac) = flag_last_cue;
     end
     
+    % explain more why the whole code for primSac. above is repeated below and primSac could be considered success post-recording, as we discussed ?
     % Tag the prim_fail
     % search the period after cue_present till the next str_present
     % exclude the last cue_present since we already took care of it
@@ -335,7 +340,7 @@ for counter_trial = 1 : 1 : num_trials
             idx_prim = idx_prim_success(counter_prim);
             time_last_cue_pres = TRIAL.time_state_cue_present(end);
             time_start_search = SACS_ALL_TRIAL.time_offset(idx_prim);
-            if time_start_search < time_last_cue_pres
+            if time_start_search < time_last_cue_pres % ? as above, explain this scenario of successful primSac not associated with the last cue present.
                 % search from prim sac offset till the next str presentation
                 time_finish_search = TRIAL.time_state_str_fixation( find(TRIAL.time_state_str_fixation > time_start_search, 1, 'first') );
                 flag_last_cue = false;
@@ -397,7 +402,9 @@ for counter_trial = 1 : 1 : num_trials
         if counter_cue_pres==1
             time_start_search = TRIAL.time_start;
         else
-            time_start_search = TRIAL.time_state_str_fixation( find(TRIAL.time_state_str_fixation < time_finish_search, 1, 'last') ) - TRIAL.time_pursuit; % str_pursuit is the shiftet version of str_present
+            time_start_search = TRIAL.time_state_str_fixation( find(TRIAL.time_state_str_fixation < time_finish_search, 1, 'last') ) - TRIAL.time_pursuit; % str_pursuit is the shifted version of str_present
+            % why not just use state start tgt pursuit?
+            % also, why not look from after str. tgt. present. ?
         end
         idx_sac = find((SACS_ALL_TRIAL.time_onset > time_start_search) & (SACS_ALL_TRIAL.time_onset < time_finish_search), 1, 'last');
         if ~isempty(idx_sac)
@@ -408,8 +415,9 @@ for counter_trial = 1 : 1 : num_trials
                 continue;
             end
             SACS_ALL_TRIAL.time_visual(idx_sac)      = time_start_search;
-            SACS_ALL_TRIAL.reaction(idx_sac)         = (SACS_ALL_TRIAL.time_onset(idx_sac) - SACS_ALL_TRIAL.time_visual(idx_sac)) * 1000.0;
+            SACS_ALL_TRIAL.reaction(idx_sac)         = (SACS_ALL_TRIAL.time_onset(idx_sac) - SACS_ALL_TRIAL.time_visual(idx_sac)) * 1000.0; % counting the rxn. time from presentation of moving start target?
             SACS_ALL_TRIAL.visual_px_onset(idx_sac)  = SACS_ALL_TRIAL.eye_r_px_onset(idx_sac); % this entry is for the sake of filling up the nan values
+                   % why not keep nan value to avoid confusion, to be clear it's not a meaninful value (same comment for below)?
             SACS_ALL_TRIAL.visual_py_onset(idx_sac)  = SACS_ALL_TRIAL.eye_r_py_onset(idx_sac); % this entry is for the sake of filling up the nan values
             SACS_ALL_TRIAL.visual_px_offset(idx_sac) = TRIAL.start_x;
             SACS_ALL_TRIAL.visual_py_offset(idx_sac) = TRIAL.start_y;
@@ -557,6 +565,7 @@ for counter_trial = 1 : 1 : num_trials
         ((SACS_ALL_TRIAL.eye_r_py_offset - SACS_ALL_TRIAL.tgt_py_offset).^2) );
     idx_target_irrelev = isnan(SACS_ALL_TRIAL.tag) & (diff_finish < threshold_pos);
     SACS_ALL_TRIAL.visual_px_onset( idx_target_irrelev) = SACS_ALL_TRIAL.eye_r_px_onset(idx_target_irrelev); % this entry is for the sake of filling up the nan values
+    % this var. may actually be meaningful, if trying to see where target is wrt. center of gaze, in which case it'd be better to remove above comment to remove confusion ?
     SACS_ALL_TRIAL.visual_py_onset( idx_target_irrelev) = SACS_ALL_TRIAL.eye_r_py_onset(idx_target_irrelev); % this entry is for the sake of filling up the nan values
     SACS_ALL_TRIAL.visual_px_offset(idx_target_irrelev) = SACS_ALL_TRIAL.tgt_px_offset( idx_target_irrelev);
     SACS_ALL_TRIAL.visual_py_offset(idx_target_irrelev) = SACS_ALL_TRIAL.tgt_py_offset( idx_target_irrelev);
@@ -568,11 +577,15 @@ for counter_trial = 1 : 1 : num_trials
     SACS_ALL_TRIAL.visual_px_onset( idx_other_irrelev) = SACS_ALL_TRIAL.eye_r_px_onset( idx_other_irrelev); % this entry is for the sake of filling up the nan values
     SACS_ALL_TRIAL.visual_py_onset( idx_other_irrelev) = SACS_ALL_TRIAL.eye_r_py_onset( idx_other_irrelev); % this entry is for the sake of filling up the nan values
     SACS_ALL_TRIAL.visual_px_offset(idx_other_irrelev) = SACS_ALL_TRIAL.eye_r_px_offset(idx_other_irrelev); % this entry is for the sake of filling up the nan values
+    % perhaps have visual_offset as tgt_onset?; brain is registering stimulus whether or not it's paying attention
     SACS_ALL_TRIAL.visual_py_offset(idx_other_irrelev) = SACS_ALL_TRIAL.eye_r_py_offset(idx_other_irrelev); % this entry is for the sake of filling up the nan values
     SACS_ALL_TRIAL.diff_finish(     idx_other_irrelev) = 0.0;
+    % this could be btwn eye_offset and tgt_offset (or just nan)?
+    % diff_start could be btwn eye_onset and tgt_onset?
+    % diff_ang could be btwn vectors visual_amp and eye_amp?; what eye is doing vs. what it's supposed to be doing
     SACS_ALL_TRIAL.tag(             idx_other_irrelev) = 10; % 'other_irrelev' tag 10
     
-    % Fill up the nan values
+    % Fill up the nan values; keep them as nans??
     idx_nan_visual_values = isnan(SACS_ALL_TRIAL.visual_amp_x);
     SACS_ALL_TRIAL.visual_amp_x(idx_nan_visual_values)     = (SACS_ALL_TRIAL.visual_px_offset(idx_nan_visual_values) - SACS_ALL_TRIAL.visual_px_onset(idx_nan_visual_values));
     SACS_ALL_TRIAL.visual_amp_y(idx_nan_visual_values)     = (SACS_ALL_TRIAL.visual_py_offset(idx_nan_visual_values) - SACS_ALL_TRIAL.visual_py_onset(idx_nan_visual_values));
@@ -654,7 +667,7 @@ for counter_trial = 1 : 1 : num_trials
     end
     
     %% Plot trial
-    flag_plot_trial = 0;
+    flag_plot_trial = 1;
     if flag_plot_trial
     trial_num = counter_trial;
     

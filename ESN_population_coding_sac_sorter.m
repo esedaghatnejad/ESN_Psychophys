@@ -1,10 +1,22 @@
 %% function ESN_population_coding_sac_sorter
 function ESN_population_coding_sac_sorter
 %% Global variables
-global data_type_eye_list data_type_BEHAVE_list data_type_neuro_list data_type_EPHYS_list event_type_list ...
+global tag_name_list data_type_eye_list data_type_BEHAVE_list data_type_neuro_list data_type_EPHYS_list event_type_list ...
     waveform_inds_span length_trace inds_span ...
     ang_step ang_edges ang_values amp_edges vel_edges ...
     range_cell_with_4dir_behave
+tag_name_list = { ...
+    'prim_success', ... % tag 1
+    'prim_attempt', ... % tag 2
+    'prim_fail', ... % tag 3
+    'corr_success', ... % tag 4
+    'corr_fail', ... % tag 5
+    'back_center_success', ... % tag 6
+    'back_center_prim', ... % tag 7
+    'back_center_irrelev', ... % tag 8
+    'target_irrelev', ... % tag 9
+    'other_irrelev', ... % tag 10
+    };
 data_type_eye_list    = {'eye_vx', 'eye_vy'};
 data_type_BEHAVE_list = {'eye_r_vx_filt', 'eye_r_vy_filt'};
 data_type_neuro_list  = {'neuro_SS', 'neuro_CS'};
@@ -16,12 +28,13 @@ inds_span    = ((-(length_trace/2)+1) : 1 : (length_trace/2))';
 ang_step     = 45;
 ang_edges    = (0 - (ang_step/2)) : ang_step : (360 + (ang_step/2));
 ang_values   = (0) : ang_step : (360 - ang_step);
-amp_edges    = [-0.5 2 4 6 8 10 50];
-vel_edges    = [0 200 300 400 500 600 10000];
+amp_edges    = [0 1.5 2.5 3.5 4.5 5.5 7.5 100];
+vel_edges    = [0 150 250 350 450 550 650 750 10000];
 range_cell_with_4dir_behave = [1 51]; % This is to correct the data for the first round of recordings from Mirza, pCell_list_Mirza_pre201906
 % plese set the range_cell_with_4dir_behave to [-1 -1] if you do not have 4dir sessions
 
 %% Steps to prepare the combined eye & neuro data
+clc; clear; close all;
 tic
 % (1) re_run_ESN_sac_sorter(); % this func will re-analyze the _ANALYZED files and add the SACS_ALL_DATA with tags to them
 % (2) re_run_add_ephys_sac_sorter(); % this func will fuse the eye & neuro data and save the results with _sac name
@@ -31,8 +44,39 @@ tic
 % (5) build_population_data(); % load cell_data files (_combine_) and form population data.
 toc
 %% Plot functions
-% (1) plot_neural_properties(); % load population_neural_properties and plot neural_properties
-% (2) plot_CS_on_properties(); % load population_neural_properties and plot CS_on properties
+% (1) plot_neural_properties(1); % load population_neural_properties and plot neural_properties
+% (2) plot_CS_on_properties(2); % load population_neural_properties and plot CS_on properties
+% (3) 
+
+%% Plot population_data
+%
+params.data_type       = 'SS';
+params.CSYS_type       = 'tuned';
+params.event_type_name = 'onset';
+params.variable        = 'vel';
+params.tag_id          = 8;
+params.flag_smooth_plot = true;
+params.fig_num = 3;
+if ~exist([params.data_type '_population_' params.CSYS_type], 'var')
+    load([params.data_type '_population_' params.CSYS_type '.mat'], [params.data_type '_population_' params.CSYS_type])
+end
+if ~exist(['num_sac_' params.CSYS_type], 'var')
+    load(['num_sac_' params.CSYS_type '.mat'], ['num_sac_' params.CSYS_type])
+end
+eval(['population_data = ' params.data_type '_population_' params.CSYS_type ';']);
+eval(['num_sac_data = ' 'num_sac_' params.CSYS_type ';']);
+
+% [population_data_avg, num_sac_data_avg] = average_over_population_data(population_data, num_sac_data, params.variable, 1);
+% [population_data_avg_avg, ~] = average_over_population_data(population_data_avg, num_sac_data_avg, params.variable, 2);
+% data_ang_avg     = population_data_avg.(params.variable)(params.tag_id).(params.event_type_name);
+% data_ang_avg_avg = population_data_avg_avg.(params.variable)(params.tag_id).(params.event_type_name);
+% plot_population_data(params.fig_num, data_ang_avg, data_ang_avg_avg, params);
+
+data_ang_avg     = population_data.(params.variable)(params.tag_id).(params.event_type_name);
+population_data_avg_avg = average_over_population_data(population_data, num_sac_data, params.variable, 2);
+data_ang_avg_avg     = population_data_avg_avg.(params.variable)(params.tag_id).(params.event_type_name);
+plot_population_data(params.fig_num, data_ang_avg, data_ang_avg_avg, params);
+%}
 end
 
 %% function RE-RUN ESN_Sac_Sorter
@@ -47,7 +91,7 @@ num_pCells = size(pCell_list, 1);
 %% Loop over pCells
 for counter_pCell = 1 : 1 : num_pCells
     fprintf(['### ' 'Analyzing pCell no. ', num2str(counter_pCell), ' / ' num2str(num_pCells) ' ###' '\n']);
-    num_recording = sum(pCell_list_isstr(counter_pCell, :));
+    num_recording = nansum(pCell_list_isstr(counter_pCell, :));
     for counter_recording = 1 : 1 : num_recording
         %% build plot_data address
         file_name_cell = pCell_list{counter_pCell, counter_recording}; % '190423_142023_01_sorted_ESN_plot_data';
@@ -108,7 +152,7 @@ num_pCells = size(pCell_list, 1);
 %% Loop over pCells
 for counter_pCell = 1 : 1 : num_pCells
     fprintf(['### ' 'Analyzing pCell no. ', num2str(counter_pCell), ' / ' num2str(num_pCells) ' ###' '\n']);
-    num_recording = sum(pCell_list_isstr(counter_pCell, :));
+    num_recording = nansum(pCell_list_isstr(counter_pCell, :));
     for counter_recording = 1 : 1 : num_recording
         %% build plot_data address
         file_name_cell = pCell_list{counter_pCell, counter_recording}; % '190423_142023_01_sorted_ESN_plot_data';
@@ -372,8 +416,8 @@ for counter_sac = 1 : num_sacs
         ind_end_auditory = ind_start;
     end
     
-    BEHAVE.SACS_ALL_DATA.neuro_CS_count_visual(  1, counter_sac) = sum(BEHAVE.SACS_ALL_DATA.neuro_CS_visual(  ind_start:ind_end_visual,   counter_sac));
-    BEHAVE.SACS_ALL_DATA.neuro_CS_count_auditory(1, counter_sac) = sum(BEHAVE.SACS_ALL_DATA.neuro_CS_auditory(ind_start:ind_end_auditory, counter_sac));
+    BEHAVE.SACS_ALL_DATA.neuro_CS_count_visual(  1, counter_sac) = nansum(BEHAVE.SACS_ALL_DATA.neuro_CS_visual(  ind_start:ind_end_visual,   counter_sac));
+    BEHAVE.SACS_ALL_DATA.neuro_CS_count_auditory(1, counter_sac) = nansum(BEHAVE.SACS_ALL_DATA.neuro_CS_auditory(ind_start:ind_end_auditory, counter_sac));
 end
 
 fprintf(' --> Completed. \n')
@@ -438,7 +482,7 @@ end
 %% Loop over pCells
 for counter_pCell = 1 : 1 : num_pCells
     fprintf(['### ' 'Analyzing pCell no. ', num2str(counter_pCell), ' / ' num2str(num_pCells) ' ###' '\n']);
-    num_recording = sum(pCell_list_isstr(counter_pCell, :));
+    num_recording = nansum(pCell_list_isstr(counter_pCell, :));
     clearvars data_recordings
     %% Loop over recordings
     for counter_recording = 1 : 1 : num_recording
@@ -571,7 +615,7 @@ for counter_pCell = 1 : 1 : num_pCells
     params.cell_name    = cell_name;
     params.duration     = Neural_Properties.SS_duration;
     params.sac_tag_list = EXPERIMENT_PARAMS.sac_tag_list{1};
-    params.num_trials   = sum(cell2mat(EXPERIMENT_PARAMS.num_trials));
+    params.num_trials   = nansum(cell2mat(EXPERIMENT_PARAMS.num_trials));
     fprintf([cell_name ': Saving .png plot ...'])
     plot_sac_sorter(SACS_ALL_DATA, params)
     hFig_ = gcf;
@@ -634,7 +678,7 @@ plot(SACS_ALL_DATA.eye_r_px(:,idx_tag), ...
      SACS_ALL_DATA.eye_r_py(:,idx_tag), 'k')
 plot(SACS_ALL_DATA.eye_r_px_offset(:,idx_tag), ...
      SACS_ALL_DATA.eye_r_py_offset(:,idx_tag), 'om')
-title([title_ ': ' num2str(sum(idx_tag)) ' sac'], 'interpret', 'none');
+title([title_ ': ' num2str(nansum(idx_tag)) ' sac'], 'interpret', 'none');
 xlim([-17, 17])
 ylim([-15, 15])
 % axis equal;
@@ -664,6 +708,7 @@ set(gca, 'XTick', (0:200:500)/1000)
 ylabel('Reaction')
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 %% Add the title info
 sgtitle([params.cell_name ', ' ...
     'trial: ' num2str(params.num_trials) ', ' ...
@@ -681,14 +726,16 @@ clc; close all;
 global ang_edges ang_values range_cell_with_4dir_behave
 path_cell_data = uigetdir;
 if ~strcmp(path_cell_data(end), filesep);path_cell_data = [path_cell_data filesep];end
-cell_file_names = dir([path_cell_data '*_combine_*.mat']);
-num_pCells = length(cell_file_names);
+pCell_ids = build_pCell_ids();
+num_pCells = size(pCell_ids, 1);
+
 %% Loop over pCells
 for counter_pCell = 1 : num_pCells
     fprintf(['### ' 'Analyzing pCell no. ', num2str(counter_pCell), ' / ' num2str(num_pCells) ' ###' '\n']);
     %% load SACS_ALL_DATA
-    cell_file_name = cell_file_names(counter_pCell).name;
+    cell_file_name = pCell_ids{counter_pCell, 1};
     load([path_cell_data cell_file_name], 'SACS_ALL_DATA');
+    
     %% compute CS-on
     visual_px_offset = SACS_ALL_DATA.visual_px_offset;
     visual_py_offset = SACS_ALL_DATA.visual_py_offset;
@@ -697,7 +744,27 @@ for counter_pCell = 1 : num_pCells
     delta_x = visual_px_offset - eye_r_px_onset;
     delta_y = visual_py_offset - eye_r_py_onset;
     visual_ang = wrapTo360(atan2d(delta_y, delta_x));
-    visual_ang_bin = discretize(visual_ang, ang_edges);
+    neuro_CS_count = SACS_ALL_DATA.neuro_CS_count_visual;
+
+%     visual_px_offset = SACS_ALL_DATA.visual_px_offset;
+%     visual_py_offset = SACS_ALL_DATA.visual_py_offset;
+%     visual_px_onset  = SACS_ALL_DATA.visual_px_onset;
+%     visual_py_onset  = SACS_ALL_DATA.visual_py_onset;
+%     delta_x = visual_px_offset - visual_px_onset;
+%     delta_y = visual_py_offset - visual_py_onset;
+%     visual_ang = wrapTo360(atan2d(delta_y, delta_x));
+%     neuro_CS_count = SACS_ALL_DATA.neuro_CS_count_visual;
+%     neuro_CS_count = nansum(SACS_ALL_DATA.neuro_CS_visual(250:450, :));
+
+%     visual_ang = wrapTo360(SACS_ALL_DATA.eye_r_ang);
+%     neuro_CS_count = nansum(SACS_ALL_DATA.neuro_CS_onset(50:250, :));
+    
+    if (counter_pCell >= range_cell_with_4dir_behave(1)) && (counter_pCell <= range_cell_with_4dir_behave(2))
+        visual_ang_bin = discretize(ESN_Round(visual_ang, 90.0, 'round'), ang_edges);
+    else
+        visual_ang_bin = discretize(visual_ang, ang_edges);
+    end
+
     last_bin_id = length(ang_edges) - 1;
     visual_ang_bin(visual_ang_bin == last_bin_id) = 1; % wrap the circle around
     % 1: 0deg % 2: 45deg % 3: 90deg % 4: 135deg % 5: 180deg % 6: 225deg % 7: 270deg % 8: 315deg
@@ -711,8 +778,8 @@ for counter_pCell = 1 : num_pCells
         for counter_ang = 1 : num_ang_bin
             idx_tag = (SACS_ALL_DATA.tag == tag_bin(counter_tag));
             idx_ang = (visual_ang_bin == counter_ang);
-            CS_count(counter_tag, counter_ang) = sum(SACS_ALL_DATA.neuro_CS_count_visual(1, idx_tag&idx_ang));
-            sac_count(counter_tag, counter_ang) = sum(idx_tag&idx_ang);
+            CS_count(counter_tag, counter_ang) = nansum(neuro_CS_count(1, idx_tag&idx_ang));
+            sac_count(counter_tag, counter_ang) = nansum(idx_tag&idx_ang);
             CS_prob(counter_tag, counter_ang) = CS_count(counter_tag, counter_ang) ./ sac_count(counter_tag, counter_ang);
         end
     end
@@ -722,12 +789,17 @@ for counter_pCell = 1 : num_pCells
     CS_prob_sum = nansum(CS_prob,2); % sum of weights
     CS_rho = abs(r) ./ CS_prob_sum; % Computes mean resultant vector length for circular data.
     
-    CS_count_avg  = CS_count( 1, :) + CS_count( 4, :);
-    sac_count_avg = sac_count(1, :) + sac_count(4, :);
+    CS_count_avg  = CS_count( 1, :) + CS_count( 4, :) + CS_count( 8, :);
+    sac_count_avg = sac_count(1, :) + sac_count(4, :) + sac_count(8, :);
     % 'prim_success' tag 1 % 'corr_success' tag 4
     CS_prob_avg = CS_count_avg ./ sac_count_avg;
+%     CS_prob_avg = ( ( CS_count(1,:)./sac_count(1,:) ) + ( CS_count(4,:)./sac_count(4,:) ) ) * 0.5;
+    
     r_avg = nansum(CS_prob_avg.* exp(1i*deg2rad(ang_values)) , 2); % compute weighted sum of cos and sin of angles
     CS_ang_avg =  wrapTo360(rad2deg(angle(r_avg)));
+%     [~, id_max_] = max(CS_prob_avg);
+%     CS_ang_avg = ang_values(id_max_);
+    
     CS_rho_avg = abs(r_avg) ./ nansum(CS_prob_avg,2);
     
     if (counter_pCell >= range_cell_with_4dir_behave(1)) && (counter_pCell <= range_cell_with_4dir_behave(2))
@@ -759,6 +831,8 @@ for counter_pCell = 1 : num_pCells
     vonMises_std = wrapTo360(rad2deg(sqrt(vonMises_var)));
     
     %% Build CS_on_data
+    CS_on_data.sac_count = sac_count;
+    CS_on_data.CS_count  = CS_count;
     CS_on_data.CS_prob = CS_prob;
     CS_on_data.CS_ang  = CS_ang;
     CS_on_data.CS_rho  = CS_rho;
@@ -777,8 +851,30 @@ for counter_pCell = 1 : num_pCells
     
     %% Append CS_on_data to cell_data
     save([path_cell_data cell_file_name], 'CS_on_data', '-append');
+    
 end
 fprintf('### ALL DONE. ###\n')
+end
+
+%% function build_pCell_ids()
+function pCell_ids = build_pCell_ids()
+pCell_list = ESN_build_pCell_list();
+pCell_list_isstr = arrayfun(@iscellstr,pCell_list);
+num_pCells = size(pCell_list, 1);
+pCell_ids = cell(num_pCells, 1);
+for counter_pCell = 1 : num_pCells
+    file_name_cell = pCell_list{counter_pCell, 1};
+    if file_name_cell(18) == 's'
+        id_          = file_name_cell(1:16);
+    elseif file_name_cell(18) == '2'
+        id_          = file_name_cell(1:18);
+    else
+        error('Build plot_data_compress: cell id does not follow the standards')
+    end
+    num_recording = nansum(pCell_list_isstr(counter_pCell, :));
+    cell_file_name = [id_ '_' 'combine' '_' num2str(num_recording)];
+    pCell_ids{counter_pCell, 1} = cell_file_name;
+end
 end
 
 %% function build_neural_properties()
@@ -786,11 +882,11 @@ function build_neural_properties()
 clc; close all;
 path_cell_data = uigetdir;
 if ~strcmp(path_cell_data(end), filesep);path_cell_data = [path_cell_data filesep];end
-cell_file_names = dir([path_cell_data '*_combine_*.mat']);
-num_pCells = length(cell_file_names);
+pCell_ids = build_pCell_ids();
+num_pCells = size(pCell_ids, 1);
 
 %% Init variables
-cell_file_name = cell_file_names(1).name;
+cell_file_name = pCell_ids{1, 1};
 load([path_cell_data cell_file_name], 'Neural_Properties', 'CS_on_data');
 population_neural_properties = struct;
 field_names_Neural_Properties = fieldnames(Neural_Properties);
@@ -820,7 +916,7 @@ end
 for counter_pCell = 1 : num_pCells
     fprintf(['### ' 'Analyzing pCell no. ', num2str(counter_pCell), ' / ' num2str(num_pCells) ' ###' '\n']);
     %% load SACS_ALL_DATA
-    cell_file_name = cell_file_names(counter_pCell).name;
+    cell_file_name = pCell_ids{counter_pCell, 1};
     load([path_cell_data cell_file_name], 'Neural_Properties', 'CS_on_data');
     %%
     for counter_field_Neural_Properties = 1 : length(field_names_Neural_Properties)
@@ -862,13 +958,13 @@ fprintf(' --> Completed. \n')
 end
 
 %% function plot_neural_properties
-function plot_neural_properties()
+function plot_neural_properties(fig_num)
 %% Load population_neural_properties
 [file_name,file_path] = uigetfile([pwd filesep 'population_neural_properties.mat'], 'Select population_neural_properties file');
 load([file_path, file_name], 'population_neural_properties');
 
 %% Init plot
-hFig = figure(1);
+hFig = figure(fig_num);
 clf(hFig)
 num_row_fig = 1;
 num_col_fig = 5;
@@ -903,8 +999,8 @@ CS_firing_pCells_mean = nanmean(CS_firing_pCells);
 CS_firing_pCells_stdv = nanstd( CS_firing_pCells);
 CS_firing_pCells_sem  = nanstd( CS_firing_pCells)./sqrt(num_pCells);
 
-stat_SS = ['SS_firing, ', 'mean: ', num2str(mean(SS_firing_pCells)), ', SEM: ', num2str(std(SS_firing_pCells)./sqrt(num_pCells)), ', std: ', num2str(std(SS_firing_pCells))];
-stat_CS = ['CS_firing, ', 'mean: ', num2str(mean(CS_firing_pCells)), ', SEM: ', num2str(std(CS_firing_pCells)./sqrt(num_pCells)), ', std: ', num2str(std(CS_firing_pCells))];
+stat_SS = ['SS_firing, ', 'mean: ', num2str(nanmean(SS_firing_pCells)), ', SEM: ', num2str(nanstd(SS_firing_pCells)./sqrt(num_pCells)), ', std: ', num2str(nanstd(SS_firing_pCells))];
+stat_CS = ['CS_firing, ', 'mean: ', num2str(nanmean(CS_firing_pCells)), ', SEM: ', num2str(nanstd(CS_firing_pCells)./sqrt(num_pCells)), ', std: ', num2str(nanstd(CS_firing_pCells))];
 fprintf([stat_SS '\n']);
 fprintf([stat_CS '\n'])
 
@@ -981,6 +1077,7 @@ plot(time_waveform, CS_waveform_mean, '-r', 'LineWidth', 1.0)
 ylabel('waveform')
 xlabel('Time (ms)')
 ylim([-1.3 +1.2])
+xlim([-2 4])
 
 subplot(num_row_fig,num_col_fig, 4)
 hold on
@@ -996,6 +1093,7 @@ plot(time_xprob, CS_xprob_mean, '-r', 'LineWidth', 1.0)
 ylabel('prob')
 xlabel('Time (ms)')
 ylim([-0.2 +1.6])
+xlim([-50 50])
 
 %% Suppression
 subplot(num_row_fig,num_col_fig, 5)
@@ -1010,13 +1108,13 @@ ESN_Beautify_Plot(hFig, [8, 2], 8)
 end
 
 %% function plot_CS_on_properties
-function plot_CS_on_properties()
+function plot_CS_on_properties(fig_num)
 %% Load population_neural_properties
 [file_name,file_path] = uigetfile([pwd filesep 'population_neural_properties.mat'], 'Select population_neural_properties file');
 load([file_path, file_name], 'population_neural_properties');
 
 %% Init plot
-hFig = figure(1);
+hFig = figure(fig_num);
 clf(hFig)
 num_row_fig = 2;
 num_col_fig = 4;
@@ -1139,89 +1237,109 @@ end
 %% function build_population_data()
 function build_population_data()
 clc; close all;
-global event_type_list inds_span amp_edges vel_edges
+global event_type_list amp_edges vel_edges length_trace
 path_cell_data = uigetdir;
 if ~strcmp(path_cell_data(end), filesep);path_cell_data = [path_cell_data filesep];end
-cell_file_names = dir([path_cell_data '*_combine_*.mat']);
-cell_file_name = cell_file_names(1).name;
+pCell_ids = build_pCell_ids();
+num_pCells = size(pCell_ids, 1);
+cell_file_name = pCell_ids{1, 1};
 load([path_cell_data cell_file_name], 'SACS_ALL_DATA', 'CS_on_data');
 tag_bin = unique(SACS_ALL_DATA.tag);
-length_trace = length(inds_span);
-num_pCells = length(cell_file_names);
 num_tag_bin = length(tag_bin);
-num_ang_bin = length(CS_on_data.idx_CS_tuning);
+num_ang_bin = length(CS_on_data.idx_CS_tuned);
 num_amp_bin = length(amp_edges) - 1;
 num_vel_bin = length(vel_edges) - 1;
+flag_build_absol = false;
+
 %% Init variables
 % STRUCT (SS / CS / VM) -> 10x1 tag struct (amp / vel) -> variable name (onset / vmax / offset / visual) -> 6x8 cell (ampXang / velXang) -> 138x500 double (pCellXtrace)
+fprintf(['Initializing the variables' ' ...'])
 for counter_tag = 1 : num_tag_bin
     for counter_event_type = 1 : length(event_type_list)
         event_type_name = event_type_list{counter_event_type};
+        if flag_build_absol
         SS_population_absol.amp(counter_tag).(event_type_name) = cell(num_amp_bin, num_ang_bin);
-        SS_population_tuned.amp(counter_tag).(event_type_name) = cell(num_amp_bin, num_ang_bin);
-        SS_population_absol.vel(counter_tag).(event_type_name) = cell(num_vel_bin, num_ang_bin);
-        SS_population_tuned.vel(counter_tag).(event_type_name) = cell(num_vel_bin, num_ang_bin);
-        
         CS_population_absol.amp(counter_tag).(event_type_name) = cell(num_amp_bin, num_ang_bin);
-        CS_population_tuned.amp(counter_tag).(event_type_name) = cell(num_amp_bin, num_ang_bin);
-        CS_population_absol.vel(counter_tag).(event_type_name) = cell(num_vel_bin, num_ang_bin);
-        CS_population_tuned.vel(counter_tag).(event_type_name) = cell(num_vel_bin, num_ang_bin);
-        
         VM_population_absol.amp(counter_tag).(event_type_name) = cell(num_amp_bin, num_ang_bin);
-        VM_population_tuned.amp(counter_tag).(event_type_name) = cell(num_amp_bin, num_ang_bin);
-        VM_population_absol.vel(counter_tag).(event_type_name) = cell(num_vel_bin, num_ang_bin);
-        VM_population_tuned.vel(counter_tag).(event_type_name) = cell(num_vel_bin, num_ang_bin);
-        
+        VT_population_absol.amp(counter_tag).(event_type_name) = cell(num_amp_bin, num_ang_bin);
         num_sac_absol.amp(counter_tag).(event_type_name) = cell(num_amp_bin, num_ang_bin);
-        num_sac_tuned.amp(counter_tag).(event_type_name) = cell(num_amp_bin, num_ang_bin);
+        
+        SS_population_absol.vel(counter_tag).(event_type_name) = cell(num_vel_bin, num_ang_bin);
+        CS_population_absol.vel(counter_tag).(event_type_name) = cell(num_vel_bin, num_ang_bin);
+        VM_population_absol.vel(counter_tag).(event_type_name) = cell(num_vel_bin, num_ang_bin);
+        VT_population_absol.vel(counter_tag).(event_type_name) = cell(num_vel_bin, num_ang_bin);
         num_sac_absol.vel(counter_tag).(event_type_name) = cell(num_vel_bin, num_ang_bin);
+        end
+        
+        SS_population_tuned.amp(counter_tag).(event_type_name) = cell(num_amp_bin, num_ang_bin);
+        CS_population_tuned.amp(counter_tag).(event_type_name) = cell(num_amp_bin, num_ang_bin);
+        VM_population_tuned.amp(counter_tag).(event_type_name) = cell(num_amp_bin, num_ang_bin);
+        VT_population_tuned.amp(counter_tag).(event_type_name) = cell(num_amp_bin, num_ang_bin);
+        num_sac_tuned.amp(counter_tag).(event_type_name) = cell(num_amp_bin, num_ang_bin);
+        
+        SS_population_tuned.vel(counter_tag).(event_type_name) = cell(num_vel_bin, num_ang_bin);
+        CS_population_tuned.vel(counter_tag).(event_type_name) = cell(num_vel_bin, num_ang_bin);
+        VM_population_tuned.vel(counter_tag).(event_type_name) = cell(num_vel_bin, num_ang_bin);
+        VT_population_tuned.vel(counter_tag).(event_type_name) = cell(num_vel_bin, num_ang_bin);
         num_sac_tuned.vel(counter_tag).(event_type_name) = cell(num_vel_bin, num_ang_bin);
         
         for counter_ang = 1 : num_ang_bin
             for counter_amp = 1 : num_amp_bin
+                if flag_build_absol
                 SS_population_absol.amp(counter_tag).(event_type_name){counter_amp, counter_ang} = nan(num_pCells, length_trace);
-                SS_population_tuned.amp(counter_tag).(event_type_name){counter_amp, counter_ang} = nan(num_pCells, length_trace);
-                
                 CS_population_absol.amp(counter_tag).(event_type_name){counter_amp, counter_ang} = nan(num_pCells, length_trace);
-                CS_population_tuned.amp(counter_tag).(event_type_name){counter_amp, counter_ang} = nan(num_pCells, length_trace);
-                
                 VM_population_absol.amp(counter_tag).(event_type_name){counter_amp, counter_ang} = nan(num_pCells, length_trace);
-                VM_population_tuned.amp(counter_tag).(event_type_name){counter_amp, counter_ang} = nan(num_pCells, length_trace);
-                
+                VT_population_absol.amp(counter_tag).(event_type_name){counter_amp, counter_ang} = nan(num_pCells, length_trace);
                 num_sac_absol.amp(counter_tag).(event_type_name){counter_amp, counter_ang} = zeros(num_pCells, 1);
+                end
+                
+                SS_population_tuned.amp(counter_tag).(event_type_name){counter_amp, counter_ang} = nan(num_pCells, length_trace);
+                CS_population_tuned.amp(counter_tag).(event_type_name){counter_amp, counter_ang} = nan(num_pCells, length_trace);
+                VM_population_tuned.amp(counter_tag).(event_type_name){counter_amp, counter_ang} = nan(num_pCells, length_trace);
+                VT_population_tuned.amp(counter_tag).(event_type_name){counter_amp, counter_ang} = nan(num_pCells, length_trace);
                 num_sac_tuned.amp(counter_tag).(event_type_name){counter_amp, counter_ang} = zeros(num_pCells, 1);
             end
             for counter_vel = 1 : num_vel_bin
+                if flag_build_absol
                 SS_population_absol.vel(counter_tag).(event_type_name){counter_vel, counter_ang} = nan(num_pCells, length_trace);
-                SS_population_tuned.vel(counter_tag).(event_type_name){counter_vel, counter_ang} = nan(num_pCells, length_trace);
-                
                 CS_population_absol.vel(counter_tag).(event_type_name){counter_vel, counter_ang} = nan(num_pCells, length_trace);
-                CS_population_tuned.vel(counter_tag).(event_type_name){counter_vel, counter_ang} = nan(num_pCells, length_trace);
-                
                 VM_population_absol.vel(counter_tag).(event_type_name){counter_vel, counter_ang} = nan(num_pCells, length_trace);
-                VM_population_tuned.vel(counter_tag).(event_type_name){counter_vel, counter_ang} = nan(num_pCells, length_trace);
-                
+                VT_population_absol.vel(counter_tag).(event_type_name){counter_vel, counter_ang} = nan(num_pCells, length_trace);
                 num_sac_absol.vel(counter_tag).(event_type_name){counter_vel, counter_ang} = zeros(num_pCells, 1);
+                end
+                
+                SS_population_tuned.vel(counter_tag).(event_type_name){counter_vel, counter_ang} = nan(num_pCells, length_trace);
+                CS_population_tuned.vel(counter_tag).(event_type_name){counter_vel, counter_ang} = nan(num_pCells, length_trace);
+                VM_population_tuned.vel(counter_tag).(event_type_name){counter_vel, counter_ang} = nan(num_pCells, length_trace);
+                VT_population_tuned.vel(counter_tag).(event_type_name){counter_vel, counter_ang} = nan(num_pCells, length_trace);
                 num_sac_tuned.vel(counter_tag).(event_type_name){counter_vel, counter_ang} = zeros(num_pCells, 1);
             end
         end
     end
 end
+fprintf(' --> Completed. \n')
 
 %% Loop over pCells
 for counter_pCell = 1 : num_pCells
     fprintf(['### ' 'Analyzing pCell no. ', num2str(counter_pCell), ' / ' num2str(num_pCells) ' ###' '\n']);
     %% load SACS_ALL_DATA
-    cell_file_name = cell_file_names(counter_pCell).name;
+    cell_file_name = pCell_ids{counter_pCell, 1};
     load([path_cell_data cell_file_name], 'SACS_ALL_DATA', 'CS_on_data');
     
     %% Compute data
     SACS_amp_bin = discretize(SACS_ALL_DATA.eye_r_amp_m,  amp_edges);
-    SACS_vel_bin = discretize(SACS_ALL_DATA.eye_r_vm_max, amp_edges);
+    SACS_vel_bin = discretize(SACS_ALL_DATA.eye_r_vm_max, vel_edges);
+    eye_amp_x = repmat(SACS_ALL_DATA.eye_r_amp_x, length_trace, 1);
+    eye_amp_y = repmat(SACS_ALL_DATA.eye_r_amp_y, length_trace, 1);
+    eye_amp_m = repmat(SACS_ALL_DATA.eye_r_amp_m, length_trace, 1);
     for counter_event_type = 1 : length(event_type_list)
         event_type_name = event_type_list{counter_event_type};
-        SACS_ALL_DATA.(['eye_vm' '_' event_type_name]) = sqrt(...
-            SACS_ALL_DATA.(['eye_vx' '_' event_type_name]).^2 + SACS_ALL_DATA.(['eye_vy' '_' event_type_name]).^2 );
+        eye_vx = SACS_ALL_DATA.(['eye_vx' '_' event_type_name]);
+        eye_vy = SACS_ALL_DATA.(['eye_vy' '_' event_type_name]);
+        eye_vm = sqrt(eye_vx.^2 + eye_vy.^2 );
+        eye_vt = ( (eye_vx.*eye_amp_x) + (eye_vy.*eye_amp_y) ) ./ eye_amp_m;
+        SACS_ALL_DATA.(['eye_vm' '_' event_type_name]) = eye_vm;
+        SACS_ALL_DATA.(['eye_vt' '_' event_type_name]) = eye_vt;
         for counter_tag = 1 : num_tag_bin
             idx_tag = (SACS_ALL_DATA.tag == tag_bin(counter_tag));
             for counter_ang = 1 : num_ang_bin
@@ -1229,45 +1347,60 @@ for counter_pCell = 1 : num_pCells
                 idx_ang_tuned = (CS_on_data.visual_ang_bin_tuned == counter_ang);
                 for counter_amp = 1 : num_amp_bin
                     idx_amp = (SACS_amp_bin == counter_amp);
-                    idx_tuned = idx_tag & idx_amp & idx_ang_tuned;
-                    idx_absol = idx_tag & idx_amp & idx_ang_absol;
                     
+                    if flag_build_absol
+                    idx_absol = idx_tag & idx_amp & idx_ang_absol;
                     SS_population_absol.amp(counter_tag).(event_type_name){counter_amp, counter_ang}(counter_pCell, :) = ...
                         reshape(nanmean( SACS_ALL_DATA.(['neuro_SS' '_' event_type_name])(:,idx_absol), 2), 1, length_trace);
-                    SS_population_tuned.amp(counter_tag).(event_type_name){counter_amp, counter_ang}(counter_pCell, :) = ...
-                        reshape(nanmean( SACS_ALL_DATA.(['neuro_SS' '_' event_type_name])(:,idx_tuned), 2), 1, length_trace);
                     CS_population_absol.amp(counter_tag).(event_type_name){counter_amp, counter_ang}(counter_pCell, :) = ...
                         reshape(nanmean( SACS_ALL_DATA.(['neuro_CS' '_' event_type_name])(:,idx_absol), 2), 1, length_trace);
-                    CS_population_tuned.amp(counter_tag).(event_type_name){counter_amp, counter_ang}(counter_pCell, :) = ...
-                        reshape(nanmean( SACS_ALL_DATA.(['neuro_CS' '_' event_type_name])(:,idx_tuned), 2), 1, length_trace);
                     VM_population_absol.amp(counter_tag).(event_type_name){counter_amp, counter_ang}(counter_pCell, :) = ...
                         reshape(nanmean( SACS_ALL_DATA.(['eye_vm' '_' event_type_name])(:,idx_absol), 2), 1, length_trace);
-                    VM_population_tuned.amp(counter_tag).(event_type_name){counter_amp, counter_ang}(counter_pCell, :) = ...
-                        reshape(nanmean( SACS_ALL_DATA.(['eye_vm' '_' event_type_name])(:,idx_tuned), 2), 1, length_trace);
+                    VT_population_absol.amp(counter_tag).(event_type_name){counter_amp, counter_ang}(counter_pCell, :) = ...
+                        reshape(nanmean( SACS_ALL_DATA.(['eye_vt' '_' event_type_name])(:,idx_absol), 2), 1, length_trace);
                     num_sac_absol.amp(counter_tag).(event_type_name){counter_amp, counter_ang}(counter_pCell, :) = ...
                         nansum(idx_absol);
+                    end
+                    
+                    idx_tuned = idx_tag & idx_amp & idx_ang_tuned;
+                    SS_population_tuned.amp(counter_tag).(event_type_name){counter_amp, counter_ang}(counter_pCell, :) = ...
+                        reshape(nanmean( SACS_ALL_DATA.(['neuro_SS' '_' event_type_name])(:,idx_tuned), 2), 1, length_trace);
+                    CS_population_tuned.amp(counter_tag).(event_type_name){counter_amp, counter_ang}(counter_pCell, :) = ...
+                        reshape(nanmean( SACS_ALL_DATA.(['neuro_CS' '_' event_type_name])(:,idx_tuned), 2), 1, length_trace);
+                    VM_population_tuned.amp(counter_tag).(event_type_name){counter_amp, counter_ang}(counter_pCell, :) = ...
+                        reshape(nanmean( SACS_ALL_DATA.(['eye_vm' '_' event_type_name])(:,idx_tuned), 2), 1, length_trace);
+                    VT_population_tuned.amp(counter_tag).(event_type_name){counter_amp, counter_ang}(counter_pCell, :) = ...
+                        reshape(nanmean( SACS_ALL_DATA.(['eye_vt' '_' event_type_name])(:,idx_tuned), 2), 1, length_trace);
                     num_sac_tuned.amp(counter_tag).(event_type_name){counter_amp, counter_ang}(counter_pCell, :) = ...
                         nansum(idx_tuned);
+                    
                 end
                 for counter_vel = 1 : num_vel_bin
                     idx_vel = (SACS_vel_bin == counter_vel);
-                    idx_tuned = idx_tag & idx_vel & idx_ang_tuned;
-                    idx_absol = idx_tag & idx_vel & idx_ang_absol;
                     
+                    if flag_build_absol
+                    idx_absol = idx_tag & idx_vel & idx_ang_absol;
                     SS_population_absol.vel(counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pCell, :) = ...
                         reshape(nanmean( SACS_ALL_DATA.(['neuro_SS' '_' event_type_name])(:,idx_absol), 2), 1, length_trace);
-                    SS_population_tuned.vel(counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pCell, :) = ...
-                        reshape(nanmean( SACS_ALL_DATA.(['neuro_SS' '_' event_type_name])(:,idx_tuned), 2), 1, length_trace);
                     CS_population_absol.vel(counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pCell, :) = ...
                         reshape(nanmean( SACS_ALL_DATA.(['neuro_CS' '_' event_type_name])(:,idx_absol), 2), 1, length_trace);
-                    CS_population_tuned.vel(counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pCell, :) = ...
-                        reshape(nanmean( SACS_ALL_DATA.(['neuro_CS' '_' event_type_name])(:,idx_tuned), 2), 1, length_trace);
                     VM_population_absol.vel(counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pCell, :) = ...
                         reshape(nanmean( SACS_ALL_DATA.(['eye_vm' '_' event_type_name])(:,idx_absol), 2), 1, length_trace);
-                    VM_population_tuned.vel(counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pCell, :) = ...
-                        reshape(nanmean( SACS_ALL_DATA.(['eye_vm' '_' event_type_name])(:,idx_tuned), 2), 1, length_trace);
+                    VT_population_absol.vel(counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pCell, :) = ...
+                        reshape(nanmean( SACS_ALL_DATA.(['eye_vt' '_' event_type_name])(:,idx_absol), 2), 1, length_trace);
                     num_sac_absol.vel(counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pCell, :) = ...
                         nansum(idx_absol);
+                    end
+                    
+                    idx_tuned = idx_tag & idx_vel & idx_ang_tuned;
+                    SS_population_tuned.vel(counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pCell, :) = ...
+                        reshape(nanmean( SACS_ALL_DATA.(['neuro_SS' '_' event_type_name])(:,idx_tuned), 2), 1, length_trace);
+                    CS_population_tuned.vel(counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pCell, :) = ...
+                        reshape(nanmean( SACS_ALL_DATA.(['neuro_CS' '_' event_type_name])(:,idx_tuned), 2), 1, length_trace);
+                    VM_population_tuned.vel(counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pCell, :) = ...
+                        reshape(nanmean( SACS_ALL_DATA.(['eye_vm' '_' event_type_name])(:,idx_tuned), 2), 1, length_trace);
+                    VT_population_tuned.vel(counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pCell, :) = ...
+                        reshape(nanmean( SACS_ALL_DATA.(['eye_vt' '_' event_type_name])(:,idx_tuned), 2), 1, length_trace);
                     num_sac_tuned.vel(counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pCell, :) = ...
                         nansum(idx_tuned);
                 end
@@ -1277,15 +1410,202 @@ for counter_pCell = 1 : num_pCells
 
 end
 fprintf('### ALL DONE. ###\n')
+
 %% Save data
 fprintf(['Saving .mat files' ' ...'])
+if flag_build_absol
 save([path_cell_data '..' filesep 'SS_population_absol' '.mat'], 'SS_population_absol', '-v7.3');
-save([path_cell_data '..' filesep 'SS_population_tuned' '.mat'], 'SS_population_tuned', '-v7.3');
 save([path_cell_data '..' filesep 'CS_population_absol' '.mat'], 'CS_population_absol', '-v7.3');
-save([path_cell_data '..' filesep 'CS_population_tuned' '.mat'], 'CS_population_tuned', '-v7.3');
 save([path_cell_data '..' filesep 'VM_population_absol' '.mat'], 'VM_population_absol', '-v7.3');
-save([path_cell_data '..' filesep 'VM_population_tuned' '.mat'], 'VM_population_tuned', '-v7.3');
+save([path_cell_data '..' filesep 'VT_population_absol' '.mat'], 'VT_population_absol', '-v7.3');
 save([path_cell_data '..' filesep 'num_sac_absol' '.mat'], 'num_sac_absol', '-v7.3');
+end
+
+save([path_cell_data '..' filesep 'SS_population_tuned' '.mat'], 'SS_population_tuned', '-v7.3');
+save([path_cell_data '..' filesep 'CS_population_tuned' '.mat'], 'CS_population_tuned', '-v7.3');
+save([path_cell_data '..' filesep 'VM_population_tuned' '.mat'], 'VM_population_tuned', '-v7.3');
+save([path_cell_data '..' filesep 'VT_population_tuned' '.mat'], 'VT_population_tuned', '-v7.3');
 save([path_cell_data '..' filesep 'num_sac_tuned' '.mat'], 'num_sac_tuned', '-v7.3');
 fprintf(' --> Completed. \n')
+
+end
+
+%% function average_over_population_data
+function [population_data_avg, num_sac_data_avg] = average_over_population_data(population_data, num_sac_data, variable, dim)
+%% Handle inputs
+
+% variable = 'amp' or 'vel'
+% dim = 1 -> average over different varibale amp/vel levels
+% dim = 2 -> average over different ang levels
+if nargin < 4
+    dim = 1;
+end
+if nargin < 3
+    variable = 'vel';
+end
+if nargin < 2
+    population_data_avg = [];
+    return;
+end
+
+%% Calc necessary variables
+global event_type_list inds_span
+length_trace = length(inds_span);
+num_pCells  = size(population_data.(variable)(1).onset{1, 1}, 1);
+num_tag_bin = length(population_data.(variable));
+num_ang_bin = size(population_data.(variable)(1).onset, 2);
+num_var_bin = size(population_data.(variable)(1).onset, 1);
+
+%% Init population_data_avg
+if dim == 1
+    num_ang_bin_avg = num_ang_bin;
+    num_var_bin_avg = 1;
+elseif dim == 2
+    num_ang_bin_avg = 1;
+    num_var_bin_avg = num_var_bin;
+else
+    dim = 1;
+    num_ang_bin_avg = num_ang_bin;
+    num_var_bin_avg = 1;
+end
+for counter_tag = 1 : num_tag_bin
+    for counter_event_type = 1 : length(event_type_list)
+        event_type_name = event_type_list{counter_event_type};
+        population_data_avg.(variable)(counter_tag).(event_type_name) = cell(num_var_bin_avg, num_ang_bin_avg);
+        num_sac_data_avg.(variable)(counter_tag).(event_type_name) = cell(num_var_bin_avg, num_ang_bin_avg);
+        for counter_ang = 1 : num_ang_bin_avg
+            for counter_var = 1 : num_var_bin_avg
+                population_data_avg.(variable)(counter_tag).(event_type_name){counter_var, counter_ang} = nan(num_pCells, length_trace);
+                num_sac_data_avg.(variable)(counter_tag).(event_type_name){counter_var, counter_ang} = zeros(num_pCells, 1);
+            end
+        end
+    end
+end
+
+%% Compute population_data_avg
+fprintf(['average_over_population_data' ' ...'])
+for counter_event_type = 1 : length(event_type_list)
+    event_type_name = event_type_list{counter_event_type};
+    for counter_tag = 1 : num_tag_bin
+        if dim == 1
+            for counter_ang = 1 : num_ang_bin
+                event_data_avg_ = zeros(num_pCells, length_trace);
+                num_sac_avg_    = zeros(num_pCells, length_trace);
+                for counter_var = 1 : num_var_bin
+                    event_data_ = ...
+                        population_data.(variable)(counter_tag).(event_type_name){counter_var, counter_ang};
+                    event_data_(isnan(event_data_)) = 0;
+                    num_sac_ = ...
+                           num_sac_data.(variable)(counter_tag).(event_type_name){counter_var, counter_ang};
+                    num_sac_ = repmat(num_sac_, 1, length_trace);
+                    event_data_avg_ = event_data_avg_ + (event_data_ .* num_sac_);
+                    num_sac_avg_    = num_sac_avg_    + num_sac_;
+                end
+                population_data_avg.(variable)(counter_tag).(event_type_name){1, counter_ang} = event_data_avg_ ./ num_sac_avg_;
+                num_sac_data_avg.(variable)(counter_tag).(event_type_name){1, counter_ang} = num_sac_avg_(:,1);
+            end
+        elseif dim == 2
+            for counter_var = 1 : num_var_bin
+                event_data_avg_ = zeros(num_pCells, length_trace);
+                num_sac_avg_    = zeros(num_pCells, length_trace);
+                for counter_ang = 1 : num_ang_bin
+                    event_data_ = ...
+                        population_data.(variable)(counter_tag).(event_type_name){counter_var, counter_ang};
+                    event_data_(isnan(event_data_)) = 0;
+                    num_sac_ = ...
+                           num_sac_data.(variable)(counter_tag).(event_type_name){counter_var, counter_ang};
+                    num_sac_ = repmat(num_sac_, 1, length_trace);
+                    event_data_avg_ = event_data_avg_ + (event_data_ .* num_sac_);
+                    num_sac_avg_    = num_sac_avg_    + num_sac_;
+                end
+                population_data_avg.(variable)(counter_tag).(event_type_name){counter_var, 1} = event_data_avg_ ./ num_sac_avg_;
+                num_sac_data_avg.(variable)(counter_tag).(event_type_name){counter_var, 1} = num_sac_avg_(:,1);
+            end
+        end
+    end
+end
+fprintf(' --> Completed. \n')
+end
+
+%% function plot_population_data
+function plot_population_data(fig_num, data_ang_avg, data_ang_avg_avg, params)
+%% Init plot
+hFig = figure(fig_num);
+clf(hFig)
+num_row_fig = 3;
+num_col_fig = 3;
+ax_ang_id = [6, 3, 2, 1, 4, 7, 8, 9];
+ax_center_id = 5;
+
+num_ang_bin = size(data_ang_avg, 2);
+num_var_bin = size(data_ang_avg, 1);
+
+line_colors_ = [0,0,0; pink(round(1.5*num_var_bin))];
+
+% pCell_dix_ = [1:65, 90:134];
+pCell_dix_ = 1:size(data_ang_avg{1, 1}, 1);
+%% Plot
+global inds_span length_trace
+clearvars h_ax
+for counter_ang = 1 : num_ang_bin
+    h_ax(counter_ang) = subplot(num_row_fig, num_col_fig, ax_ang_id(counter_ang));
+    hold on;
+    for counter_var = 1 : num_var_bin
+        data_pCells = data_ang_avg{counter_var, counter_ang}(pCell_dix_,:);
+        data_mean_ = nanmean(data_pCells);
+        data_mean_x_axis = reshape(inds_span, 1, []);
+        data_sem_ = nanstd(data_pCells) ./ sqrt(nansum(~isnan(data_pCells)));
+        if params.flag_smooth_plot
+            data_mean_ = ESN_smooth(data_mean_);
+            data_sem_  = ESN_smooth(data_sem_);
+        end
+        data_sem_p_ = data_mean_ + data_sem_;
+        data_sem_m_ = data_mean_ - data_sem_;
+        data_sem_y_axis_ = [(data_sem_p_) flip(data_sem_m_)];
+        data_sem_x_axis_ = [(data_mean_x_axis) flip(data_mean_x_axis)];
+        xline(data_mean_x_axis(round(length_trace/2)))
+%         plot(data_sem_x_axis_, data_sem_y_axis_, 'LineWidth', 0.25, 'Color', line_colors_(counter_var, :))
+        plot(data_mean_x_axis, data_mean_, 'LineWidth', 1, 'Color', line_colors_(counter_var, :))
+    end
+end
+
+h_ax(counter_ang+1) = subplot(num_row_fig, num_col_fig, ax_center_id);
+hold on;
+for counter_var = 1 : num_var_bin
+    data_pCells = data_ang_avg_avg{counter_var, 1}(pCell_dix_, :);
+    data_mean_ = nanmean(data_pCells);
+    data_mean_x_axis = reshape(inds_span, 1, []);
+    data_sem_ = nanstd(data_pCells) ./ sqrt(nansum(~isnan(data_pCells)));
+    if params.flag_smooth_plot
+        data_mean_ = ESN_smooth(data_mean_);
+        data_sem_  = ESN_smooth(data_sem_);
+    end
+    data_sem_p_ = data_mean_ + data_sem_;
+    data_sem_m_ = data_mean_ - data_sem_;
+    data_sem_y_axis_ = [(data_sem_p_) flip(data_sem_m_)];
+    data_sem_x_axis_ = [(data_mean_x_axis) flip(data_mean_x_axis)];
+    xline(data_mean_x_axis(round(length_trace/2)))
+%     plot(data_sem_x_axis_, data_sem_y_axis_, 'LineWidth', 0.25, 'Color', line_colors_(counter_var, :))
+    plot(data_mean_x_axis, data_mean_, 'LineWidth', 1, 'Color', line_colors_(counter_var, :))
+end
+
+y_lim_ = zeros(length(h_ax), 2);
+for counter_ax = 1 : length(h_ax)
+    y_lim_(counter_ax, :) = ylim(h_ax(counter_ax));
+end
+y_lim__ = [min(y_lim_(:,1)) max(y_lim_(:,2))];
+for counter_ax = 1 : length(h_ax)
+    set(h_ax(counter_ax), 'ylim', y_lim__);
+end
+%% ESN_Beautify_Plot
+sgtitle([params.data_type ', ' ...
+    params.CSYS_type ', ' ...
+    'tag: ' num2str(params.tag_id) ', ' ...
+    'time: ' params.event_type_name ', ' ...
+    params.variable ...
+    ], ...
+    'interpret', 'none');
+
+ESN_Beautify_Plot(hFig, [4, 4], 8)
+
 end

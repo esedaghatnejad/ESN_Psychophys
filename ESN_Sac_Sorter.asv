@@ -98,8 +98,9 @@ for counter_trial = 1 : 1 : num_trials
     end
     threshold = 75; % deg/s
     eye_vm_ = TRIAL.eye_r_vm_filt;
-    eye_vm_ = [eye_vm_; eye_vm_(end)]; % why?
-    idx_bool_rise_threshold = (eye_vm_(2:end)-threshold > 0) & (eye_vm_(1:end-1)-threshold <= 0); % why?
+    eye_vm_ = [eye_vm_; eye_vm_(end)]; % adding a dummy value; see 'idx_bool_rise_threshold' line below
+    idx_bool_rise_threshold = (eye_vm_(2:end)-threshold > 0) & (eye_vm_(1:end-1)-threshold <= 0); % to detect only the moments when velocity first crosses the threshold
+                                                                                                  % these points will be used to detect potential saccades
     idx_int_rise_threshold = find(idx_bool_rise_threshold);
     num_saccades = length(idx_int_rise_threshold);
     eye_velocity_trace     = TRIAL.eye_r_vm_filt;
@@ -141,51 +142,50 @@ for counter_trial = 1 : 1 : num_trials
     all_sac_inds( all_sac_inds < 1 ) = 1;
     all_sac_inds( all_sac_inds > length_time_ ) = length_time_;
     all_sac_inds = all_sac_inds';
-    % why repeat multiple times?
-    for counter_iteration = 1 : 5
-        all_sac_ind_onset_  = all_sac_ind_onset(:,all_sac_validity);
-        all_sac_ind_vmax_   = all_sac_ind_vmax(:,all_sac_validity);
-        all_sac_ind_offset_ = all_sac_ind_offset(:,all_sac_validity);
-        all_sac_inds_       = all_sac_inds(:,all_sac_validity);
-        all_sac_validity_   = true(size(all_sac_ind_onset_));
-        
-        eye_velocity_trace_     = eye_velocity_trace;
-        all_sac_eye_r_vm_ = reshape(eye_velocity_trace_(all_sac_inds_),num_sac_datapoints, []);
-        all_sac_eye_r_px_ = reshape(TRIAL.eye_r_px_filt(all_sac_inds_),num_sac_datapoints, []);
-        all_sac_eye_r_py_ = reshape(TRIAL.eye_r_py_filt(all_sac_inds_),num_sac_datapoints, []);
-        all_sac_eye_r_vm_max_ = reshape(eye_velocity_trace_(all_sac_ind_vmax_), 1, []);
-        all_sac_duration_ = all_sac_ind_offset_ - all_sac_ind_onset_;
-        all_sac_eye_r_amp_m_ = sqrt(...
-            ((TRIAL.eye_r_px_filt(all_sac_ind_offset_) - TRIAL.eye_r_px_filt(all_sac_ind_onset_)).^2) + ...
-            ((TRIAL.eye_r_py_filt(all_sac_ind_offset_) - TRIAL.eye_r_py_filt(all_sac_ind_onset_)).^2) );
-        all_sac_eye_r_amp_m_ = reshape(all_sac_eye_r_amp_m_, 1, []);
-        
-        all_sac_validity_( max(all_sac_eye_r_vm_) > 1200 ) = false;           % invalidate if saccade trace has velocity > 1000 deg/s
-        all_sac_validity_( max(all_sac_eye_r_vm_(1:40,:)) > 300 ) = false;    % invalidate if saccade trace during 1-40ms has velocity > 300 deg/s
-        all_sac_validity_( max(all_sac_eye_r_vm_(100:150,:)) > 300 ) = false; % invalidate if saccade trace during 100-150ms has velocity > 300 deg/s
-        all_sac_validity_( max(all_sac_eye_r_vm_(1:50,:)) > all_sac_eye_r_vm_(60,:) ) = false;   % invalidate if saccade trace during 1-50ms has velocity > vmax (10ms buffer before vmax)
-        all_sac_validity_( max(all_sac_eye_r_vm_(80:150,:)) > all_sac_eye_r_vm_(60,:) ) = false; % invalidate if saccade trace during 80-150ms has velocity > vmax (20ms buffer after vmax)
-        all_sac_validity_( all_sac_eye_r_vm_max_ < threshold ) = false; % invalidate if vm_max < threshold deg/s
-        all_sac_validity_( all_sac_duration_ > 100 ) = false;           % invalidate if saccades duration > 100 ms
-        all_sac_validity_( all_sac_ind_offset_-all_sac_ind_vmax_ > 70 ) = false; % invalidate if deceleration > 70 ms
-        all_sac_validity_( all_sac_ind_vmax_-all_sac_ind_onset_ > 50 ) = false;  % invalidate if acceleration > 50 ms
-        all_sac_validity_( all_sac_ind_offset_-all_sac_ind_vmax_ < 2 ) = false;  % invalidate if deceleration < 2 ms
-        all_sac_validity_( all_sac_ind_vmax_-all_sac_ind_onset_ < 2 ) = false;   % invalidate if acceleration < 2 ms
-        all_sac_validity_( all_sac_eye_r_amp_m_ > 20 ) = false;  % invalidate if saccade amplitude > 20 deg
-        all_sac_validity_( all_sac_eye_r_amp_m_ < 0.2 ) = false; % invalidate if saccade amplitude < 0.2 deg
-        all_sac_validity_( max(abs(all_sac_eye_r_px_)) > 20 ) = false;   % invalidate if abs of eye position > 20 deg
-        all_sac_validity_( max(abs(all_sac_eye_r_py_)) > 20 ) = false;   % invalidate if abs of eye position > 20 deg
-        
-        all_sac_validity_( [(abs(diff(all_sac_ind_vmax_)) < 5) false] ) = false;   % invalidate if ind_vmax is the same
-        all_sac_validity_( [(abs(diff(all_sac_ind_onset_)) < 5) false] ) = false;  % invalidate if ind_onset is the same
-        all_sac_validity_( [(abs(diff(all_sac_ind_offset_)) < 5) false] ) = false; % invalidate if ind_offset is the same
-        
-        all_sac_ind_onset  = all_sac_ind_onset_(:,all_sac_validity_);
-        all_sac_ind_vmax   = all_sac_ind_vmax_(:,all_sac_validity_);
-        all_sac_ind_offset = all_sac_ind_offset_(:,all_sac_validity_);
-        all_sac_inds       = all_sac_inds_(:,all_sac_validity_);
-        all_sac_validity   = true(size(all_sac_ind_onset));
-    end
+    
+    all_sac_ind_onset_  = all_sac_ind_onset(:,all_sac_validity);
+    all_sac_ind_vmax_   = all_sac_ind_vmax(:,all_sac_validity);
+    all_sac_ind_offset_ = all_sac_ind_offset(:,all_sac_validity);
+    all_sac_inds_       = all_sac_inds(:,all_sac_validity);
+    all_sac_validity_   = true(size(all_sac_ind_onset_));
+
+    eye_velocity_trace_     = eye_velocity_trace;
+    all_sac_eye_r_vm_ = reshape(eye_velocity_trace_(all_sac_inds_),num_sac_datapoints, []);
+    all_sac_eye_r_px_ = reshape(TRIAL.eye_r_px_filt(all_sac_inds_),num_sac_datapoints, []);
+    all_sac_eye_r_py_ = reshape(TRIAL.eye_r_py_filt(all_sac_inds_),num_sac_datapoints, []);
+    all_sac_eye_r_vm_max_ = reshape(eye_velocity_trace_(all_sac_ind_vmax_), 1, []);
+    all_sac_duration_ = all_sac_ind_offset_ - all_sac_ind_onset_;
+    all_sac_eye_r_amp_m_ = sqrt(...
+        ((TRIAL.eye_r_px_filt(all_sac_ind_offset_) - TRIAL.eye_r_px_filt(all_sac_ind_onset_)).^2) + ...
+        ((TRIAL.eye_r_py_filt(all_sac_ind_offset_) - TRIAL.eye_r_py_filt(all_sac_ind_onset_)).^2) );
+    all_sac_eye_r_amp_m_ = reshape(all_sac_eye_r_amp_m_, 1, []);
+
+    all_sac_validity_( max(all_sac_eye_r_vm_) > 1200 ) = false;           % invalidate if saccade trace has velocity > 1000 deg/s
+    all_sac_validity_( max(all_sac_eye_r_vm_(1:40,:)) > 300 ) = false;    % invalidate if saccade trace during 1-40ms has velocity > 300 deg/s
+    all_sac_validity_( max(all_sac_eye_r_vm_(100:150,:)) > 300 ) = false; % invalidate if saccade trace during 100-150ms has velocity > 300 deg/s
+    all_sac_validity_( max(all_sac_eye_r_vm_(1:50,:)) > all_sac_eye_r_vm_(60,:) ) = false;   % invalidate if saccade trace during 1-50ms has velocity > vmax (10ms buffer before vmax)
+    all_sac_validity_( max(all_sac_eye_r_vm_(80:150,:)) > all_sac_eye_r_vm_(60,:) ) = false; % invalidate if saccade trace during 80-150ms has velocity > vmax (20ms buffer after vmax)
+    all_sac_validity_( all_sac_eye_r_vm_max_ < threshold ) = false; % invalidate if vm_max < threshold deg/s
+    all_sac_validity_( all_sac_duration_ > 100 ) = false;           % invalidate if saccades duration > 100 ms
+    all_sac_validity_( all_sac_ind_offset_-all_sac_ind_vmax_ > 70 ) = false; % invalidate if deceleration > 70 ms
+    all_sac_validity_( all_sac_ind_vmax_-all_sac_ind_onset_ > 50 ) = false;  % invalidate if acceleration > 50 ms
+    all_sac_validity_( all_sac_ind_offset_-all_sac_ind_vmax_ < 2 ) = false;  % invalidate if deceleration < 2 ms
+    all_sac_validity_( all_sac_ind_vmax_-all_sac_ind_onset_ < 2 ) = false;   % invalidate if acceleration < 2 ms
+    all_sac_validity_( all_sac_eye_r_amp_m_ > 20 ) = false;  % invalidate if saccade amplitude > 20 deg
+    all_sac_validity_( all_sac_eye_r_amp_m_ < 0.2 ) = false; % invalidate if saccade amplitude < 0.2 deg
+    all_sac_validity_( max(abs(all_sac_eye_r_px_)) > 20 ) = false;   % invalidate if abs of eye position > 20 deg
+    all_sac_validity_( max(abs(all_sac_eye_r_py_)) > 20 ) = false;   % invalidate if abs of eye position > 20 deg
+
+    all_sac_validity_( [(abs(diff(all_sac_ind_vmax_)) < 5) false] ) = false;   % invalidate if ind_vmax is the same
+    all_sac_validity_( [(abs(diff(all_sac_ind_onset_)) < 5) false] ) = false;  % invalidate if ind_onset is the same
+    all_sac_validity_( [(abs(diff(all_sac_ind_offset_)) < 5) false] ) = false; % invalidate if ind_offset is the same
+
+    all_sac_ind_onset  = all_sac_ind_onset_(:,all_sac_validity_);
+    all_sac_ind_vmax   = all_sac_ind_vmax_(:,all_sac_validity_);
+    all_sac_ind_offset = all_sac_ind_offset_(:,all_sac_validity_);
+    all_sac_inds       = all_sac_inds_(:,all_sac_validity_);
+    all_sac_validity   = true(size(all_sac_ind_onset));
+    
     
     %% Init SACS_ALL and add common params
     SACS_ALL_TRIAL = struct;
@@ -259,11 +259,10 @@ for counter_trial = 1 : 1 : num_trials
             ((SACS_ALL_TRIAL.eye_r_px_offset(idx_sac) - TRIAL.end_x).^2) + ...
             ((SACS_ALL_TRIAL.eye_r_py_offset(idx_sac) - TRIAL.end_y).^2) );
         SACS_ALL_TRIAL.diff_ang(idx_sac) = abs(acosd( ...
-            ( (SACS_ALL_TRIAL.eye_r_amp_x(idx_sac) .* SACS_ALL_TRIAL.visual_amp_x(idx_sac)) + ...
-              (SACS_ALL_TRIAL.eye_r_amp_y(idx_sac) .* SACS_ALL_TRIAL.visual_amp_y(idx_sac)) ) ...
-            ./ (SACS_ALL_TRIAL.eye_r_amp_m(idx_sac)) ./ (SACS_ALL_TRIAL.visual_amp_m(idx_sac)) )); % x dot y = |x||y|cos(diff_ang)
+            ( (SACS_ALL_TRIAL.eye_r_amp_x(idx_sac) * SACS_ALL_TRIAL.visual_amp_x(idx_sac)) + ...
+              (SACS_ALL_TRIAL.eye_r_amp_y(idx_sac) * SACS_ALL_TRIAL.visual_amp_y(idx_sac)) ) ...
+            / (SACS_ALL_TRIAL.eye_r_amp_m(idx_sac)) / (SACS_ALL_TRIAL.visual_amp_m(idx_sac)) )); % x dot y = |x||y|cos(diff_ang)
         % perhaps comparing eye trajectory with direction of cue from starting eye position is more correct?
-
         validity_sac = true;
         validity_sac = validity_sac && (SACS_ALL_TRIAL.diff_start( idx_sac) < threshold_pos);
         validity_sac = validity_sac && ( (SACS_ALL_TRIAL.diff_finish(idx_sac) < threshold_pos) || (diff_finish_tgt_end < threshold_pos) ); % ? need to include reasoning behind allowing saccade to end tgt, as we talked about

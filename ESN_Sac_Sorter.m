@@ -93,13 +93,12 @@ for counter_trial = 1 : 1 : num_trials
     
     %% Extract Saccades
     clearvars -except EXPERIMENT_PARAMS TRIALS_DATA counter_trial num_trials TRIAL SACS_ALL
-    if counter_trial ==3
-        disp('e');
-    end
+
     threshold = 75; % deg/s
     eye_vm_ = TRIAL.eye_r_vm_filt;
-    eye_vm_ = [eye_vm_; eye_vm_(end)]; % why?
-    idx_bool_rise_threshold = (eye_vm_(2:end)-threshold > 0) & (eye_vm_(1:end-1)-threshold <= 0); % why?
+    eye_vm_ = [eye_vm_; eye_vm_(end)]; % adding dummy value; see the code for 'idx_bool_rise_threshold' below
+    idx_bool_rise_threshold = (eye_vm_(2:end)-threshold > 0) & (eye_vm_(1:end-1)-threshold <= 0); % to detect the moments when velocity first crosses the threshold, during a period of high velocity
+                                                                                                  % these indices are used to detect potential saccades
     idx_int_rise_threshold = find(idx_bool_rise_threshold);
     num_saccades = length(idx_int_rise_threshold);
     eye_velocity_trace     = TRIAL.eye_r_vm_filt;
@@ -141,51 +140,50 @@ for counter_trial = 1 : 1 : num_trials
     all_sac_inds( all_sac_inds < 1 ) = 1;
     all_sac_inds( all_sac_inds > length_time_ ) = length_time_;
     all_sac_inds = all_sac_inds';
-    % why repeat multiple times?
-    for counter_iteration = 1 : 5
-        all_sac_ind_onset_  = all_sac_ind_onset(:,all_sac_validity);
-        all_sac_ind_vmax_   = all_sac_ind_vmax(:,all_sac_validity);
-        all_sac_ind_offset_ = all_sac_ind_offset(:,all_sac_validity);
-        all_sac_inds_       = all_sac_inds(:,all_sac_validity);
-        all_sac_validity_   = true(size(all_sac_ind_onset_));
-        
-        eye_velocity_trace_     = eye_velocity_trace;
-        all_sac_eye_r_vm_ = reshape(eye_velocity_trace_(all_sac_inds_),num_sac_datapoints, []);
-        all_sac_eye_r_px_ = reshape(TRIAL.eye_r_px_filt(all_sac_inds_),num_sac_datapoints, []);
-        all_sac_eye_r_py_ = reshape(TRIAL.eye_r_py_filt(all_sac_inds_),num_sac_datapoints, []);
-        all_sac_eye_r_vm_max_ = reshape(eye_velocity_trace_(all_sac_ind_vmax_), 1, []);
-        all_sac_duration_ = all_sac_ind_offset_ - all_sac_ind_onset_;
-        all_sac_eye_r_amp_m_ = sqrt(...
-            ((TRIAL.eye_r_px_filt(all_sac_ind_offset_) - TRIAL.eye_r_px_filt(all_sac_ind_onset_)).^2) + ...
-            ((TRIAL.eye_r_py_filt(all_sac_ind_offset_) - TRIAL.eye_r_py_filt(all_sac_ind_onset_)).^2) );
-        all_sac_eye_r_amp_m_ = reshape(all_sac_eye_r_amp_m_, 1, []);
-        
-        all_sac_validity_( max(all_sac_eye_r_vm_) > 1200 ) = false;           % invalidate if saccade trace has velocity > 1000 deg/s
-        all_sac_validity_( max(all_sac_eye_r_vm_(1:40,:)) > 300 ) = false;    % invalidate if saccade trace during 1-40ms has velocity > 300 deg/s
-        all_sac_validity_( max(all_sac_eye_r_vm_(100:150,:)) > 300 ) = false; % invalidate if saccade trace during 100-150ms has velocity > 300 deg/s
-        all_sac_validity_( max(all_sac_eye_r_vm_(1:50,:)) > all_sac_eye_r_vm_(60,:) ) = false;   % invalidate if saccade trace during 1-50ms has velocity > vmax (10ms buffer before vmax)
-        all_sac_validity_( max(all_sac_eye_r_vm_(80:150,:)) > all_sac_eye_r_vm_(60,:) ) = false; % invalidate if saccade trace during 80-150ms has velocity > vmax (20ms buffer after vmax)
-        all_sac_validity_( all_sac_eye_r_vm_max_ < threshold ) = false; % invalidate if vm_max < threshold deg/s
-        all_sac_validity_( all_sac_duration_ > 100 ) = false;           % invalidate if saccades duration > 100 ms
-        all_sac_validity_( all_sac_ind_offset_-all_sac_ind_vmax_ > 70 ) = false; % invalidate if deceleration > 70 ms
-        all_sac_validity_( all_sac_ind_vmax_-all_sac_ind_onset_ > 50 ) = false;  % invalidate if acceleration > 50 ms
-        all_sac_validity_( all_sac_ind_offset_-all_sac_ind_vmax_ < 2 ) = false;  % invalidate if deceleration < 2 ms
-        all_sac_validity_( all_sac_ind_vmax_-all_sac_ind_onset_ < 2 ) = false;   % invalidate if acceleration < 2 ms
-        all_sac_validity_( all_sac_eye_r_amp_m_ > 20 ) = false;  % invalidate if saccade amplitude > 20 deg
-        all_sac_validity_( all_sac_eye_r_amp_m_ < 0.2 ) = false; % invalidate if saccade amplitude < 0.2 deg
-        all_sac_validity_( max(abs(all_sac_eye_r_px_)) > 20 ) = false;   % invalidate if abs of eye position > 20 deg
-        all_sac_validity_( max(abs(all_sac_eye_r_py_)) > 20 ) = false;   % invalidate if abs of eye position > 20 deg
-        
-        all_sac_validity_( [(abs(diff(all_sac_ind_vmax_)) < 5) false] ) = false;   % invalidate if ind_vmax is the same
-        all_sac_validity_( [(abs(diff(all_sac_ind_onset_)) < 5) false] ) = false;  % invalidate if ind_onset is the same
-        all_sac_validity_( [(abs(diff(all_sac_ind_offset_)) < 5) false] ) = false; % invalidate if ind_offset is the same
-        
-        all_sac_ind_onset  = all_sac_ind_onset_(:,all_sac_validity_);
-        all_sac_ind_vmax   = all_sac_ind_vmax_(:,all_sac_validity_);
-        all_sac_ind_offset = all_sac_ind_offset_(:,all_sac_validity_);
-        all_sac_inds       = all_sac_inds_(:,all_sac_validity_);
-        all_sac_validity   = true(size(all_sac_ind_onset));
-    end
+    
+    all_sac_ind_onset_  = all_sac_ind_onset(:,all_sac_validity);
+    all_sac_ind_vmax_   = all_sac_ind_vmax(:,all_sac_validity);
+    all_sac_ind_offset_ = all_sac_ind_offset(:,all_sac_validity);
+    all_sac_inds_       = all_sac_inds(:,all_sac_validity);
+    all_sac_validity_   = true(size(all_sac_ind_onset_));
+
+    eye_velocity_trace_     = eye_velocity_trace;
+    all_sac_eye_r_vm_ = reshape(eye_velocity_trace_(all_sac_inds_),num_sac_datapoints, []);
+    all_sac_eye_r_px_ = reshape(TRIAL.eye_r_px_filt(all_sac_inds_),num_sac_datapoints, []);
+    all_sac_eye_r_py_ = reshape(TRIAL.eye_r_py_filt(all_sac_inds_),num_sac_datapoints, []);
+    all_sac_eye_r_vm_max_ = reshape(eye_velocity_trace_(all_sac_ind_vmax_), 1, []);
+    all_sac_duration_ = all_sac_ind_offset_ - all_sac_ind_onset_;
+    all_sac_eye_r_amp_m_ = sqrt(...
+        ((TRIAL.eye_r_px_filt(all_sac_ind_offset_) - TRIAL.eye_r_px_filt(all_sac_ind_onset_)).^2) + ...
+        ((TRIAL.eye_r_py_filt(all_sac_ind_offset_) - TRIAL.eye_r_py_filt(all_sac_ind_onset_)).^2) );
+    all_sac_eye_r_amp_m_ = reshape(all_sac_eye_r_amp_m_, 1, []);
+
+    all_sac_validity_( max(all_sac_eye_r_vm_) > 1200 ) = false;           % invalidate if saccade trace has velocity > 1000 deg/s
+    all_sac_validity_( max(all_sac_eye_r_vm_(1:40,:)) > 300 ) = false;    % invalidate if saccade trace during 1-40ms has velocity > 300 deg/s
+    all_sac_validity_( max(all_sac_eye_r_vm_(100:150,:)) > 300 ) = false; % invalidate if saccade trace during 100-150ms has velocity > 300 deg/s
+    all_sac_validity_( max(all_sac_eye_r_vm_(1:50,:)) > all_sac_eye_r_vm_(60,:) ) = false;   % invalidate if saccade trace during 1-50ms has velocity > vmax (10ms buffer before vmax)
+    all_sac_validity_( max(all_sac_eye_r_vm_(80:150,:)) > all_sac_eye_r_vm_(60,:) ) = false; % invalidate if saccade trace during 80-150ms has velocity > vmax (20ms buffer after vmax)
+    all_sac_validity_( all_sac_eye_r_vm_max_ < threshold ) = false; % invalidate if vm_max < threshold deg/s
+    all_sac_validity_( all_sac_duration_ > 100 ) = false;           % invalidate if saccades duration > 100 ms
+    all_sac_validity_( all_sac_ind_offset_-all_sac_ind_vmax_ > 70 ) = false; % invalidate if deceleration > 70 ms
+    all_sac_validity_( all_sac_ind_vmax_-all_sac_ind_onset_ > 50 ) = false;  % invalidate if acceleration > 50 ms
+    all_sac_validity_( all_sac_ind_offset_-all_sac_ind_vmax_ < 2 ) = false;  % invalidate if deceleration < 2 ms
+    all_sac_validity_( all_sac_ind_vmax_-all_sac_ind_onset_ < 2 ) = false;   % invalidate if acceleration < 2 ms
+    all_sac_validity_( all_sac_eye_r_amp_m_ > 20 ) = false;  % invalidate if saccade amplitude > 20 deg
+    all_sac_validity_( all_sac_eye_r_amp_m_ < 0.2 ) = false; % invalidate if saccade amplitude < 0.2 deg
+    all_sac_validity_( max(abs(all_sac_eye_r_px_)) > 20 ) = false;   % invalidate if abs of eye position > 20 deg
+    all_sac_validity_( max(abs(all_sac_eye_r_py_)) > 20 ) = false;   % invalidate if abs of eye position > 20 deg
+
+    all_sac_validity_( [(abs(diff(all_sac_ind_vmax_)) < 5) false] ) = false;   % invalidate if ind_vmax is the same
+    all_sac_validity_( [(abs(diff(all_sac_ind_onset_)) < 5) false] ) = false;  % invalidate if ind_onset is the same
+    all_sac_validity_( [(abs(diff(all_sac_ind_offset_)) < 5) false] ) = false; % invalidate if ind_offset is the same
+
+    all_sac_ind_onset  = all_sac_ind_onset_(:,all_sac_validity_);
+    all_sac_ind_vmax   = all_sac_ind_vmax_(:,all_sac_validity_);
+    all_sac_ind_offset = all_sac_ind_offset_(:,all_sac_validity_);
+    all_sac_inds       = all_sac_inds_(:,all_sac_validity_);
+    all_sac_validity   = true(size(all_sac_ind_onset));
+    
     
     %% Init SACS_ALL and add common params
     SACS_ALL_TRIAL = struct;
@@ -232,64 +230,17 @@ for counter_trial = 1 : 1 : num_trials
     threshold_pos = 1.5; % deg
     threshold_ang = 45.0; % deg
     
-    % Tag the last prim_success
-    % search the period after the last cue_present till the next_trial
-    time_start_search  = TRIAL.time_state_cue_present(end);
-    time_finish_search = TRIAL.time_state_next_trial(end);
-    idx_sac = find((SACS_ALL_TRIAL.time_onset > time_start_search) & (SACS_ALL_TRIAL.time_onset < time_finish_search), 1, 'first');
-    if ~isempty(idx_sac)
-        SACS_ALL_TRIAL.time_visual(idx_sac)      = time_start_search;
-        SACS_ALL_TRIAL.time_auditory(idx_sac)    = time_start_search; % neutral beep at the cue presentation
-        SACS_ALL_TRIAL.visual_px_onset(idx_sac)  = TRIAL.start_x;
-        SACS_ALL_TRIAL.visual_py_onset(idx_sac)  = TRIAL.start_y;
-        SACS_ALL_TRIAL.visual_px_offset(idx_sac) = TRIAL.cue_x;
-        SACS_ALL_TRIAL.visual_py_offset(idx_sac) = TRIAL.cue_y;
-        SACS_ALL_TRIAL.reaction(idx_sac)         = (SACS_ALL_TRIAL.time_onset(idx_sac) - SACS_ALL_TRIAL.time_visual(idx_sac)) * 1000.0;
-        SACS_ALL_TRIAL.visual_amp_x(idx_sac)     = (SACS_ALL_TRIAL.visual_px_offset(idx_sac) - SACS_ALL_TRIAL.visual_px_onset(idx_sac));
-        SACS_ALL_TRIAL.visual_amp_y(idx_sac)     = (SACS_ALL_TRIAL.visual_py_offset(idx_sac) - SACS_ALL_TRIAL.visual_py_onset(idx_sac));
-        SACS_ALL_TRIAL.visual_amp_m(idx_sac)     = sqrt((SACS_ALL_TRIAL.visual_amp_x(idx_sac).^2) + (SACS_ALL_TRIAL.visual_amp_y(idx_sac).^2));
-        SACS_ALL_TRIAL.visual_ang(idx_sac)       = atan2d(SACS_ALL_TRIAL.visual_amp_y(idx_sac), SACS_ALL_TRIAL.visual_amp_x(idx_sac));
-        SACS_ALL_TRIAL.diff_start(idx_sac)  = sqrt( ...
-            ((SACS_ALL_TRIAL.eye_r_px_onset( idx_sac) - SACS_ALL_TRIAL.visual_px_onset( idx_sac)).^2) + ...
-            ((SACS_ALL_TRIAL.eye_r_py_onset( idx_sac) - SACS_ALL_TRIAL.visual_py_onset( idx_sac)).^2) );
-        SACS_ALL_TRIAL.diff_finish(idx_sac) = sqrt( ...
-            ((SACS_ALL_TRIAL.eye_r_px_offset(idx_sac) - SACS_ALL_TRIAL.visual_px_offset(idx_sac)).^2) + ...
-            ((SACS_ALL_TRIAL.eye_r_py_offset(idx_sac) - SACS_ALL_TRIAL.visual_py_offset(idx_sac)).^2) );
-        diff_finish_tgt_end = sqrt( ...
-            ((SACS_ALL_TRIAL.eye_r_px_offset(idx_sac) - TRIAL.end_x).^2) + ...
-            ((SACS_ALL_TRIAL.eye_r_py_offset(idx_sac) - TRIAL.end_y).^2) );
-        SACS_ALL_TRIAL.diff_ang(idx_sac) = abs(acosd( ...
-            ( (SACS_ALL_TRIAL.eye_r_amp_x(idx_sac) .* SACS_ALL_TRIAL.visual_amp_x(idx_sac)) + ...
-              (SACS_ALL_TRIAL.eye_r_amp_y(idx_sac) .* SACS_ALL_TRIAL.visual_amp_y(idx_sac)) ) ...
-            ./ (SACS_ALL_TRIAL.eye_r_amp_m(idx_sac)) ./ (SACS_ALL_TRIAL.visual_amp_m(idx_sac)) )); % x dot y = |x||y|cos(diff_ang)
-        % perhaps comparing eye trajectory with direction of cue from starting eye position is more correct?
-
-        validity_sac = true;
-        validity_sac = validity_sac && (SACS_ALL_TRIAL.diff_start( idx_sac) < threshold_pos);
-        validity_sac = validity_sac && ( (SACS_ALL_TRIAL.diff_finish(idx_sac) < threshold_pos) || (diff_finish_tgt_end < threshold_pos) ); % ? need to include reasoning behind allowing saccade to end tgt, as we talked about
-        validity_sac = validity_sac && (SACS_ALL_TRIAL.diff_ang(   idx_sac) < threshold_ang);
-        
-        if validity_sac
-            SACS_ALL_TRIAL.tag(idx_sac) = 1; % 'prim_success' tag 1
-        elseif ( SACS_ALL_TRIAL.diff_ang(idx_sac) < threshold_ang ) && (SACS_ALL_TRIAL.diff_start( idx_sac) < threshold_pos) % code unclear; this represents sacOffset too far from cue or end tgt. bc of validity statements;
-                                                                                                                             % more clear to just have 3 ifs, instead of above validity statments? same comment for all below
-            SACS_ALL_TRIAL.tag(idx_sac) = 2; % 'prim_attempt' tag 2
-        elseif ( SACS_ALL_TRIAL.diff_ang(idx_sac) >= threshold_ang ) && (SACS_ALL_TRIAL.diff_start( idx_sac) < threshold_pos) % saccade that is not going twrd the cue tgt.
-            SACS_ALL_TRIAL.tag(idx_sac) = 3; % 'prim_fail' tag 3
-        end
-        flag_last_cue = true;
-        SACS_ALL_TRIAL.flag_last_cue(idx_sac) = flag_last_cue;
-    end
-    
-    % explain more why the whole code for primSac. above is repeated below and primSac could be considered success post-recording, as we discussed ?
-    % Tag the prim_fail
-    % search the period after cue_present till the next str_present
-    % exclude the last cue_present since we already took care of it
-    length_cue_presentation = length(TRIAL.time_state_cue_present) - 1;
-    if length_cue_presentation > 0
+    % Tag the primary saccades
+    length_cue_presentation = length(TRIAL.time_state_cue_present);
     for counter_cue_pres = 1 : length_cue_presentation
         time_start_search  = TRIAL.time_state_cue_present(counter_cue_pres);
-        time_finish_search = TRIAL.time_state_str_fixation( find(TRIAL.time_state_str_fixation > time_start_search, 1, 'first') );
+        % For primSac. that comes after last cue present., search the period after the last cue_present till the next_trial
+        if counter_cue_pres == length_cue_presentation
+            time_finish_search = TRIAL.time_state_next_trial(end);
+        % For the rest, search the period after the cue_present. till the next str_present
+        else
+            time_finish_search = TRIAL.time_state_str_fixation( find(TRIAL.time_state_str_fixation > time_start_search, 1, 'first') );
+        end
         idx_sac = find((SACS_ALL_TRIAL.time_onset > time_start_search) & (SACS_ALL_TRIAL.time_onset < time_finish_search), 1, 'first');
         if ~isempty(idx_sac)
             SACS_ALL_TRIAL.time_visual(idx_sac)      = time_start_search;
@@ -303,6 +254,12 @@ for counter_trial = 1 : 1 : num_trials
             SACS_ALL_TRIAL.visual_amp_y(idx_sac)     = (SACS_ALL_TRIAL.visual_py_offset(idx_sac) - SACS_ALL_TRIAL.visual_py_onset(idx_sac));
             SACS_ALL_TRIAL.visual_amp_m(idx_sac)     = sqrt((SACS_ALL_TRIAL.visual_amp_x(idx_sac).^2) + (SACS_ALL_TRIAL.visual_amp_y(idx_sac).^2));
             SACS_ALL_TRIAL.visual_ang(idx_sac)       = atan2d(SACS_ALL_TRIAL.visual_amp_y(idx_sac), SACS_ALL_TRIAL.visual_amp_x(idx_sac));
+            visual_amp_x_ = SACS_ALL_TRIAL.visual_px_offset(idx_sac) - SACS_ALL_TRIAL.eye_r_px_onset(idx_sac);
+            visual_amp_y_ = SACS_ALL_TRIAL.visual_py_offset(idx_sac) - SACS_ALL_TRIAL.eye_r_py_onset(idx_sac);
+            visual_amp_m_ = sqrt(visual_amp_x_.^2 + visual_amp_y_.^2);
+            eye_r_amp_x_ = SACS_ALL_TRIAL.eye_r_amp_x(idx_sac);
+            eye_r_amp_y_ = SACS_ALL_TRIAL.eye_r_amp_x(idx_sac);
+            eye_r_amp_m_ = SACS_ALL_TRIAL.eye_r_amp_m(idx_sac);
             SACS_ALL_TRIAL.diff_start(idx_sac)  = sqrt( ...
                 ((SACS_ALL_TRIAL.eye_r_px_onset( idx_sac) - SACS_ALL_TRIAL.visual_px_onset( idx_sac)).^2) + ...
                 ((SACS_ALL_TRIAL.eye_r_py_onset( idx_sac) - SACS_ALL_TRIAL.visual_py_onset( idx_sac)).^2) );
@@ -312,24 +269,32 @@ for counter_trial = 1 : 1 : num_trials
             diff_finish_tgt_end = sqrt( ...
                 ((SACS_ALL_TRIAL.eye_r_px_offset(idx_sac) - TRIAL.end_x).^2) + ...
                 ((SACS_ALL_TRIAL.eye_r_py_offset(idx_sac) - TRIAL.end_y).^2) );
-            SACS_ALL_TRIAL.diff_ang(idx_sac) = abs(acosd( ...
-                ( (SACS_ALL_TRIAL.eye_r_amp_x(idx_sac) .* SACS_ALL_TRIAL.visual_amp_x(idx_sac)) + ...
-                  (SACS_ALL_TRIAL.eye_r_amp_y(idx_sac) .* SACS_ALL_TRIAL.visual_amp_y(idx_sac)) ) ...
-                ./ (SACS_ALL_TRIAL.eye_r_amp_m(idx_sac)) ./ (SACS_ALL_TRIAL.visual_amp_m(idx_sac)) ));
-            validity_sac = true;
-            validity_sac = validity_sac && (SACS_ALL_TRIAL.diff_start( idx_sac) < threshold_pos);
-            validity_sac = validity_sac && ( (SACS_ALL_TRIAL.diff_finish(idx_sac) < threshold_pos) || (diff_finish_tgt_end < threshold_pos) );
-            validity_sac = validity_sac && (SACS_ALL_TRIAL.diff_ang(   idx_sac) < threshold_ang);
-
-            if validity_sac
-                SACS_ALL_TRIAL.tag(idx_sac) = 1; % 'prim_success' tag 1
-            elseif ( SACS_ALL_TRIAL.diff_ang(idx_sac) < threshold_ang ) && (SACS_ALL_TRIAL.diff_start( idx_sac) < threshold_pos)
-                SACS_ALL_TRIAL.tag(idx_sac) = 2; % 'prim_attempt' tag 2
-            elseif ( SACS_ALL_TRIAL.diff_ang(idx_sac) >= threshold_ang ) && (SACS_ALL_TRIAL.diff_start( idx_sac) < threshold_pos)
-                SACS_ALL_TRIAL.tag(idx_sac) = 3; % 'prim_fail' tag 3
+            SACS_ALL_TRIAL.diff_ang(idx_sac) = abs(acosd(... % x dot y = |x||y|cos(diff_ang); angle btwn vector from eye start pos. to cue and vector of saccade trajectory
+                (visual_amp_x_.* eye_r_amp_x_ + visual_amp_y_.* eye_r_amp_y_)./visual_amp_m_./eye_r_amp_m_ ) );
+            if counter_cue_pres == length_cue_presentation
+                flag_last_cue = true;
+                SACS_ALL_TRIAL.flag_last_cue(idx_sac) = flag_last_cue;
             end
+            
+            % If saccade starts near start tgt. && moves twrd. cue tgt. && lands near cue or end tgt., then 'prim_success' tag 1
+            % Note: allowing primSac. landing near end tgt. bc saccade gets hypometric as exp. progresses,
+            % so saccade in trial with end tgt. that steps back from cue tgt. is counted
+            % Note: saccade could be considered successful primSac. and even have successful corrSac. that follows but not comes
+            % after the last cue present. in a trial, bc. the calibration during exp. may be off and thus counting "successful" saccade 
+            % as incorrect and repeating cue present.
+            if ((SACS_ALL_TRIAL.diff_start( idx_sac) < threshold_pos) && (SACS_ALL_TRIAL.diff_ang(idx_sac) < threshold_ang) &&...
+                    ((SACS_ALL_TRIAL.diff_finish(idx_sac) < threshold_pos) || (diff_finish_tgt_end < threshold_pos))) 
+                SACS_ALL_TRIAL.tag(idx_sac) = 1; 
+            % If saccade starts near start tgt. && moves twrd. cue tgt. but not lands near cue nor end tgt., then 'prim_attempt' tag 2
+            elseif ((SACS_ALL_TRIAL.diff_start( idx_sac) < threshold_pos) &&(SACS_ALL_TRIAL.diff_ang(idx_sac) < threshold_ang ) &&...
+                    ~((SACS_ALL_TRIAL.diff_finish(idx_sac) < threshold_pos) || (diff_finish_tgt_end < threshold_pos))) 
+                SACS_ALL_TRIAL.tag(idx_sac) = 2; 
+            % If saccade starts near start tgt. but not moves twrd. cue tgt. (implying not landing near cue nor end tgt.), then 'prim_fail' tag 3
+            elseif ((SACS_ALL_TRIAL.diff_start( idx_sac) < threshold_pos) && (SACS_ALL_TRIAL.diff_ang(idx_sac) >= threshold_ang )) 
+                SACS_ALL_TRIAL.tag(idx_sac) = 3; 
+            end
+            
         end
-    end
     end
     
     % Tag the corr_success and corr_fail
@@ -341,7 +306,7 @@ for counter_trial = 1 : 1 : num_trials
             idx_prim = idx_prim_success(counter_prim);
             time_last_cue_pres = TRIAL.time_state_cue_present(end);
             time_start_search = SACS_ALL_TRIAL.time_offset(idx_prim);
-            if time_start_search < time_last_cue_pres % ? as above, explain this scenario of successful primSac not associated with the last cue present.
+            if time_start_search < time_last_cue_pres % refer to 'prim_success' tag 1 comments to see how 'corr_success' could occur but exp. doesn't proceed to next trial
                 % search from prim sac offset till the next str presentation
                 time_finish_search = TRIAL.time_state_str_fixation( find(TRIAL.time_state_str_fixation > time_start_search, 1, 'first') );
                 flag_last_cue = false;
@@ -379,16 +344,17 @@ for counter_trial = 1 : 1 : num_trials
                     ( (SACS_ALL_TRIAL.eye_r_amp_x(idx_sac) .* visual_amp_x_prim) + ...
                       (SACS_ALL_TRIAL.eye_r_amp_y(idx_sac) .* visual_amp_y_prim) ) ...
                     ./ (SACS_ALL_TRIAL.eye_r_amp_m(idx_sac)) ./ (visual_amp_m_prim) ));
-                validity_sac = true;
-                validity_sac = validity_sac && (SACS_ALL_TRIAL.visual_amp_m(idx_sac) > eps);
-                validity_sac = validity_sac && (SACS_ALL_TRIAL.diff_start( idx_sac) < threshold_pos);
-                validity_sac = validity_sac && (SACS_ALL_TRIAL.diff_finish(idx_sac) < threshold_pos);
-                validity_sac = validity_sac && (SACS_ALL_TRIAL.diff_ang(   idx_sac) < threshold_ang);
-                if validity_sac
-                    SACS_ALL_TRIAL.tag(idx_sac) = 4; % 'corr_success' tag 4
+           
+                % If end tgt. is different from cue tgt. && saccade starts near where eye was @ previous successful primSac. offset
+                % && moves twrd. and lands near end tgt., then 'corr_success' tag 4
+                if ((SACS_ALL_TRIAL.visual_amp_m(idx_sac) > eps)&&(SACS_ALL_TRIAL.diff_start(idx_sac) < threshold_pos)...
+                        &&(SACS_ALL_TRIAL.diff_ang(idx_sac) < threshold_ang)&&(SACS_ALL_TRIAL.diff_finish(idx_sac) < threshold_pos))
+                    SACS_ALL_TRIAL.tag(idx_sac) = 4; 
                     SACS_ALL_TRIAL.flag_last_cue(idx_sac) = flag_last_cue;
+                % If saccade doesn't meet reqs. for 'corr_success' but still starts near where eye was @ previous successful primSac. offset,
+                % then 'corr_fail' tag 5
                 elseif (SACS_ALL_TRIAL.diff_start( idx_sac) < threshold_pos)
-                    SACS_ALL_TRIAL.tag(idx_sac) = 5; % 'corr_fail' tag 5
+                    SACS_ALL_TRIAL.tag(idx_sac) = 5; 
                     SACS_ALL_TRIAL.flag_last_cue(idx_sac) = flag_last_cue;
                 end
             end
@@ -403,9 +369,11 @@ for counter_trial = 1 : 1 : num_trials
         if counter_cue_pres==1
             time_start_search = TRIAL.time_start;
         else
-            time_start_search = TRIAL.time_state_str_fixation( find(TRIAL.time_state_str_fixation < time_finish_search, 1, 'last') ) - TRIAL.time_pursuit; % str_pursuit is the shifted version of str_present
-            % why not just use state start tgt pursuit?
-            % also, why not look from after str. tgt. present. ?
+            time_start_search = TRIAL.time_state_str_fixation( find(TRIAL.time_state_str_fixation < time_finish_search, 1, 'last') ) - TRIAL.time_pursuit; % str_pursuit is earlier than str_present by pursuit duration (usually 200 ms)
+            % Not simply using 'time_state_str_pursuit,' as finite state machine of the exp., can change the state from 'DETECT_SACCADE_START' to
+            % 'INCORRECT_SACCADE' to 'STR_TARGET_PURSUIT' and we recorded 'time_state_str_pursuit' when state changed from 'INIT' to 'STR_TARGET_PURSUIT,'
+            % so in the case of this sequence of states, 'time_state_str_pursuit' is not when the pursuit target, which results in the back-to-center saccade
+            % of the current 'counter_cue_pres' loop, appears
         end
         idx_sac = find((SACS_ALL_TRIAL.time_onset > time_start_search) & (SACS_ALL_TRIAL.time_onset < time_finish_search), 1, 'last');
         if ~isempty(idx_sac)
@@ -416,22 +384,21 @@ for counter_trial = 1 : 1 : num_trials
                 continue;
             end
             SACS_ALL_TRIAL.time_visual(idx_sac)      = time_start_search;
-            SACS_ALL_TRIAL.reaction(idx_sac)         = (SACS_ALL_TRIAL.time_onset(idx_sac) - SACS_ALL_TRIAL.time_visual(idx_sac)) * 1000.0; % counting the rxn. time from presentation of moving start target?
+            SACS_ALL_TRIAL.reaction(idx_sac)         = (SACS_ALL_TRIAL.time_onset(idx_sac) - SACS_ALL_TRIAL.time_visual(idx_sac)) * 1000.0; % counting the rxn. time from presentation of moving pursuit target
             SACS_ALL_TRIAL.visual_px_onset(idx_sac)  = SACS_ALL_TRIAL.eye_r_px_onset(idx_sac); % this entry is for the sake of filling up the nan values
-                   % why not keep nan value to avoid confusion, to be clear it's not a meaninful value (same comment for below)?
             SACS_ALL_TRIAL.visual_py_onset(idx_sac)  = SACS_ALL_TRIAL.eye_r_py_onset(idx_sac); % this entry is for the sake of filling up the nan values
             SACS_ALL_TRIAL.visual_px_offset(idx_sac) = TRIAL.start_x;
             SACS_ALL_TRIAL.visual_py_offset(idx_sac) = TRIAL.start_y;
             SACS_ALL_TRIAL.diff_finish(idx_sac) = sqrt( ...
                 ((SACS_ALL_TRIAL.eye_r_px_offset(idx_sac) - SACS_ALL_TRIAL.visual_px_offset(idx_sac)).^2) + ...
                 ((SACS_ALL_TRIAL.eye_r_py_offset(idx_sac) - SACS_ALL_TRIAL.visual_py_offset(idx_sac)).^2) );
-            validity_sac = true;
-            validity_sac = validity_sac && (SACS_ALL_TRIAL.diff_finish(idx_sac) < threshold_pos);
 
-            if validity_sac
-                SACS_ALL_TRIAL.tag(idx_sac) = 8; % 'back_center_irrelev' tag 8
-            else
-                SACS_ALL_TRIAL.tag(idx_sac) = 10; % 'other_irrelev' tag 10
+            % If saccade lands near start tgt., then 'back_center_irrelev' tag 8
+            if (SACS_ALL_TRIAL.diff_finish(idx_sac) < threshold_pos)
+                SACS_ALL_TRIAL.tag(idx_sac) = 8; 
+            % If saccade doesn't land near start tgt., then 'other_irrelev' tag 10  
+            elseif (SACS_ALL_TRIAL.diff_finish(idx_sac) >= threshold_pos)
+                SACS_ALL_TRIAL.tag(idx_sac) = 10; 
             end
         end
     end
@@ -508,7 +475,7 @@ for counter_trial = 1 : 1 : num_trials
     % Tag the potential back_center_prim which happen after prim or corr
     % but did not trigger the "time_state_cue_present"
     idx_prim_corr = find((SACS_ALL_TRIAL.tag >= 1) & (SACS_ALL_TRIAL.tag <= 5));
-    % find 'prim_success' tag 1 % 'prim_attempt' tag 2 % 'prim_fail' tag 3 % 'corr_success' tag 4 % 'cord_fail' tag 5
+    % find 'prim_success' tag 1 % 'prim_attempt' tag 2 % 'prim_fail' tag 3 % 'corr_success' tag 4 % 'corr_fail' tag 5
     if ~isempty(idx_prim_corr)
         for counter_prim_corr = 1 : length(idx_prim_corr)
             idx_sac = idx_prim_corr(counter_prim_corr)+1;
@@ -565,9 +532,8 @@ for counter_trial = 1 : 1 : num_trials
         ((SACS_ALL_TRIAL.eye_r_px_offset - SACS_ALL_TRIAL.tgt_px_offset).^2) + ...
         ((SACS_ALL_TRIAL.eye_r_py_offset - SACS_ALL_TRIAL.tgt_py_offset).^2) );
     idx_target_irrelev = isnan(SACS_ALL_TRIAL.tag) & (diff_finish < threshold_pos);
-    SACS_ALL_TRIAL.visual_px_onset( idx_target_irrelev) = SACS_ALL_TRIAL.eye_r_px_onset(idx_target_irrelev); % this entry is for the sake of filling up the nan values
-    % this var. may actually be meaningful, if trying to see where target is wrt. center of gaze, in which case it'd be better to remove above comment to remove confusion ?
-    SACS_ALL_TRIAL.visual_py_onset( idx_target_irrelev) = SACS_ALL_TRIAL.eye_r_py_onset(idx_target_irrelev); % this entry is for the sake of filling up the nan values
+    SACS_ALL_TRIAL.visual_px_onset( idx_target_irrelev) = SACS_ALL_TRIAL.eye_r_px_onset(idx_target_irrelev);
+    SACS_ALL_TRIAL.visual_py_onset( idx_target_irrelev) = SACS_ALL_TRIAL.eye_r_py_onset(idx_target_irrelev); 
     SACS_ALL_TRIAL.visual_px_offset(idx_target_irrelev) = SACS_ALL_TRIAL.tgt_px_offset( idx_target_irrelev);
     SACS_ALL_TRIAL.visual_py_offset(idx_target_irrelev) = SACS_ALL_TRIAL.tgt_py_offset( idx_target_irrelev);
     SACS_ALL_TRIAL.diff_finish(     idx_target_irrelev) = diff_finish(idx_target_irrelev);
@@ -578,15 +544,12 @@ for counter_trial = 1 : 1 : num_trials
     SACS_ALL_TRIAL.visual_px_onset( idx_other_irrelev) = SACS_ALL_TRIAL.eye_r_px_onset( idx_other_irrelev); % this entry is for the sake of filling up the nan values
     SACS_ALL_TRIAL.visual_py_onset( idx_other_irrelev) = SACS_ALL_TRIAL.eye_r_py_onset( idx_other_irrelev); % this entry is for the sake of filling up the nan values
     SACS_ALL_TRIAL.visual_px_offset(idx_other_irrelev) = SACS_ALL_TRIAL.eye_r_px_offset(idx_other_irrelev); % this entry is for the sake of filling up the nan values
-    % perhaps have visual_offset as tgt_onset?; brain is registering stimulus whether or not it's paying attention
     SACS_ALL_TRIAL.visual_py_offset(idx_other_irrelev) = SACS_ALL_TRIAL.eye_r_py_offset(idx_other_irrelev); % this entry is for the sake of filling up the nan values
-    SACS_ALL_TRIAL.diff_finish(     idx_other_irrelev) = 0.0;
-    % this could be btwn eye_offset and tgt_offset (or just nan)?
-    % diff_start could be btwn eye_onset and tgt_onset?
-    % diff_ang could be btwn vectors visual_amp and eye_amp?; what eye is doing vs. what it's supposed to be doing
+    SACS_ALL_TRIAL.diff_finish(     idx_other_irrelev) = 0.0; % this entry is for the sake of filling up the nan values
+
     SACS_ALL_TRIAL.tag(             idx_other_irrelev) = 10; % 'other_irrelev' tag 10
     
-    % Fill up the nan values; keep them as nans??
+    % Fill up the nan values
     idx_nan_visual_values = isnan(SACS_ALL_TRIAL.visual_amp_x);
     SACS_ALL_TRIAL.visual_amp_x(idx_nan_visual_values)     = (SACS_ALL_TRIAL.visual_px_offset(idx_nan_visual_values) - SACS_ALL_TRIAL.visual_px_onset(idx_nan_visual_values));
     SACS_ALL_TRIAL.visual_amp_y(idx_nan_visual_values)     = (SACS_ALL_TRIAL.visual_py_offset(idx_nan_visual_values) - SACS_ALL_TRIAL.visual_py_onset(idx_nan_visual_values));
@@ -619,6 +582,7 @@ for counter_trial = 1 : 1 : num_trials
     end
     
     % Re-tag the 1st saccade as back_center_success if it landed at start
+    % Handles case when there is 'back_center_success' but eye makes irrelevant saccades before the saccade twrd. target that initiates cue present.
     idx_sac = 1;
     diff_finish  = sqrt( ...
         ((SACS_ALL_TRIAL.eye_r_px_offset( idx_sac) - TRIAL.start_x).^2) + ...

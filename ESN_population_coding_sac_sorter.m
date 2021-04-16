@@ -1,3 +1,5 @@
+%% MASTER FUNCTION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% function ESN_population_coding_sac_sorter
 function ESN_population_coding_sac_sorter
 %% Global variables
@@ -47,11 +49,10 @@ toc
 %% Plot functions
 % (1) plot_neural_properties(1); % load population_neural_properties and plot neural_properties
 % (2) plot_CS_on_properties(2); % load population_neural_properties and plot CS_on properties
-% (3) 
- plot_population_data_iteratively(3);
+% (3) plot_population_data_iteratively(3);
 
 %% Plot population_data
-%
+%{
 params.data_type       = 'SS';
 params.CSYS_type       = 'tuned';
 params.event_type_name = 'onset';
@@ -102,6 +103,9 @@ plot_population_data(params.fig_num, data_ang_avg, data_ang_avg_avg, params, dat
 % plot_population_data(params.fig_num, data_ang_avg, data_ang_avg_avg, params);
 %}
 end
+
+%% RE-RUN RAW FILES %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% function RE-RUN ESN_Sac_Sorter
 function re_run_ESN_sac_sorter()
@@ -660,97 +664,8 @@ end
 fprintf('### ALL DONE. ###\n')
 end
 
-%% plot_sac_sorter
-function plot_sac_sorter(SACS_ALL_DATA, params)
-%% Set parameters
-amp_edges = -.25 : 0.5 : 15.25;
-ang_edges = (-pi-(pi/16)) : (pi/8) : (pi-(pi/16));
-react_edges = -12.5: 25 : 512.5;
-num_row = 9;
-num_col = 9;
-
-%% Init plot
-hFig = figure(1);
-clf(hFig)
-hold on
-
-%% Plot the results
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-for counter_tag = 1 : 9
-if counter_tag == 8
-    idx_tag = (SACS_ALL_DATA.tag==8) | (SACS_ALL_DATA.tag==9);
-    title_ = [params.sac_tag_list{8} ' & ' params.sac_tag_list{9}];
-elseif counter_tag == 9
-    idx_tag = (SACS_ALL_DATA.tag==10);
-    title_ = params.sac_tag_list{10};
-else
-    idx_tag = (SACS_ALL_DATA.tag==counter_tag);
-    title_ = params.sac_tag_list{counter_tag};
-end
-
-axes_minor_nums = reshape(1:num_row*num_col, num_row, num_col)';
-axes_main_row = floor((counter_tag - 1) / 3)+1;
-axes_main_col = mod(counter_tag, 3); if (axes_main_col==0); axes_main_col=3; end
-row1_ = ((axes_main_row-1)*3)+1;
-row2_ = ((axes_main_row-1)*3)+2;
-row3_ = ((axes_main_row-1)*3)+3;
-col1_ = ((axes_main_col-1)*3)+1;
-col2_ = ((axes_main_col-1)*3)+2;
-col3_ = ((axes_main_col-1)*3)+3;
-
-axes_trace = [axes_minor_nums(row1_,col1_), axes_minor_nums(row1_,col2_), axes_minor_nums(row1_,col3_)...
-              axes_minor_nums(row2_,col1_), axes_minor_nums(row2_,col2_), axes_minor_nums(row2_,col3_) ];
-axes_amp_dis = axes_minor_nums(row3_,col1_);
-axes_ang_dis = axes_minor_nums(row3_,col2_);
-axes_react_dis = axes_minor_nums(row3_,col3_);
-
-subplot(num_row,num_col,axes_trace)
-hold on
-plot(SACS_ALL_DATA.eye_r_px(:,idx_tag), ...
-     SACS_ALL_DATA.eye_r_py(:,idx_tag), 'k')
-plot(SACS_ALL_DATA.eye_r_px_offset(:,idx_tag), ...
-     SACS_ALL_DATA.eye_r_py_offset(:,idx_tag), 'om')
-title([title_ ': ' num2str(nansum(idx_tag)) ' sac'], 'interpret', 'none');
-xlim([-17, 17])
-ylim([-15, 15])
-% axis equal;
-
-subplot(num_row,num_col,axes_amp_dis)
-hold on
-histogram(SACS_ALL_DATA.eye_r_amp_m(:,idx_tag), amp_edges, 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'k')
-histogram(SACS_ALL_DATA.eye_r_amp_m(:,idx_tag), amp_edges, 'DisplayStyle', 'stairs', 'EdgeColor', 'k', 'FaceColor', 'none', 'linewidth', 2)
-xlim([0, 15])
-set(gca, 'XTick', 0:3:15)
-ylabel('Amplitude')
-
-subplot(num_row,num_col,axes_ang_dis)
-polarhistogram(deg2rad(SACS_ALL_DATA.eye_r_ang(:,idx_tag)), (ang_edges), 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'k')
-hold on
-polarhistogram(deg2rad(SACS_ALL_DATA.eye_r_ang(:,idx_tag)), (ang_edges), 'DisplayStyle', 'stairs', 'EdgeColor', 'k', 'FaceColor', 'none', 'linewidth', 2)
-set(gca, 'ThetaTick', [])
-set(gca, 'RTick', [])
-set(gca, 'Title', [])
-
-subplot(num_row,num_col,axes_react_dis)
-hold on
-histogram(SACS_ALL_DATA.reaction(:,idx_tag)/1000, react_edges/1000, 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'k')
-histogram(SACS_ALL_DATA.reaction(:,idx_tag)/1000, react_edges/1000, 'DisplayStyle', 'stairs', 'EdgeColor', 'k', 'FaceColor', 'none', 'linewidth', 2)
-xlim([0, 500]/1000)
-set(gca, 'XTick', (0:200:500)/1000)
-ylabel('Reaction')
-end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%% Add the title info
-sgtitle([params.cell_name ', ' ...
-    'trial: ' num2str(params.num_trials) ', ' ...
-    'sac: ' num2str(length(SACS_ALL_DATA.validity)) ', ' ...
-    'dur: ' num2str(params.duration/60,3) 'min' ...
-    ], ...
-    'interpret', 'none');
-ESN_Beautify_Plot(hFig, [13 13], 8)
-
-end
+%% RE-RUN PCELL FILES %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% function CS_on_analysis()
 function CS_on_analysis()
@@ -898,6 +813,9 @@ for counter_pCell = 1 : num_pCells
 end
 end
 
+%% BUILD FUNCTIONS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 %% function build_neural_properties()
 function build_neural_properties()
 clc; close all;
@@ -975,295 +893,6 @@ population_neural_properties.CS_suppression_time = idx+5;
 fprintf(['Saving .mat files' ' ...'])
 save([path_cell_data '..' filesep 'population_neural_properties' '.mat'], 'population_neural_properties', '-v7.3');
 fprintf(' --> Completed. \n')
-
-end
-
-%% function plot_neural_properties
-function plot_neural_properties(fig_num)
-%% Load population_neural_properties
-path_cell_data = uigetdir;
-if ~strcmp(path_cell_data(end), filesep);path_cell_data = [path_cell_data filesep];end
-path_cell_data = [path_cell_data '..' filesep];
-load([path_cell_data, 'population_neural_properties.mat'], 'population_neural_properties');
-
-%% Init plot
-hFig = figure(fig_num);
-clf(hFig)
-num_row_fig = 1;
-num_col_fig = 5;
-SS_firing_edges = 5:10:135;
-CS_firing_edges = 0.25:0.1:1.55;
-CS_suppression_edges = 5.5: 1 : 25.5;
-
-%% Calc variables
-global waveform_inds_span
-if isempty(waveform_inds_span)
-    fprintf('ERROR: Global variables are empty.\n');
-    return;
-end
-num_pCells          = size(population_neural_properties.SS_firing_rate, 1);
-% XProb
-SS_firing_pCells    = population_neural_properties.SS_firing_rate;
-CS_firing_pCells    = population_neural_properties.CS_firing_rate;
-SS_waveform_pCells  = population_neural_properties.SS_waveform;
-CS_waveform_pCells  = population_neural_properties.CS_waveform;
-SS_xprob_pCells     = population_neural_properties.Corr_data_SS_SSxSS_AUTO;
-CS_xprob_pCells     = population_neural_properties.Corr_data_CS_CSxSS_AUTO;
-CS_suppression_time = population_neural_properties.CS_suppression_time;
-SS_waveform_pCells_norm = SS_waveform_pCells ./ repmat(max(abs(SS_waveform_pCells), [],2), 1, size(SS_waveform_pCells, 2));
-CS_waveform_pCells_norm = CS_waveform_pCells ./ repmat(max(abs(SS_waveform_pCells), [],2), 1, size(CS_waveform_pCells, 2)); % normalize to SS max and not CS max
-SS_xprob_pCells_norm    = SS_xprob_pCells ./ repmat(SS_firing_pCells, 1, size(SS_xprob_pCells, 2)) .* 1000;
-CS_xprob_pCells_norm    = CS_xprob_pCells ./ repmat(SS_firing_pCells, 1, size(CS_xprob_pCells, 2)) .* 1000; % normalize to SS firing and not CS firing
-time_waveform = (waveform_inds_span ./ 30e3) * 1000;
-time_xprob = nanmean(population_neural_properties.Corr_data_SS_inds_span .* ...
-    repmat(population_neural_properties.Corr_data_SS_bin_size_time, 1, size(population_neural_properties.Corr_data_SS_inds_span, 2))) * 1000;
-
-% Firing rate
-SS_firing_pCells_mean = nanmean(SS_firing_pCells);
-SS_firing_pCells_stdv = nanstd( SS_firing_pCells);
-SS_firing_pCells_sem  = nanstd( SS_firing_pCells)./sqrt(num_pCells);
-CS_firing_pCells_mean = nanmean(CS_firing_pCells);
-CS_firing_pCells_stdv = nanstd( CS_firing_pCells);
-CS_firing_pCells_sem  = nanstd( CS_firing_pCells)./sqrt(num_pCells);
-
-stat_SS = ['SS_firing, ', 'mean: ', num2str(nanmean(SS_firing_pCells)), ', SEM: ', num2str(nanstd(SS_firing_pCells)./sqrt(num_pCells)), ', std: ', num2str(nanstd(SS_firing_pCells))];
-stat_CS = ['CS_firing, ', 'mean: ', num2str(nanmean(CS_firing_pCells)), ', SEM: ', num2str(nanstd(CS_firing_pCells)./sqrt(num_pCells)), ', std: ', num2str(nanstd(CS_firing_pCells))];
-fprintf([stat_SS '\n']);
-fprintf([stat_CS '\n'])
-
-% Waveform
-SS_waveform_mean = nanmean(SS_waveform_pCells_norm);
-SS_waveform_stdv = nanstd( SS_waveform_pCells_norm);%./sqrt(num_pCells);
-SS_waveform_stdv_p = SS_waveform_mean + SS_waveform_stdv;
-SS_waveform_stdv_m = SS_waveform_mean - SS_waveform_stdv;
-SS_waveform_stdv_y_axes = [(SS_waveform_stdv_p) flip(SS_waveform_stdv_m)];
-SS_waveform_stdv_x_axes = [(time_waveform) flip(time_waveform)];
-
-CS_waveform_mean = nanmean(CS_waveform_pCells_norm);
-CS_waveform_stdv = nanstd( CS_waveform_pCells_norm);%./sqrt(num_pCells);
-CS_waveform_stdv_p = CS_waveform_mean + CS_waveform_stdv;
-CS_waveform_stdv_m = CS_waveform_mean - CS_waveform_stdv;
-CS_waveform_stdv_y_axes = [(CS_waveform_stdv_p) flip(CS_waveform_stdv_m)];
-CS_waveform_stdv_x_axes = [(time_waveform) flip(time_waveform)];
-
-SS_xprob_mean = nanmean(SS_xprob_pCells_norm);
-SS_xprob_stdv = nanstd( SS_xprob_pCells_norm);%./sqrt(num_pCells);
-SS_xprob_stdv_p = SS_xprob_mean + SS_xprob_stdv;
-SS_xprob_stdv_m = SS_xprob_mean - SS_xprob_stdv;
-SS_xprob_stdv_y_axes = [(SS_xprob_stdv_p) flip(SS_xprob_stdv_m)];
-SS_xprob_stdv_x_axes = [(time_xprob) flip(time_xprob)];
-
-CS_xprob_mean = nanmean(CS_xprob_pCells_norm);
-CS_xprob_stdv = nanstd( CS_xprob_pCells_norm);%./sqrt(num_pCells);
-CS_xprob_stdv_p = CS_xprob_mean + CS_xprob_stdv;
-CS_xprob_stdv_m = CS_xprob_mean - CS_xprob_stdv;
-CS_xprob_stdv_y_axes = [(CS_xprob_stdv_p) flip(CS_xprob_stdv_m)];
-CS_xprob_stdv_x_axes = [(time_xprob) flip(time_xprob)];
-
-%% Firing rate
-subplot(num_row_fig,num_col_fig, 1)
-hold on
-histogram(SS_firing_pCells, SS_firing_edges, 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'b')
-histogram(SS_firing_pCells, SS_firing_edges, 'DisplayStyle', 'stairs', 'EdgeColor', 'b', 'FaceColor', 'none', 'linewidth', 2)
-yl_ = ylim;
-plot([(SS_firing_pCells_mean+SS_firing_pCells_stdv), (SS_firing_pCells_mean+SS_firing_pCells_stdv)], yl_, '-b', 'LineWidth', 0.5);
-plot([(SS_firing_pCells_mean-SS_firing_pCells_stdv), (SS_firing_pCells_mean-SS_firing_pCells_stdv)], yl_, '-b', 'LineWidth', 0.5);
-% plot([(SS_firing_pCells_mean+SS_firing_pCells_sem), (SS_firing_pCells_mean+SS_firing_pCells_sem)], yl_, '--b', 'LineWidth', 1);
-% plot([(SS_firing_pCells_mean-SS_firing_pCells_sem), (SS_firing_pCells_mean-SS_firing_pCells_sem)], yl_, '--b', 'LineWidth', 1);
-plot([(SS_firing_pCells_mean), (SS_firing_pCells_mean)], yl_, '-b', 'LineWidth', 1.0);
-xlabel('SS Firing Rate (Hz)')
-ylabel('Count (#)')
-% title(stat_SS, 'interpreter', 'none')
-
-subplot(num_row_fig,num_col_fig, 2)
-hold on
-histogram(CS_firing_pCells, CS_firing_edges, 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'r')
-histogram(CS_firing_pCells, CS_firing_edges, 'DisplayStyle', 'stairs', 'EdgeColor', 'r', 'FaceColor', 'none', 'linewidth', 2)
-yl_ = ylim;
-plot([(CS_firing_pCells_mean+CS_firing_pCells_stdv), (CS_firing_pCells_mean+CS_firing_pCells_stdv)], yl_, '-r', 'LineWidth', 0.5);
-plot([(CS_firing_pCells_mean-CS_firing_pCells_stdv), (CS_firing_pCells_mean-CS_firing_pCells_stdv)], yl_, '-r', 'LineWidth', 0.5);
-% plot([(CS_firing_pCells_mean+CS_firing_pCells_sem),  (CS_firing_pCells_mean+CS_firing_pCells_sem)],  yl_, '--r', 'LineWidth', 1);
-% plot([(CS_firing_pCells_mean-CS_firing_pCells_sem),  (CS_firing_pCells_mean-CS_firing_pCells_sem)],  yl_, '--r', 'LineWidth', 1);
-plot([(CS_firing_pCells_mean),                       (CS_firing_pCells_mean)], yl_, '-r', 'LineWidth', 1.0);
-xlabel('CS Firing Rate (Hz)')
-ylabel('Count (#)')
-% title(stat_CS,  'interpreter', 'none')
-
-%% Waveform
-subplot(num_row_fig,num_col_fig, 3)
-hold on
-% plot(time_waveform, SS_waveform_stdv_m, '-b', 'LineWidth', 0.5)
-% plot(time_waveform, SS_waveform_stdv_p, '-b', 'LineWidth', 0.5)
-plot(SS_waveform_stdv_x_axes, SS_waveform_stdv_y_axes, '-b', 'LineWidth', 0.5)
-plot(time_waveform, SS_waveform_mean, '-b', 'LineWidth', 1.0)
-
-% plot(time_waveform, CS_waveform_stdv_m, '-r', 'LineWidth', 0.5)
-% plot(time_waveform, CS_waveform_stdv_p, '-r', 'LineWidth', 0.5)
-plot(CS_waveform_stdv_x_axes, CS_waveform_stdv_y_axes, '-r', 'LineWidth', 0.5)
-plot(time_waveform, CS_waveform_mean, '-r', 'LineWidth', 1.0)
-ylabel('waveform')
-xlabel('Time (ms)')
-ylim([-1.3 +1.2])
-xlim([-2 4])
-
-subplot(num_row_fig,num_col_fig, 4)
-hold on
-% plot(time_xprob, SS_xprob_stdv_p, '-b', 'LineWidth', 0.5)
-% plot(time_xprob, SS_xprob_stdv_m, '-b', 'LineWidth', 0.5)
-plot(SS_xprob_stdv_x_axes, SS_xprob_stdv_y_axes, '-b', 'LineWidth', 0.5)
-plot(time_xprob, SS_xprob_mean, '-b', 'LineWidth', 1.0)
-
-% plot(time_xprob, CS_xprob_stdv_p, '-r', 'LineWidth', 0.5)
-% plot(time_xprob, CS_xprob_stdv_m, '-r', 'LineWidth', 0.5)
-plot(CS_xprob_stdv_x_axes, CS_xprob_stdv_y_axes, '-r', 'LineWidth', 0.5)
-plot(time_xprob, CS_xprob_mean, '-r', 'LineWidth', 1.0)
-ylabel('prob')
-xlabel('Time (ms)')
-ylim([-0.2 +1.6])
-xlim([-50 50])
-
-%% Suppression
-subplot(num_row_fig,num_col_fig, 5)
-hold on
-histogram(CS_suppression_time, CS_suppression_edges,  'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', [0.5 0.5 0.5])
-histogram(CS_suppression_time, CS_suppression_edges,  'DisplayStyle', 'stairs', 'EdgeColor', 'r', 'FaceColor', 'none', 'linewidth', 2)
-ylabel('Count')
-xlabel('CS suppression (ms)')
-%% ESN_Beautify_Plot
-ESN_Beautify_Plot(hFig, [8, 2], 8)
-
-end
-
-%% function plot_CS_on_properties
-function plot_CS_on_properties(fig_num)
-%% Load population_neural_properties
-path_cell_data = uigetdir;
-if ~strcmp(path_cell_data(end), filesep);path_cell_data = [path_cell_data filesep];end
-path_cell_data = [path_cell_data '..' filesep];
-load([path_cell_data, 'population_neural_properties.mat'], 'population_neural_properties');
-
-%% Init plot
-hFig = figure(fig_num);
-clf(hFig)
-num_row_fig = 2;
-num_col_fig = 4;
-num_pCells          = size(population_neural_properties.CS_ang_avg, 1);
-step_size_ = 22.5;
-ang_edges = 0-(step_size_/2):step_size_:360-(step_size_/2);
-sig_edges = 35:2:61;
-
-CS_ang_avg = population_neural_properties.CS_ang_avg;
-vonMises_std = population_neural_properties.vonMises_std;
-CS_prob_avg_tuned = population_neural_properties.CS_prob_avg_tuned;
-overall_prob_TUNED_mean = nanmean(CS_prob_avg_tuned, 1);
-overall_prob_TUNED_stdv = nanstd(CS_prob_avg_tuned, 0, 1) ./ sqrt(num_pCells);
-overall_prob_TUNED_stdv_p = overall_prob_TUNED_mean + overall_prob_TUNED_stdv;
-overall_prob_TUNED_stdv_m = overall_prob_TUNED_mean - overall_prob_TUNED_stdv;
-
-%% Plot CS-on distribution
-subplot(num_row_fig, num_col_fig, 1);
-idx_pCells = 1:num_pCells; % All
-polarhistogram(deg2rad(CS_ang_avg(idx_pCells)), deg2rad(ang_edges), 'DisplayStyle', 'bar','FaceColor',[0.6 0.6 0.6], 'EdgeColor', 'none')
-hold on
-polarhistogram(deg2rad(CS_ang_avg(idx_pCells)), deg2rad(ang_edges), 'DisplayStyle', 'stairs','FaceColor','none', 'EdgeColor', 'r', 'linewidth', 1)
-rlim([0 25])
-set(gca, 'ThetaTick', 0:45:315, 'RTick', 0:5:25,...
-    'RTickLabel', {'', '', '10', '', '20', ''}, 'ThetaTickLabel', {'0','','90','', '180','','270', ''})
-title('CS-on mean Dist.')
-
-%% Plot std distribution
-subplot(num_row_fig, num_col_fig, 2);
-histogram(vonMises_std, sig_edges, 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', [0.6 0.6 0.6])
-hold on
-histogram(vonMises_std, sig_edges, 'DisplayStyle', 'stairs', 'EdgeColor', 'r', 'FaceColor', 'none', 'linewidth', 1)
-xline(nanmean(vonMises_std),'Color', 'r', 'linewidth', 1)
-ylabel('count')
-xlabel('Circular std. (deg)')
-title('CS-on stdv Dist.')
-
-%% Plot CS tuning circular
-global ang_values
-if isempty(ang_values)
-    fprintf('ERROR: Global variables are empty.\n');
-    return;
-end
-
-plot_data_amp_mean = [overall_prob_TUNED_mean, overall_prob_TUNED_mean(1), nan]';
-plot_data_deg_mean = [ang_values, ang_values(1), nan]';
-
-plot_data_amp_stdv_p = [overall_prob_TUNED_stdv_p, overall_prob_TUNED_stdv_p(1), nan]';
-plot_data_deg_stdv_p = [ang_values, ang_values(1), nan]';
-
-plot_data_amp_stdv_m = [overall_prob_TUNED_stdv_m, overall_prob_TUNED_stdv_m(1), nan]';
-plot_data_deg_stdv_m = [ang_values, ang_values(1), nan]';
-
-subplot(num_row_fig, num_col_fig, 3);
-polarplot(deg2rad(plot_data_deg_stdv_p),plot_data_amp_stdv_m, '-k', 'LineWidth', 0.5)
-hold on
-polarplot(deg2rad(plot_data_deg_stdv_m),plot_data_amp_stdv_p, '-k', 'LineWidth', 0.5)
-polarplot(deg2rad(plot_data_deg_mean),plot_data_amp_mean, '-k', 'LineWidth', 1)
-rlim([0 0.25])
-set(gca, 'ThetaTick', 0:45:315, 'RTick', 0:0.05:0.25, ...
-    'RTickLabel', {'', '', '0.1', '', '0.2', ''}, 'ThetaTickLabel', {'0','','90','', '180','','270', ''})
-title('CS Tuning', 'Interpreter', 'none');
-
-%% Plot CS tuning linear, CS-on at center
-subplot(num_row_fig, num_col_fig, 4);
-hold on
-% plot_order_ = [6 7 8 1 2 3 4 5 6];
-plot_order_ = [5 6 7 8 1 2 3 4 5];
-plot(overall_prob_TUNED_stdv_p(plot_order_), '-k', 'LineWidth', 0.5)
-plot(overall_prob_TUNED_stdv_m(plot_order_), '-k', 'LineWidth', 0.5)
-plot(overall_prob_TUNED_mean(plot_order_), '-k', 'LineWidth', 1)
-ylabel('CS probability');
-xlabel('Direction')
-% set(gca, 'XTick', 1:1:8, 'XTickLabel', {'', '-90','','ON','','90','','180',''})
-set(gca, 'XTick', 1:1:9, 'XTickLabel', {'-180', '', '-90','','ON','','90','','180'})
-
-avg_prob_TUNED_mean = nanmean(nanmean(CS_prob_avg_tuned, 2));
-avg_prob_TUNED_stdv = nanstd(nanmean(CS_prob_avg_tuned, 2), 0, 1) ./ sqrt(num_pCells);
-avg_prob_TUNED_mean = repmat(avg_prob_TUNED_mean, 1, size(CS_prob_avg_tuned,2));
-avg_prob_TUNED_stdv = repmat(avg_prob_TUNED_stdv, 1, size(CS_prob_avg_tuned,2));
-avg_prob_TUNED_stdv_p = avg_prob_TUNED_mean + avg_prob_TUNED_stdv;
-avg_prob_TUNED_stdv_m = avg_prob_TUNED_mean - avg_prob_TUNED_stdv;
-
-plot(avg_prob_TUNED_stdv_p(plot_order_), '-k', 'LineWidth', 0.5)
-plot(avg_prob_TUNED_stdv_m(plot_order_), '-k', 'LineWidth', 0.5)
-plot(avg_prob_TUNED_mean(plot_order_), '-k', 'LineWidth', 1)
-ylim([0.05 0.25])
-title('CS Tuning', 'Interpreter', 'none');
-
-%% Plot CS tuning linear, CS-on on side
-subplot(num_row_fig, num_col_fig, 8);
-hold on
-plot_order_ = [6 7 8 1 2 3 4 5 6];
-% plot_order_ = [5 6 7 8 1 2 3 4 5];
-plot(overall_prob_TUNED_stdv_p(plot_order_), '-k', 'LineWidth', 0.5)
-plot(overall_prob_TUNED_stdv_m(plot_order_), '-k', 'LineWidth', 0.5)
-plot(overall_prob_TUNED_mean(plot_order_), '-k', 'LineWidth', 1)
-ylabel('CS probability');
-xlabel('Direction')
-set(gca, 'XTick', 1:1:8, 'XTickLabel', {'', '-90','','ON','','90','','180',''})
-% set(gca, 'XTick', 1:1:9, 'XTickLabel', {'-180', '', '-90','','ON','','90','','180'})
-
-avg_prob_TUNED_mean = nanmean(nanmean(CS_prob_avg_tuned, 2));
-avg_prob_TUNED_stdv = nanstd(nanmean(CS_prob_avg_tuned, 2), 0, 1) ./ sqrt(num_pCells);
-avg_prob_TUNED_mean = repmat(avg_prob_TUNED_mean, 1, size(CS_prob_avg_tuned,2));
-avg_prob_TUNED_stdv = repmat(avg_prob_TUNED_stdv, 1, size(CS_prob_avg_tuned,2));
-avg_prob_TUNED_stdv_p = avg_prob_TUNED_mean + avg_prob_TUNED_stdv;
-avg_prob_TUNED_stdv_m = avg_prob_TUNED_mean - avg_prob_TUNED_stdv;
-
-plot(avg_prob_TUNED_stdv_p(plot_order_), '-k', 'LineWidth', 0.5)
-plot(avg_prob_TUNED_stdv_m(plot_order_), '-k', 'LineWidth', 0.5)
-plot(avg_prob_TUNED_mean(plot_order_), '-k', 'LineWidth', 1)
-ylim([0.05 0.25])
-title('CS Tuning', 'Interpreter', 'none');
-
-
-
-%% ESN_Beautify_Plot
-ESN_Beautify_Plot(hFig, [8, 4], 8)
-
 
 end
 
@@ -1475,6 +1104,9 @@ fprintf(' --> Completed. \n')
 
 end
 
+%% AVG FUNCTIONS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 %% function population_data_avg_over_levels
 function [population_avg_levels, num_sac_data_avg] = population_data_avg_over_levels(population_data, num_sac_data, variable, dim)
 %% Handle inputs
@@ -1625,229 +1257,6 @@ fprintf(' --> Completed. \n')
 
 end
 
-%% function plot_population_data
-function plot_population_data(fig_num, data_ang_avg, data_ang_avg_avg, params, data_ang_std, data_ang_std_avg)
-%% Handle inputs
-if nargin < 5
-    flag_std = false;
-elseif (nargin >= 5) && (nargin <= 6)
-    flag_std = true;
-end
-%% Init plot
-hFig = figure(fig_num);
-clf(hFig)
-num_row_fig = 3;
-num_col_fig = 3;
-ax_ang_id = [6, 3, 2, 1, 4, 7, 8, 9, 5];
-
-num_ang_bin = size(data_ang_avg, 2);
-num_var_bin = size(data_ang_avg, 1);
-
-line_colors_ = [0,0,0; pink(round(1.5*num_var_bin))];
-
-
-%% Plot
-global inds_span ang_values tag_name_list
-if isempty(inds_span)
-    fprintf('ERROR: Global variables are empty.\n');
-    return;
-end
-ang_values_ = [ang_values nan];
-clearvars h_ax
-for counter_ang = 1 : num_ang_bin+1
-    h_ax(counter_ang) = subplot(num_row_fig, num_col_fig, ax_ang_id(counter_ang));
-    hold on;
-    for counter_var = 1 : num_var_bin
-        if counter_ang == (num_ang_bin+1)
-            data_pCells = data_ang_avg_avg{counter_var, 1};
-            if flag_std
-                data_sem_ = data_ang_std_avg{counter_var, 1};
-            end
-        else
-            data_pCells = data_ang_avg{counter_var, counter_ang};
-            if flag_std
-                data_sem_ = data_ang_std{counter_var, counter_ang};
-            end
-        end
-        num_rows_data_ = size(data_pCells, 1);
-        if num_rows_data_ > 1
-            data_pCells = data_pCells(params.pCell_idx,:);
-        end
-        if strcmp(params.data_type, 'SS') || strcmp(params.data_type, 'CS')
-            data_pCells = data_pCells .* 1000.0; % convert Pr to Firing/Hz
-            if flag_std
-                data_sem_ = data_sem_ .* 1000.0;
-            end
-        end
-        if num_rows_data_ == 1
-            data_mean_ = data_pCells;
-            if ~flag_std
-                data_sem_ = zeros(size(data_mean_));
-            end
-        else
-            data_mean_ = nanmean(data_pCells);
-            if ~flag_std
-                data_sem_ = nanstd(data_pCells) ./ sqrt(nansum(~isnan(data_pCells)));
-            end
-        end
-        data_mean_x_axis = reshape(inds_span, 1, []);
-        if (strcmp(params.data_type, 'SS') || strcmp(params.data_type, 'CS')) && params.flag_smooth_plot
-            data_mean_ = ESN_smooth(data_mean_);
-            data_sem_  = ESN_smooth(data_sem_);
-        end
-        data_sem_p_ = data_mean_ + data_sem_;
-        data_sem_m_ = data_mean_ - data_sem_;
-        data_sem_y_axis_ = [(data_sem_p_) flip(data_sem_m_)];
-        data_sem_x_axis_ = [(data_mean_x_axis) flip(data_mean_x_axis)];
-        xline(50)
-        xline(-50)
-        xline(0)
-        plot(data_sem_x_axis_, data_sem_y_axis_, 'LineWidth', 0.25, 'Color', line_colors_(counter_var, :))
-        plot(data_mean_x_axis, data_mean_, 'LineWidth', 1, 'Color', line_colors_(counter_var, :))
-        if counter_ang == (num_ang_bin+1)
-            title('all dir.')
-        else
-            title([num2str(ang_values_(counter_ang)) ' dir.'])
-        end
-        if ang_values_(counter_ang) == 270
-            xlabel(['Time from ' params.event_type_name ' (ms)']);
-        end
-        if ang_values_(counter_ang) == 180
-            if strcmp(params.data_type, 'SS')
-                ylabel('SS firing (change, Hz)');
-            elseif strcmp(params.data_type, 'CS')
-                ylabel('CS firing (change, Hz)');
-            elseif strcmp(params.data_type, 'VT')
-                ylabel('Tangent velocity (deg/s)');
-            elseif strcmp(params.data_type, 'VM')
-                ylabel('Velocity magnitude (deg/s)');
-            end
-        end
-    end
-end
-
-y_lim_ = zeros(length(h_ax), 2);
-for counter_ax = 1 : length(h_ax)
-    y_lim_(counter_ax, :) = ylim(h_ax(counter_ax));
-end
-if strcmp(params.data_type, 'SS')
-    y_lim__ = [-15 +25];
-elseif strcmp(params.data_type, 'CS')
-    y_lim__ = [-1 +2];
-elseif strcmp(params.data_type, 'VT')
-    y_lim__ = [-25 +650];
-elseif strcmp(params.data_type, 'VM')
-    y_lim__ = [-25 +650];
-else
-    y_lim__ = [min(y_lim_(:,1)) max(y_lim_(:,2))];
-end
-
-for counter_ax = 1 : length(h_ax)
-    set(h_ax(counter_ax), 'ylim', y_lim__);
-end
-%% ESN_Beautify_Plot
-sgtitle([...
-    tag_name_list{params.tag_id} ', ' ...
-    params.data_type ', ' ...
-    params.CSYS_type ', ' ...
-    params.event_type_name ', ' ...
-    params.variable ...
-    ], ...
-    'interpret', 'none', 'FontSize', 12);
-
-ESN_Beautify_Plot(hFig, [4, 4], 8)
-
-end
-
-%% function plot_population_data_iteratively
-function plot_population_data_iteratively(fig_num)
-%% Set variables
-global event_type_list tag_name_list
-data_type_list = {'SS', 'CS', 'VT', 'VM'};
-CSYS_type_list = {'tuned', 'absol'};
-num_tag = 10;
-%% Load population_neural_properties
-path_cell_data = uigetdir;
-if ~strcmp(path_cell_data(end), filesep);path_cell_data = [path_cell_data filesep];end
-path_cell_data = [path_cell_data '..' filesep];
-
-if ~exist([path_cell_data 'population_figs'], 'dir')
-    mkdir([path_cell_data 'population_figs']);
-end
-
-%% Loop over conditions
-params.variable        = 'amp';
-if ~exist('population_neural_properties', 'var')
-    load([path_cell_data 'population_neural_properties' '.mat'], 'population_neural_properties')
-end
-for counter_CSYS_type = 1 : length(CSYS_type_list)
-    params.CSYS_type       = CSYS_type_list{counter_CSYS_type};
-    if ~exist(['num_sac_' params.CSYS_type], 'var')
-        load([path_cell_data 'num_sac_' params.CSYS_type '.mat'], ['num_sac_' params.CSYS_type])
-    end
-    eval(['num_sac_data = ' 'num_sac_' params.CSYS_type ';']);
-    clearvars(['num_sac_' params.CSYS_type]);
-for counter_data_type = 1 : length(data_type_list)
-    params.data_type       = data_type_list{counter_data_type};
-    if ~exist([params.data_type '_population_' params.CSYS_type], 'var')
-        load([path_cell_data params.data_type '_population_' params.CSYS_type '.mat'], [params.data_type '_population_' params.CSYS_type])
-    end
-    eval(['population_data = ' params.data_type '_population_' params.CSYS_type ';']);
-    clearvars([params.data_type '_population_' params.CSYS_type]);
-    if strcmp(params.data_type, 'SS') || strcmp(params.data_type, 'CS')
-        eval(['firing_rate = population_neural_properties.' params.data_type '_firing_rate'  ';']);
-        population_data = subtract_baseline_from_neural_data(population_data, firing_rate, params.variable);
-    end
-    [population_avg_levels, num_sac_data_avg] = population_data_avg_over_levels(population_data, num_sac_data, params.variable, 1);
-     population_avg_sacs = population_data_avg_over_sacs(population_avg_levels, num_sac_data_avg, params.variable);
-    [population_std_sacs, ~] = population_data_std_over_sacs(population_avg_levels, num_sac_data_avg, params.variable);
-
-    [population_avg_levels_avg, num_sac_data_avg_avg] = population_data_avg_over_levels(population_avg_levels, num_sac_data_avg, params.variable, 2);
-     population_avg_sacs_avg = population_data_avg_over_sacs(population_avg_levels_avg, num_sac_data_avg_avg, params.variable);
-    [population_std_sacs_avg, ~] = population_data_std_over_sacs(population_avg_levels_avg, num_sac_data_avg_avg, params.variable);
-for counter_event_type = 1 : length(event_type_list)
-    params.event_type_name = event_type_list{counter_event_type};
-    
-    params.pCell_idx = 1:size(population_data.(params.variable)(1).onset{1, 1}, 1);
-    % params.pCell_idx = [1:65, 90:134];
-for counter_tag = 1 : num_tag
-    
-    params.tag_id          = counter_tag;
-    params.flag_smooth_plot = true;
-    params.fig_num = fig_num;
-    fprintf(['### Plotting: ' params.CSYS_type ', ' params.data_type ', ' params.event_type_name ', ' tag_name_list{counter_tag} '. ###\n'])
-    
-    % data_ang_avg     = population_avg_levels.(params.variable)(params.tag_id).(params.event_type_name);
-    data_ang_avg     = population_avg_sacs.(params.variable)(params.tag_id).(params.event_type_name);
-    data_ang_std     = population_std_sacs.(params.variable)(params.tag_id).(params.event_type_name);
-
-    % data_ang_avg_avg = population_avg_levels_avg.(params.variable)(params.tag_id).(params.event_type_name);
-    data_ang_avg_avg = population_avg_sacs_avg.(params.variable)(params.tag_id).(params.event_type_name);
-    data_ang_std_avg = population_std_sacs_avg.(params.variable)(params.tag_id).(params.event_type_name);
-    
-    % plot_population_data(params.fig_num, data_ang_avg, data_ang_avg_avg, params);
-    plot_population_data(params.fig_num, data_ang_avg, data_ang_avg_avg, params, data_ang_std, data_ang_std_avg);
-    
-    %% Save figs
-    path_fig_ = [path_cell_data 'population_figs' filesep params.CSYS_type filesep params.data_type filesep num2str(counter_tag) '_' tag_name_list{counter_tag}];
-    if ~exist(path_fig_, 'dir')
-        mkdir(path_fig_);
-    end
-    file_name_fig_ = [params.CSYS_type '_' params.data_type '_' num2str(counter_tag) '_' tag_name_list{counter_tag} '_' params.event_type_name];
-    hFig_ = figure(params.fig_num);
-    saveas(hFig_,[path_fig_ filesep file_name_fig_], 'pdf');
-%             saveas(hFig_,[path_fig_ filesep file_name_fig_], 'png');
-    close(hFig_)
-end
-end % counter_event_type
-clearvars([params.data_type '_population_' params.CSYS_type], 'population_data');
-end % counter_data_type
-clearvars(['num_sac_' params.CSYS_type], 'num_sac_data');
-end % counter_CSYS_type
-fprintf('### ALL DONE. ###\n')
-
-end
-
 %% function population_data_avg_over_sacs
 function population_avg_sacs = population_data_avg_over_sacs(population_data, num_sac_data, variable)
 %% Handle inputs
@@ -1981,3 +1390,628 @@ for counter_event_type = 1 : length(event_type_list)
 end
 fprintf(' --> Completed. \n')
 end
+
+%% PLOT FUNCTIONS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% function plot_sac_sorter
+function plot_sac_sorter(SACS_ALL_DATA, params)
+%% Set parameters
+amp_edges = -.25 : 0.5 : 15.25;
+ang_edges = (-pi-(pi/16)) : (pi/8) : (pi-(pi/16));
+react_edges = -12.5: 25 : 512.5;
+num_row = 9;
+num_col = 9;
+
+%% Init plot
+hFig = figure(1);
+clf(hFig)
+hold on
+
+%% Plot the results
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+for counter_tag = 1 : 9
+if counter_tag == 8
+    idx_tag = (SACS_ALL_DATA.tag==8) | (SACS_ALL_DATA.tag==9);
+    title_ = [params.sac_tag_list{8} ' & ' params.sac_tag_list{9}];
+elseif counter_tag == 9
+    idx_tag = (SACS_ALL_DATA.tag==10);
+    title_ = params.sac_tag_list{10};
+else
+    idx_tag = (SACS_ALL_DATA.tag==counter_tag);
+    title_ = params.sac_tag_list{counter_tag};
+end
+
+axes_minor_nums = reshape(1:num_row*num_col, num_row, num_col)';
+axes_main_row = floor((counter_tag - 1) / 3)+1;
+axes_main_col = mod(counter_tag, 3); if (axes_main_col==0); axes_main_col=3; end
+row1_ = ((axes_main_row-1)*3)+1;
+row2_ = ((axes_main_row-1)*3)+2;
+row3_ = ((axes_main_row-1)*3)+3;
+col1_ = ((axes_main_col-1)*3)+1;
+col2_ = ((axes_main_col-1)*3)+2;
+col3_ = ((axes_main_col-1)*3)+3;
+
+axes_trace = [axes_minor_nums(row1_,col1_), axes_minor_nums(row1_,col2_), axes_minor_nums(row1_,col3_)...
+              axes_minor_nums(row2_,col1_), axes_minor_nums(row2_,col2_), axes_minor_nums(row2_,col3_) ];
+axes_amp_dis = axes_minor_nums(row3_,col1_);
+axes_ang_dis = axes_minor_nums(row3_,col2_);
+axes_react_dis = axes_minor_nums(row3_,col3_);
+
+subplot(num_row,num_col,axes_trace)
+hold on
+plot(SACS_ALL_DATA.eye_r_px(:,idx_tag), ...
+     SACS_ALL_DATA.eye_r_py(:,idx_tag), 'k')
+plot(SACS_ALL_DATA.eye_r_px_offset(:,idx_tag), ...
+     SACS_ALL_DATA.eye_r_py_offset(:,idx_tag), 'om')
+title([title_ ': ' num2str(nansum(idx_tag)) ' sac'], 'interpret', 'none');
+xlim([-17, 17])
+ylim([-15, 15])
+% axis equal;
+
+subplot(num_row,num_col,axes_amp_dis)
+hold on
+histogram(SACS_ALL_DATA.eye_r_amp_m(:,idx_tag), amp_edges, 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'k')
+histogram(SACS_ALL_DATA.eye_r_amp_m(:,idx_tag), amp_edges, 'DisplayStyle', 'stairs', 'EdgeColor', 'k', 'FaceColor', 'none', 'linewidth', 2)
+xlim([0, 15])
+set(gca, 'XTick', 0:3:15)
+ylabel('Amplitude')
+
+subplot(num_row,num_col,axes_ang_dis)
+polarhistogram(deg2rad(SACS_ALL_DATA.eye_r_ang(:,idx_tag)), (ang_edges), 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'k')
+hold on
+polarhistogram(deg2rad(SACS_ALL_DATA.eye_r_ang(:,idx_tag)), (ang_edges), 'DisplayStyle', 'stairs', 'EdgeColor', 'k', 'FaceColor', 'none', 'linewidth', 2)
+set(gca, 'ThetaTick', [])
+set(gca, 'RTick', [])
+set(gca, 'Title', [])
+
+subplot(num_row,num_col,axes_react_dis)
+hold on
+histogram(SACS_ALL_DATA.reaction(:,idx_tag)/1000, react_edges/1000, 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'k')
+histogram(SACS_ALL_DATA.reaction(:,idx_tag)/1000, react_edges/1000, 'DisplayStyle', 'stairs', 'EdgeColor', 'k', 'FaceColor', 'none', 'linewidth', 2)
+xlim([0, 500]/1000)
+set(gca, 'XTick', (0:200:500)/1000)
+ylabel('Reaction')
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Add the title info
+sgtitle([params.cell_name ', ' ...
+    'trial: ' num2str(params.num_trials) ', ' ...
+    'sac: ' num2str(length(SACS_ALL_DATA.validity)) ', ' ...
+    'dur: ' num2str(params.duration/60,3) 'min' ...
+    ], ...
+    'interpret', 'none');
+ESN_Beautify_Plot(hFig, [13 13], 8)
+
+end
+
+%% function plot_neural_properties
+function plot_neural_properties(fig_num)
+%% Load population_neural_properties
+path_cell_data = uigetdir;
+if ~strcmp(path_cell_data(end), filesep);path_cell_data = [path_cell_data filesep];end
+path_cell_data = [path_cell_data '..' filesep];
+load([path_cell_data, 'population_neural_properties.mat'], 'population_neural_properties');
+
+%% Init plot
+hFig = figure(fig_num);
+clf(hFig)
+num_row_fig = 1;
+num_col_fig = 5;
+SS_firing_edges = 5:10:135;
+CS_firing_edges = 0.25:0.1:1.55;
+CS_suppression_edges = 5.5: 1 : 25.5;
+
+%% Calc variables
+global waveform_inds_span
+if isempty(waveform_inds_span)
+    fprintf('ERROR: Global variables are empty.\n');
+    return;
+end
+num_pCells          = size(population_neural_properties.SS_firing_rate, 1);
+% XProb
+SS_firing_pCells    = population_neural_properties.SS_firing_rate;
+CS_firing_pCells    = population_neural_properties.CS_firing_rate;
+SS_waveform_pCells  = population_neural_properties.SS_waveform;
+CS_waveform_pCells  = population_neural_properties.CS_waveform;
+SS_xprob_pCells     = population_neural_properties.Corr_data_SS_SSxSS_AUTO;
+CS_xprob_pCells     = population_neural_properties.Corr_data_CS_CSxSS_AUTO;
+CS_suppression_time = population_neural_properties.CS_suppression_time;
+SS_waveform_pCells_norm = SS_waveform_pCells ./ repmat(max(abs(SS_waveform_pCells), [],2), 1, size(SS_waveform_pCells, 2));
+CS_waveform_pCells_norm = CS_waveform_pCells ./ repmat(max(abs(SS_waveform_pCells), [],2), 1, size(CS_waveform_pCells, 2)); % normalize to SS max and not CS max
+SS_xprob_pCells_norm    = SS_xprob_pCells ./ repmat(SS_firing_pCells, 1, size(SS_xprob_pCells, 2)) .* 1000;
+CS_xprob_pCells_norm    = CS_xprob_pCells ./ repmat(SS_firing_pCells, 1, size(CS_xprob_pCells, 2)) .* 1000; % normalize to SS firing and not CS firing
+time_waveform = (waveform_inds_span ./ 30e3) * 1000;
+time_xprob = nanmean(population_neural_properties.Corr_data_SS_inds_span .* ...
+    repmat(population_neural_properties.Corr_data_SS_bin_size_time, 1, size(population_neural_properties.Corr_data_SS_inds_span, 2))) * 1000;
+
+% Firing rate
+SS_firing_pCells_mean = nanmean(SS_firing_pCells);
+SS_firing_pCells_stdv = nanstd( SS_firing_pCells);
+SS_firing_pCells_sem  = nanstd( SS_firing_pCells)./sqrt(num_pCells);
+CS_firing_pCells_mean = nanmean(CS_firing_pCells);
+CS_firing_pCells_stdv = nanstd( CS_firing_pCells);
+CS_firing_pCells_sem  = nanstd( CS_firing_pCells)./sqrt(num_pCells);
+
+% Waveform
+SS_waveform_mean = nanmean(SS_waveform_pCells_norm);
+SS_waveform_stdv = nanstd( SS_waveform_pCells_norm);%./sqrt(num_pCells);
+SS_waveform_stdv_p = SS_waveform_mean + SS_waveform_stdv;
+SS_waveform_stdv_m = SS_waveform_mean - SS_waveform_stdv;
+SS_waveform_stdv_y_axes = [(SS_waveform_stdv_p) flip(SS_waveform_stdv_m)];
+SS_waveform_stdv_x_axes = [(time_waveform) flip(time_waveform)];
+
+CS_waveform_mean = nanmean(CS_waveform_pCells_norm);
+CS_waveform_stdv = nanstd( CS_waveform_pCells_norm);%./sqrt(num_pCells);
+CS_waveform_stdv_p = CS_waveform_mean + CS_waveform_stdv;
+CS_waveform_stdv_m = CS_waveform_mean - CS_waveform_stdv;
+CS_waveform_stdv_y_axes = [(CS_waveform_stdv_p) flip(CS_waveform_stdv_m)];
+CS_waveform_stdv_x_axes = [(time_waveform) flip(time_waveform)];
+
+SS_xprob_pCells_norm(:,round(size(SS_xprob_pCells_norm,2)/2)) = nan;
+SS_xprob_mean = nanmean(SS_xprob_pCells_norm);
+SS_xprob_stdv = nanstd( SS_xprob_pCells_norm);%./sqrt(num_pCells);
+SS_xprob_stdv_p = SS_xprob_mean + SS_xprob_stdv;
+SS_xprob_stdv_m = SS_xprob_mean - SS_xprob_stdv;
+SS_xprob_stdv_y_axes = [(SS_xprob_stdv_p) flip(SS_xprob_stdv_m) (SS_xprob_stdv_p(1))];
+SS_xprob_stdv_x_axes = [(time_xprob) flip(time_xprob) (time_xprob(1))];
+
+CS_xprob_mean = nanmean(CS_xprob_pCells_norm);
+CS_xprob_stdv = nanstd( CS_xprob_pCells_norm);%./sqrt(num_pCells);
+CS_xprob_stdv_p = CS_xprob_mean + CS_xprob_stdv;
+CS_xprob_stdv_m = CS_xprob_mean - CS_xprob_stdv;
+CS_xprob_stdv_y_axes = [(CS_xprob_stdv_p) flip(CS_xprob_stdv_m)];
+CS_xprob_stdv_x_axes = [(time_xprob) flip(time_xprob)];
+
+% CS_suppression_time
+CS_suppression_mean =  nanmean(CS_suppression_time);
+CS_suppression_stdv =  nanstd( CS_suppression_time);
+
+%% Firing rate
+subplot(num_row_fig,num_col_fig, 1)
+hold on
+histogram(SS_firing_pCells, SS_firing_edges, 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'b')
+histogram(SS_firing_pCells, SS_firing_edges, 'DisplayStyle', 'stairs', 'EdgeColor', 'b', 'FaceColor', 'none', 'linewidth', 1)
+xline((SS_firing_pCells_mean+SS_firing_pCells_stdv), '-b', 'LineWidth', 0.5);
+xline((SS_firing_pCells_mean-SS_firing_pCells_stdv), '-b', 'LineWidth', 0.5);
+xline(SS_firing_pCells_mean,                         '-b', 'LineWidth', 1.0);
+xlabel('SS Firing Rate (Hz)')
+ylabel('Count (#)')
+% title(stat_SS, 'interpreter', 'none')
+
+subplot(num_row_fig,num_col_fig, 2)
+hold on
+histogram(CS_firing_pCells, CS_firing_edges, 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'r')
+histogram(CS_firing_pCells, CS_firing_edges, 'DisplayStyle', 'stairs', 'EdgeColor', 'r', 'FaceColor', 'none', 'linewidth', 1)
+xline((CS_firing_pCells_mean+CS_firing_pCells_stdv), '-r', 'LineWidth', 0.5);
+xline((CS_firing_pCells_mean-CS_firing_pCells_stdv), '-r', 'LineWidth', 0.5);
+xline((CS_firing_pCells_mean),                       '-r', 'LineWidth', 1.0);
+xlabel('CS Firing Rate (Hz)')
+ylabel('Count (#)')
+% title(stat_CS,  'interpreter', 'none')
+
+%% Waveform
+subplot(num_row_fig,num_col_fig, 3)
+hold on
+% plot(time_waveform, SS_waveform_stdv_m, '-b', 'LineWidth', 0.5)
+% plot(time_waveform, SS_waveform_stdv_p, '-b', 'LineWidth', 0.5)
+plot(SS_waveform_stdv_x_axes, SS_waveform_stdv_y_axes, '-b', 'LineWidth', 0.5)
+plot(time_waveform, SS_waveform_mean, '-b', 'LineWidth', 1.0)
+
+% plot(time_waveform, CS_waveform_stdv_m, '-r', 'LineWidth', 0.5)
+% plot(time_waveform, CS_waveform_stdv_p, '-r', 'LineWidth', 0.5)
+plot(CS_waveform_stdv_x_axes, CS_waveform_stdv_y_axes, '-r', 'LineWidth', 0.5)
+plot(time_waveform, CS_waveform_mean, '-r', 'LineWidth', 1.0)
+ylabel('waveform')
+xlabel('Time (ms)')
+ylim([-1.3 +1.2])
+xlim([-2 4])
+
+subplot(num_row_fig,num_col_fig, 4)
+hold on
+% plot(time_xprob, SS_xprob_stdv_p, '-b', 'LineWidth', 0.5)
+% plot(time_xprob, SS_xprob_stdv_m, '-b', 'LineWidth', 0.5)
+plot(SS_xprob_stdv_x_axes, SS_xprob_stdv_y_axes, '-b', 'LineWidth', 0.5)
+plot(time_xprob, SS_xprob_mean, '-b', 'LineWidth', 1.0)
+
+% plot(time_xprob, CS_xprob_stdv_p, '-r', 'LineWidth', 0.5)
+% plot(time_xprob, CS_xprob_stdv_m, '-r', 'LineWidth', 0.5)
+plot(CS_xprob_stdv_x_axes, CS_xprob_stdv_y_axes, '-r', 'LineWidth', 0.5)
+plot(time_xprob, CS_xprob_mean, '-r', 'LineWidth', 1.0)
+ylabel('prob')
+xlabel('Time (ms)')
+ylim([-0.2 +1.6])
+xlim([-50 50])
+
+%% Suppression
+subplot(num_row_fig,num_col_fig, 5)
+hold on
+histogram(CS_suppression_time, CS_suppression_edges,  'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', [0.5 0.5 0.5])
+histogram(CS_suppression_time, CS_suppression_edges,  'DisplayStyle', 'stairs', 'EdgeColor', 'r', 'FaceColor', 'none', 'linewidth', 1)
+xline((CS_suppression_mean+CS_suppression_stdv), '-r', 'LineWidth', 0.5);
+xline((CS_suppression_mean-CS_suppression_stdv), '-r', 'LineWidth', 0.5);
+xline((CS_suppression_mean),                     '-r', 'LineWidth', 1.0)
+ylabel('Count')
+xlabel('CS suppression (ms)')
+%% ESN_Beautify_Plot
+stat_SS = ['SS_firing, ', 'mean: ', num2str(SS_firing_pCells_mean,3), ', std: ', num2str(SS_firing_pCells_stdv,3)];
+stat_CS = ['CS_firing, ', 'mean: ', num2str(CS_firing_pCells_mean,3), ', std: ', num2str(CS_firing_pCells_stdv,3)];
+stat_suppression = ['Suppression, ', 'mean: ', num2str(CS_suppression_mean,3), ', std: ', num2str(CS_suppression_stdv,3)];
+sgtitle({[stat_SS, ' | ', stat_CS], stat_suppression}, ...
+    'interpret', 'none', 'FontSize', 8);
+ESN_Beautify_Plot(hFig, [8, 2], 8)
+
+%% Save figs
+path_fig_ = [path_cell_data 'population_figs'];
+if ~exist(path_fig_, 'dir')
+    mkdir(path_fig_);
+end
+file_name_fig_ = 'neural_properties';
+saveas(hFig,[path_fig_ filesep file_name_fig_], 'pdf');
+
+end
+
+%% function plot_CS_on_properties
+function plot_CS_on_properties(fig_num)
+%% Load population_neural_properties
+path_cell_data = uigetdir;
+if ~strcmp(path_cell_data(end), filesep);path_cell_data = [path_cell_data filesep];end
+path_cell_data = [path_cell_data '..' filesep];
+load([path_cell_data, 'population_neural_properties.mat'], 'population_neural_properties');
+
+%% Init plot
+hFig = figure(fig_num);
+clf(hFig)
+num_row_fig = 1;
+num_col_fig = 4;
+num_pCells          = size(population_neural_properties.CS_ang_avg, 1);
+step_size_ = 22.5;
+ang_edges = 0-(step_size_/2):step_size_:360-(step_size_/2);
+sig_edges = 35:2:61;
+
+CS_ang_avg = population_neural_properties.CS_ang_avg;
+vonMises_std = population_neural_properties.vonMises_std;
+CS_prob_avg_tuned = population_neural_properties.CS_prob_avg_tuned;
+overall_prob_TUNED_mean = nanmean(CS_prob_avg_tuned, 1);
+overall_prob_TUNED_stdv = nanstd(CS_prob_avg_tuned, 0, 1) ./ sqrt(num_pCells);
+overall_prob_TUNED_stdv_p = overall_prob_TUNED_mean + overall_prob_TUNED_stdv;
+overall_prob_TUNED_stdv_m = overall_prob_TUNED_mean - overall_prob_TUNED_stdv;
+
+%% Plot CS-on distribution
+subplot(num_row_fig, num_col_fig, 1);
+idx_pCells = 1:num_pCells; % All
+polarhistogram(deg2rad(CS_ang_avg(idx_pCells)), deg2rad(ang_edges), 'DisplayStyle', 'bar','FaceColor',[0.6 0.6 0.6], 'EdgeColor', 'none')
+hold on
+polarhistogram(deg2rad(CS_ang_avg(idx_pCells)), deg2rad(ang_edges), 'DisplayStyle', 'stairs','FaceColor','none', 'EdgeColor', 'r', 'linewidth', 1)
+rlim([0 25])
+set(gca, 'ThetaTick', 0:45:315, 'RTick', 0:5:25,...
+    'RTickLabel', {'', '', '10', '', '20', ''}, 'ThetaTickLabel', {'0','','90','', '180','','270', ''})
+title('CS-on mean Dist.')
+
+%% Plot std distribution
+subplot(num_row_fig, num_col_fig, 2);
+histogram(vonMises_std, sig_edges, 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', [0.6 0.6 0.6])
+hold on
+histogram(vonMises_std, sig_edges, 'DisplayStyle', 'stairs', 'EdgeColor', 'r', 'FaceColor', 'none', 'linewidth', 1)
+xline(nanmean(vonMises_std),'Color', 'r', 'linewidth', 1)
+ylabel('count')
+xlabel('Circular std. (deg)')
+title('CS-on stdv Dist.')
+
+%% Plot CS tuning circular
+global ang_values
+if isempty(ang_values)
+    fprintf('ERROR: Global variables are empty.\n');
+    return;
+end
+
+plot_data_amp_mean = [overall_prob_TUNED_mean, overall_prob_TUNED_mean(1), nan]';
+plot_data_deg_mean = [ang_values, ang_values(1), nan]';
+
+plot_data_amp_stdv_p = [overall_prob_TUNED_stdv_p, overall_prob_TUNED_stdv_p(1), nan]';
+plot_data_deg_stdv_p = [ang_values, ang_values(1), nan]';
+
+plot_data_amp_stdv_m = [overall_prob_TUNED_stdv_m, overall_prob_TUNED_stdv_m(1), nan]';
+plot_data_deg_stdv_m = [ang_values, ang_values(1), nan]';
+
+subplot(num_row_fig, num_col_fig, 3);
+polarplot(deg2rad(plot_data_deg_stdv_p),plot_data_amp_stdv_m, '-k', 'LineWidth', 0.5)
+hold on
+polarplot(deg2rad(plot_data_deg_stdv_m),plot_data_amp_stdv_p, '-k', 'LineWidth', 0.5)
+polarplot(deg2rad(plot_data_deg_mean),plot_data_amp_mean, '-k', 'LineWidth', 1)
+rlim([0 0.25])
+set(gca, 'ThetaTick', 0:45:315, 'RTick', 0:0.05:0.25, ...
+    'RTickLabel', {'', '', '0.1', '', '0.2', ''}, 'ThetaTickLabel', {'0','','90','', '180','','270', ''})
+title('CS Tuning', 'Interpreter', 'none');
+
+%% Plot CS tuning linear, CS-on at center
+subplot(num_row_fig, num_col_fig, 4);
+hold on
+% plot_order_ = [6 7 8 1 2 3 4 5 6];
+plot_order_ = [5 6 7 8 1 2 3 4 5];
+plot(overall_prob_TUNED_stdv_p(plot_order_), '-k', 'LineWidth', 0.5)
+plot(overall_prob_TUNED_stdv_m(plot_order_), '-k', 'LineWidth', 0.5)
+plot(overall_prob_TUNED_mean(plot_order_), '-k', 'LineWidth', 1)
+ylabel('CS probability');
+xlabel('Direction')
+% set(gca, 'XTick', 1:1:8, 'XTickLabel', {'', '-90','','ON','','90','','180',''})
+set(gca, 'XTick', 1:1:9, 'XTickLabel', {'-180', '', '-90','','ON','','90','','180'})
+
+avg_prob_TUNED_mean = nanmean(nanmean(CS_prob_avg_tuned, 2));
+avg_prob_TUNED_stdv = nanstd(nanmean(CS_prob_avg_tuned, 2), 0, 1) ./ sqrt(num_pCells);
+avg_prob_TUNED_mean = repmat(avg_prob_TUNED_mean, 1, size(CS_prob_avg_tuned,2));
+avg_prob_TUNED_stdv = repmat(avg_prob_TUNED_stdv, 1, size(CS_prob_avg_tuned,2));
+avg_prob_TUNED_stdv_p = avg_prob_TUNED_mean + avg_prob_TUNED_stdv;
+avg_prob_TUNED_stdv_m = avg_prob_TUNED_mean - avg_prob_TUNED_stdv;
+
+plot(avg_prob_TUNED_stdv_p(plot_order_), '-k', 'LineWidth', 0.5)
+plot(avg_prob_TUNED_stdv_m(plot_order_), '-k', 'LineWidth', 0.5)
+plot(avg_prob_TUNED_mean(plot_order_), '-k', 'LineWidth', 1)
+ylim([0.05 0.25])
+title('CS Tuning', 'Interpreter', 'none');
+
+%% Plot CS tuning linear, CS-on on side
+%{
+subplot(num_row_fig, num_col_fig, 8);
+hold on
+plot_order_ = [6 7 8 1 2 3 4 5 6];
+% plot_order_ = [5 6 7 8 1 2 3 4 5];
+plot(overall_prob_TUNED_stdv_p(plot_order_), '-k', 'LineWidth', 0.5)
+plot(overall_prob_TUNED_stdv_m(plot_order_), '-k', 'LineWidth', 0.5)
+plot(overall_prob_TUNED_mean(plot_order_), '-k', 'LineWidth', 1)
+ylabel('CS probability');
+xlabel('Direction')
+set(gca, 'XTick', 1:1:8, 'XTickLabel', {'', '-90','','ON','','90','','180',''})
+% set(gca, 'XTick', 1:1:9, 'XTickLabel', {'-180', '', '-90','','ON','','90','','180'})
+
+avg_prob_TUNED_mean = nanmean(nanmean(CS_prob_avg_tuned, 2));
+avg_prob_TUNED_stdv = nanstd(nanmean(CS_prob_avg_tuned, 2), 0, 1) ./ sqrt(num_pCells);
+avg_prob_TUNED_mean = repmat(avg_prob_TUNED_mean, 1, size(CS_prob_avg_tuned,2));
+avg_prob_TUNED_stdv = repmat(avg_prob_TUNED_stdv, 1, size(CS_prob_avg_tuned,2));
+avg_prob_TUNED_stdv_p = avg_prob_TUNED_mean + avg_prob_TUNED_stdv;
+avg_prob_TUNED_stdv_m = avg_prob_TUNED_mean - avg_prob_TUNED_stdv;
+
+plot(avg_prob_TUNED_stdv_p(plot_order_), '-k', 'LineWidth', 0.5)
+plot(avg_prob_TUNED_stdv_m(plot_order_), '-k', 'LineWidth', 0.5)
+plot(avg_prob_TUNED_mean(plot_order_), '-k', 'LineWidth', 1)
+ylim([0.05 0.25])
+title('CS Tuning', 'Interpreter', 'none');
+%}
+%% ESN_Beautify_Plot
+ESN_Beautify_Plot(hFig, [8, 2], 8)
+
+%% Save figs
+path_fig_ = [path_cell_data 'population_figs'];
+if ~exist(path_fig_, 'dir')
+    mkdir(path_fig_);
+end
+file_name_fig_ = 'CS_on_properties';
+saveas(hFig,[path_fig_ filesep file_name_fig_], 'pdf');
+
+end
+
+%% function plot_population_data_iteratively
+function plot_population_data_iteratively(fig_num)
+%% Set variables
+global event_type_list tag_name_list
+data_type_list = {'SS', 'CS', 'VT', 'VM'};
+CSYS_type_list = {'tuned', 'absol'};
+num_tag = 10;
+%% Load population_neural_properties
+path_cell_data = uigetdir;
+if ~strcmp(path_cell_data(end), filesep);path_cell_data = [path_cell_data filesep];end
+path_cell_data = [path_cell_data '..' filesep];
+
+if ~exist([path_cell_data 'population_figs'], 'dir')
+    mkdir([path_cell_data 'population_figs']);
+end
+
+%% Loop over conditions
+params.variable        = 'amp';
+if ~exist('population_neural_properties', 'var')
+    load([path_cell_data 'population_neural_properties' '.mat'], 'population_neural_properties')
+end
+for counter_CSYS_type = 1 : length(CSYS_type_list)
+    params.CSYS_type       = CSYS_type_list{counter_CSYS_type};
+    if ~exist(['num_sac_' params.CSYS_type], 'var')
+        load([path_cell_data 'num_sac_' params.CSYS_type '.mat'], ['num_sac_' params.CSYS_type])
+    end
+    eval(['num_sac_data = ' 'num_sac_' params.CSYS_type ';']);
+    clearvars(['num_sac_' params.CSYS_type]);
+for counter_data_type = 1 : length(data_type_list)
+    params.data_type       = data_type_list{counter_data_type};
+    if ~exist([params.data_type '_population_' params.CSYS_type], 'var')
+        load([path_cell_data params.data_type '_population_' params.CSYS_type '.mat'], [params.data_type '_population_' params.CSYS_type])
+    end
+    eval(['population_data = ' params.data_type '_population_' params.CSYS_type ';']);
+    clearvars([params.data_type '_population_' params.CSYS_type]);
+    if strcmp(params.data_type, 'SS') || strcmp(params.data_type, 'CS')
+        eval(['firing_rate = population_neural_properties.' params.data_type '_firing_rate'  ';']);
+        population_data = subtract_baseline_from_neural_data(population_data, firing_rate, params.variable);
+    end
+    [population_avg_levels, num_sac_data_avg] = population_data_avg_over_levels(population_data, num_sac_data, params.variable, 1);
+     population_avg_sacs = population_data_avg_over_sacs(population_avg_levels, num_sac_data_avg, params.variable);
+    [population_std_sacs, ~] = population_data_std_over_sacs(population_avg_levels, num_sac_data_avg, params.variable);
+
+    [population_avg_levels_avg, num_sac_data_avg_avg] = population_data_avg_over_levels(population_avg_levels, num_sac_data_avg, params.variable, 2);
+     population_avg_sacs_avg = population_data_avg_over_sacs(population_avg_levels_avg, num_sac_data_avg_avg, params.variable);
+    [population_std_sacs_avg, ~] = population_data_std_over_sacs(population_avg_levels_avg, num_sac_data_avg_avg, params.variable);
+for counter_event_type = 1 : length(event_type_list)
+    params.event_type_name = event_type_list{counter_event_type};
+    
+    params.pCell_idx = 1:size(population_data.(params.variable)(1).onset{1, 1}, 1);
+    % params.pCell_idx = [1:65, 90:134];
+for counter_tag = 1 : num_tag
+    
+    params.tag_id          = counter_tag;
+    params.flag_smooth_plot = true;
+    params.fig_num = fig_num;
+    fprintf(['### Plotting: ' params.CSYS_type ', ' params.data_type ', ' params.event_type_name ', ' tag_name_list{counter_tag} '. ###\n'])
+    
+    % data_ang_avg     = population_avg_levels.(params.variable)(params.tag_id).(params.event_type_name);
+    data_ang_avg     = population_avg_sacs.(params.variable)(params.tag_id).(params.event_type_name);
+    data_ang_std     = population_std_sacs.(params.variable)(params.tag_id).(params.event_type_name);
+
+    % data_ang_avg_avg = population_avg_levels_avg.(params.variable)(params.tag_id).(params.event_type_name);
+    data_ang_avg_avg = population_avg_sacs_avg.(params.variable)(params.tag_id).(params.event_type_name);
+    data_ang_std_avg = population_std_sacs_avg.(params.variable)(params.tag_id).(params.event_type_name);
+    
+    % plot_population_data(params.fig_num, data_ang_avg, data_ang_avg_avg, params);
+    plot_population_data(params.fig_num, data_ang_avg, data_ang_avg_avg, params, data_ang_std, data_ang_std_avg);
+    
+    %% Save figs
+    path_fig_ = [path_cell_data 'population_figs' filesep params.CSYS_type filesep params.data_type filesep num2str(counter_tag) '_' tag_name_list{counter_tag}];
+    if ~exist(path_fig_, 'dir')
+        mkdir(path_fig_);
+    end
+    file_name_fig_ = [params.CSYS_type '_' params.data_type '_' num2str(counter_tag) '_' tag_name_list{counter_tag} '_' params.event_type_name];
+    hFig_ = figure(params.fig_num);
+    saveas(hFig_,[path_fig_ filesep file_name_fig_], 'pdf');
+    close(hFig_)
+end
+end % counter_event_type
+clearvars([params.data_type '_population_' params.CSYS_type], 'population_data');
+end % counter_data_type
+clearvars(['num_sac_' params.CSYS_type], 'num_sac_data');
+end % counter_CSYS_type
+fprintf('### ALL DONE. ###\n')
+
+end
+
+%% function plot_population_data
+function plot_population_data(fig_num, data_ang_avg, data_ang_avg_avg, params, data_ang_std, data_ang_std_avg)
+%% Handle inputs
+if nargin < 5
+    flag_std = false;
+elseif (nargin >= 5) && (nargin <= 6)
+    flag_std = true;
+end
+%% Init plot
+hFig = figure(fig_num);
+clf(hFig)
+num_row_fig = 3;
+num_col_fig = 3;
+ax_ang_id = [6, 3, 2, 1, 4, 7, 8, 9, 5];
+
+num_ang_bin = size(data_ang_avg, 2);
+num_var_bin = size(data_ang_avg, 1);
+
+line_colors_ = [0,0,0; pink(round(1.5*num_var_bin))];
+
+
+%% Plot
+global inds_span ang_values tag_name_list
+if isempty(inds_span)
+    fprintf('ERROR: Global variables are empty.\n');
+    return;
+end
+ang_values_ = [ang_values nan];
+clearvars h_ax
+for counter_ang = 1 : num_ang_bin+1
+    h_ax(counter_ang) = subplot(num_row_fig, num_col_fig, ax_ang_id(counter_ang));
+    hold on;
+    for counter_var = 1 : num_var_bin
+        if counter_ang == (num_ang_bin+1)
+            data_pCells = data_ang_avg_avg{counter_var, 1};
+            if flag_std
+                data_sem_ = data_ang_std_avg{counter_var, 1};
+            end
+        else
+            data_pCells = data_ang_avg{counter_var, counter_ang};
+            if flag_std
+                data_sem_ = data_ang_std{counter_var, counter_ang};
+            end
+        end
+        num_rows_data_ = size(data_pCells, 1);
+        if num_rows_data_ > 1
+            data_pCells = data_pCells(params.pCell_idx,:);
+        end
+        if strcmp(params.data_type, 'SS') || strcmp(params.data_type, 'CS')
+            data_pCells = data_pCells .* 1000.0; % convert Pr to Firing/Hz
+            if flag_std
+                data_sem_ = data_sem_ .* 1000.0;
+            end
+        end
+        if num_rows_data_ == 1
+            data_mean_ = data_pCells;
+            if ~flag_std
+                data_sem_ = zeros(size(data_mean_));
+            end
+        else
+            data_mean_ = nanmean(data_pCells);
+            if ~flag_std
+                data_sem_ = nanstd(data_pCells) ./ sqrt(nansum(~isnan(data_pCells)));
+            end
+        end
+        data_mean_x_axis = reshape(inds_span, 1, []);
+        if (strcmp(params.data_type, 'SS') || strcmp(params.data_type, 'CS')) && params.flag_smooth_plot
+            data_mean_ = ESN_smooth(data_mean_);
+            data_sem_  = ESN_smooth(data_sem_);
+        end
+        data_sem_p_ = data_mean_ + data_sem_;
+        data_sem_m_ = data_mean_ - data_sem_;
+        data_sem_y_axis_ = [(data_sem_p_) flip(data_sem_m_)];
+        data_sem_x_axis_ = [(data_mean_x_axis) flip(data_mean_x_axis)];
+        xline(50)
+        xline(-50)
+        xline(0)
+        plot(data_sem_x_axis_, data_sem_y_axis_, 'LineWidth', 0.25, 'Color', line_colors_(counter_var, :))
+        plot(data_mean_x_axis, data_mean_, 'LineWidth', 1, 'Color', line_colors_(counter_var, :))
+        if counter_ang == (num_ang_bin+1)
+            title('all dir.')
+        else
+            title([num2str(ang_values_(counter_ang)) ' dir.'])
+        end
+        if ang_values_(counter_ang) == 270
+            xlabel(['Time from ' params.event_type_name ' (ms)']);
+        end
+        if ang_values_(counter_ang) == 180
+            if strcmp(params.data_type, 'SS')
+                ylabel('SS firing (change, Hz)');
+            elseif strcmp(params.data_type, 'CS')
+                ylabel('CS firing (change, Hz)');
+            elseif strcmp(params.data_type, 'VT')
+                ylabel('Tangent velocity (deg/s)');
+            elseif strcmp(params.data_type, 'VM')
+                ylabel('Velocity magnitude (deg/s)');
+            end
+        end
+    end
+end
+
+y_lim_ = zeros(length(h_ax), 2);
+for counter_ax = 1 : length(h_ax)
+    y_lim_(counter_ax, :) = ylim(h_ax(counter_ax));
+end
+if strcmp(params.data_type, 'SS')
+    y_lim__ = [-15 +25];
+elseif strcmp(params.data_type, 'CS')
+    y_lim__ = [-1 +2];
+elseif strcmp(params.data_type, 'VT')
+    y_lim__ = [-25 +650];
+elseif strcmp(params.data_type, 'VM')
+    y_lim__ = [-25 +650];
+else
+    y_lim__ = [min(y_lim_(:,1)) max(y_lim_(:,2))];
+end
+
+for counter_ax = 1 : length(h_ax)
+    set(h_ax(counter_ax), 'ylim', y_lim__);
+end
+%% ESN_Beautify_Plot
+sgtitle([...
+    tag_name_list{params.tag_id} ', ' ...
+    params.data_type ', ' ...
+    params.CSYS_type ', ' ...
+    params.event_type_name ', ' ...
+    params.variable ...
+    ], ...
+    'interpret', 'none', 'FontSize', 8);
+
+ESN_Beautify_Plot(hFig, [4, 4], 8)
+
+end
+
+
+

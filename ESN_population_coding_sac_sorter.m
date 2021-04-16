@@ -43,18 +43,20 @@ tic
 % (6) build_neural_properties(); % load cell_data files (_combine_) and form properties data.
 % (5) build_population_data(); % load cell_data files (_combine_) and form population data.
 toc
+
 %% Plot functions
 % (1) plot_neural_properties(1); % load population_neural_properties and plot neural_properties
 % (2) plot_CS_on_properties(2); % load population_neural_properties and plot CS_on properties
 % (3) 
+ plot_population_data_iteratively(3);
 
 %% Plot population_data
 %
 params.data_type       = 'SS';
 params.CSYS_type       = 'tuned';
 params.event_type_name = 'onset';
-params.variable        = 'vel';
-params.tag_id          = 8;
+params.variable        = 'amp';
+params.tag_id          = 1;
 params.flag_smooth_plot = true;
 params.fig_num = 3;
 if ~exist([params.data_type '_population_' params.CSYS_type], 'var')
@@ -62,20 +64,42 @@ if ~exist([params.data_type '_population_' params.CSYS_type], 'var')
 end
 if ~exist(['num_sac_' params.CSYS_type], 'var')
     load(['num_sac_' params.CSYS_type '.mat'], ['num_sac_' params.CSYS_type])
+end 
+if ~exist('population_neural_properties', 'var')
+    load(['population_neural_properties' '.mat'], 'population_neural_properties')
 end
+
 eval(['population_data = ' params.data_type '_population_' params.CSYS_type ';']);
 eval(['num_sac_data = ' 'num_sac_' params.CSYS_type ';']);
+if strcmp(params.data_type, 'SS') || strcmp(params.data_type, 'CS')
+    eval(['firing_rate = population_neural_properties.' params.data_type '_firing_rate'  ';']);
+    population_data = subtract_baseline_from_neural_data(population_data, firing_rate, params.variable);
+end
+% params.pCell_idx = [1:65, 90:134];
+params.pCell_idx = 1:size(population_data.(params.variable)(1).onset{1, 1}, 1);
 
-% [population_data_avg, num_sac_data_avg] = average_over_population_data(population_data, num_sac_data, params.variable, 1);
-% [population_data_avg_avg, ~] = average_over_population_data(population_data_avg, num_sac_data_avg, params.variable, 2);
-% data_ang_avg     = population_data_avg.(params.variable)(params.tag_id).(params.event_type_name);
-% data_ang_avg_avg = population_data_avg_avg.(params.variable)(params.tag_id).(params.event_type_name);
+%
+[population_avg_levels, num_sac_data_avg] = population_data_avg_over_levels(population_data, num_sac_data, params.variable, 1);
+% population_avg_sacs = population_data_avg_over_sacs(population_avg_levels, num_sac_data_avg, params.variable);
+[population_std_sacs, population_avg_sacs] = population_data_std_over_sacs(population_avg_levels, num_sac_data_avg, params.variable);
+
+[population_avg_levels_avg, num_sac_data_avg_avg] = population_data_avg_over_levels(population_avg_levels, num_sac_data_avg, params.variable, 2);
+% population_avg_sacs_avg = population_data_avg_over_sacs(population_avg_levels_avg, num_sac_data_avg_avg, params.variable);
+[population_std_sacs_avg, population_avg_sacs_avg] = population_data_std_over_sacs(population_avg_levels_avg, num_sac_data_avg_avg, params.variable);
+
+% data_ang_avg     = population_avg_levels.(params.variable)(params.tag_id).(params.event_type_name);
+data_ang_avg     = population_avg_sacs.(params.variable)(params.tag_id).(params.event_type_name);
+data_ang_std     = population_std_sacs.(params.variable)(params.tag_id).(params.event_type_name);
+% data_ang_avg_avg = population_avg_levels_avg.(params.variable)(params.tag_id).(params.event_type_name);
+data_ang_avg_avg = population_avg_sacs_avg.(params.variable)(params.tag_id).(params.event_type_name);
+data_ang_std_avg = population_std_sacs_avg.(params.variable)(params.tag_id).(params.event_type_name);
+%
+plot_population_data(params.fig_num, data_ang_avg, data_ang_avg_avg, params, data_ang_std, data_ang_std_avg);
+
+% data_ang_avg     = population_data.(params.variable)(params.tag_id).(params.event_type_name);
+% population_avg_levels_avg = population_data_avg_over_levels(population_data, num_sac_data, params.variable, 2);
+% data_ang_avg_avg     = population_avg_levels_avg.(params.variable)(params.tag_id).(params.event_type_name);
 % plot_population_data(params.fig_num, data_ang_avg, data_ang_avg_avg, params);
-
-data_ang_avg     = population_data.(params.variable)(params.tag_id).(params.event_type_name);
-population_data_avg_avg = average_over_population_data(population_data, num_sac_data, params.variable, 2);
-data_ang_avg_avg     = population_data_avg_avg.(params.variable)(params.tag_id).(params.event_type_name);
-plot_population_data(params.fig_num, data_ang_avg, data_ang_avg_avg, params);
 %}
 end
 
@@ -210,6 +234,10 @@ BEHAVE.EXPERIMENT_PARAMS.EPHYS_file_path = EPHYS.CH_sorted_file_path;
 
 %% build EPHYS.CH_sorted from DATA_PSORT
 global waveform_inds_span
+if isempty(waveform_inds_span)
+    fprintf('ERROR: Global variables are empty.\n');
+    return;
+end
 ch_data = double(DATA_PSORT.topLevel_data.ch_data);
 ch_time = double(DATA_PSORT.topLevel_data.ch_time);
 SS_index = find(logical(double(DATA_PSORT.topLevel_data.ss_index)));
@@ -279,6 +307,10 @@ EPHYS.CH_EVE.EPHYS_SS_train_1K = EPHYS_SS_train_1K;
 %% extract BEHAVE_ind from BEHAVE_EB_xcorr_time_1K
 clearvars -except EPHYS BEHAVE
 global data_type_eye_list data_type_BEHAVE_list data_type_neuro_list data_type_EPHYS_list event_type_list inds_span
+if isempty(data_type_eye_list)
+    fprintf('ERROR: Global variables are empty.\n');
+    return;
+end
 fprintf(['Analyzing ', EPHYS.CH_sorted_file_name, ' ... ']);
 REFRENCE_TIME = EPHYS.CH_EVE.BEHAVE_time_1K;
 length_time_  = length(REFRENCE_TIME);
@@ -724,6 +756,10 @@ end
 function CS_on_analysis()
 clc; close all;
 global ang_edges ang_values range_cell_with_4dir_behave
+if isempty(ang_edges)
+    fprintf('ERROR: Global variables are empty.\n');
+    return;
+end
 path_cell_data = uigetdir;
 if ~strcmp(path_cell_data(end), filesep);path_cell_data = [path_cell_data filesep];end
 pCell_ids = build_pCell_ids();
@@ -745,19 +781,6 @@ for counter_pCell = 1 : num_pCells
     delta_y = visual_py_offset - eye_r_py_onset;
     visual_ang = wrapTo360(atan2d(delta_y, delta_x));
     neuro_CS_count = SACS_ALL_DATA.neuro_CS_count_visual;
-
-%     visual_px_offset = SACS_ALL_DATA.visual_px_offset;
-%     visual_py_offset = SACS_ALL_DATA.visual_py_offset;
-%     visual_px_onset  = SACS_ALL_DATA.visual_px_onset;
-%     visual_py_onset  = SACS_ALL_DATA.visual_py_onset;
-%     delta_x = visual_px_offset - visual_px_onset;
-%     delta_y = visual_py_offset - visual_py_onset;
-%     visual_ang = wrapTo360(atan2d(delta_y, delta_x));
-%     neuro_CS_count = SACS_ALL_DATA.neuro_CS_count_visual;
-%     neuro_CS_count = nansum(SACS_ALL_DATA.neuro_CS_visual(250:450, :));
-
-%     visual_ang = wrapTo360(SACS_ALL_DATA.eye_r_ang);
-%     neuro_CS_count = nansum(SACS_ALL_DATA.neuro_CS_onset(50:250, :));
     
     if (counter_pCell >= range_cell_with_4dir_behave(1)) && (counter_pCell <= range_cell_with_4dir_behave(2))
         visual_ang_bin = discretize(ESN_Round(visual_ang, 90.0, 'round'), ang_edges);
@@ -778,8 +801,10 @@ for counter_pCell = 1 : num_pCells
         for counter_ang = 1 : num_ang_bin
             idx_tag = (SACS_ALL_DATA.tag == tag_bin(counter_tag));
             idx_ang = (visual_ang_bin == counter_ang);
-            CS_count(counter_tag, counter_ang) = nansum(neuro_CS_count(1, idx_tag&idx_ang));
-            sac_count(counter_tag, counter_ang) = nansum(idx_tag&idx_ang);
+            flag_last_cue = SACS_ALL_DATA.flag_last_cue;
+            idx_ = idx_tag&idx_ang&flag_last_cue;
+            CS_count(counter_tag, counter_ang) = nansum(neuro_CS_count(1, idx_));
+            sac_count(counter_tag, counter_ang) = nansum(idx_);
             CS_prob(counter_tag, counter_ang) = CS_count(counter_tag, counter_ang) ./ sac_count(counter_tag, counter_ang);
         end
     end
@@ -793,12 +818,9 @@ for counter_pCell = 1 : num_pCells
     sac_count_avg = sac_count(1, :) + sac_count(4, :) + sac_count(8, :);
     % 'prim_success' tag 1 % 'corr_success' tag 4
     CS_prob_avg = CS_count_avg ./ sac_count_avg;
-%     CS_prob_avg = ( ( CS_count(1,:)./sac_count(1,:) ) + ( CS_count(4,:)./sac_count(4,:) ) ) * 0.5;
     
     r_avg = nansum(CS_prob_avg.* exp(1i*deg2rad(ang_values)) , 2); % compute weighted sum of cos and sin of angles
     CS_ang_avg =  wrapTo360(rad2deg(angle(r_avg)));
-%     [~, id_max_] = max(CS_prob_avg);
-%     CS_ang_avg = ang_values(id_max_);
     
     CS_rho_avg = abs(r_avg) ./ nansum(CS_prob_avg,2);
     
@@ -847,7 +869,6 @@ for counter_pCell = 1 : num_pCells
     CS_on_data.idx_CS_on_dir  = idx_CS_on_dir;
     CS_on_data.idx_CS_tuned   = idx_CS_tuned;
     CS_on_data.visual_ang_bin       = visual_ang_bin;
-    CS_on_data.visual_ang_bin_tuned = idx_CS_tuned(visual_ang_bin);
     
     %% Append CS_on_data to cell_data
     save([path_cell_data cell_file_name], 'CS_on_data', '-append');
@@ -960,8 +981,10 @@ end
 %% function plot_neural_properties
 function plot_neural_properties(fig_num)
 %% Load population_neural_properties
-[file_name,file_path] = uigetfile([pwd filesep 'population_neural_properties.mat'], 'Select population_neural_properties file');
-load([file_path, file_name], 'population_neural_properties');
+path_cell_data = uigetdir;
+if ~strcmp(path_cell_data(end), filesep);path_cell_data = [path_cell_data filesep];end
+path_cell_data = [path_cell_data '..' filesep];
+load([path_cell_data, 'population_neural_properties.mat'], 'population_neural_properties');
 
 %% Init plot
 hFig = figure(fig_num);
@@ -974,6 +997,10 @@ CS_suppression_edges = 5.5: 1 : 25.5;
 
 %% Calc variables
 global waveform_inds_span
+if isempty(waveform_inds_span)
+    fprintf('ERROR: Global variables are empty.\n');
+    return;
+end
 num_pCells          = size(population_neural_properties.SS_firing_rate, 1);
 % XProb
 SS_firing_pCells    = population_neural_properties.SS_firing_rate;
@@ -1110,8 +1137,10 @@ end
 %% function plot_CS_on_properties
 function plot_CS_on_properties(fig_num)
 %% Load population_neural_properties
-[file_name,file_path] = uigetfile([pwd filesep 'population_neural_properties.mat'], 'Select population_neural_properties file');
-load([file_path, file_name], 'population_neural_properties');
+path_cell_data = uigetdir;
+if ~strcmp(path_cell_data(end), filesep);path_cell_data = [path_cell_data filesep];end
+path_cell_data = [path_cell_data '..' filesep];
+load([path_cell_data, 'population_neural_properties.mat'], 'population_neural_properties');
 
 %% Init plot
 hFig = figure(fig_num);
@@ -1154,6 +1183,10 @@ title('CS-on stdv Dist.')
 
 %% Plot CS tuning circular
 global ang_values
+if isempty(ang_values)
+    fprintf('ERROR: Global variables are empty.\n');
+    return;
+end
 
 plot_data_amp_mean = [overall_prob_TUNED_mean, overall_prob_TUNED_mean(1), nan]';
 plot_data_deg_mean = [ang_values, ang_values(1), nan]';
@@ -1238,6 +1271,10 @@ end
 function build_population_data()
 clc; close all;
 global event_type_list amp_edges vel_edges length_trace
+if isempty(event_type_list)
+    fprintf('ERROR: Global variables are empty.\n');
+    return;
+end
 path_cell_data = uigetdir;
 if ~strcmp(path_cell_data(end), filesep);path_cell_data = [path_cell_data filesep];end
 pCell_ids = build_pCell_ids();
@@ -1250,6 +1287,11 @@ num_ang_bin = length(CS_on_data.idx_CS_tuned);
 num_amp_bin = length(amp_edges) - 1;
 num_vel_bin = length(vel_edges) - 1;
 flag_build_absol = false;
+flag_build_tuned = false;
+if ~xor(flag_build_absol, flag_build_tuned)
+    fprintf('ERROR, build_population_data, Please select either flag_build_absol or flag_build_tuned. Not both. The code will run much faster this way.\n')
+    return;
+end
 
 %% Init variables
 % STRUCT (SS / CS / VM) -> 10x1 tag struct (amp / vel) -> variable name (onset / vmax / offset / visual) -> 6x8 cell (ampXang / velXang) -> 138x500 double (pCellXtrace)
@@ -1270,7 +1312,7 @@ for counter_tag = 1 : num_tag_bin
         VT_population_absol.vel(counter_tag).(event_type_name) = cell(num_vel_bin, num_ang_bin);
         num_sac_absol.vel(counter_tag).(event_type_name) = cell(num_vel_bin, num_ang_bin);
         end
-        
+        if flag_build_tuned
         SS_population_tuned.amp(counter_tag).(event_type_name) = cell(num_amp_bin, num_ang_bin);
         CS_population_tuned.amp(counter_tag).(event_type_name) = cell(num_amp_bin, num_ang_bin);
         VM_population_tuned.amp(counter_tag).(event_type_name) = cell(num_amp_bin, num_ang_bin);
@@ -1282,7 +1324,7 @@ for counter_tag = 1 : num_tag_bin
         VM_population_tuned.vel(counter_tag).(event_type_name) = cell(num_vel_bin, num_ang_bin);
         VT_population_tuned.vel(counter_tag).(event_type_name) = cell(num_vel_bin, num_ang_bin);
         num_sac_tuned.vel(counter_tag).(event_type_name) = cell(num_vel_bin, num_ang_bin);
-        
+        end
         for counter_ang = 1 : num_ang_bin
             for counter_amp = 1 : num_amp_bin
                 if flag_build_absol
@@ -1292,12 +1334,13 @@ for counter_tag = 1 : num_tag_bin
                 VT_population_absol.amp(counter_tag).(event_type_name){counter_amp, counter_ang} = nan(num_pCells, length_trace);
                 num_sac_absol.amp(counter_tag).(event_type_name){counter_amp, counter_ang} = zeros(num_pCells, 1);
                 end
-                
+                if flag_build_tuned
                 SS_population_tuned.amp(counter_tag).(event_type_name){counter_amp, counter_ang} = nan(num_pCells, length_trace);
                 CS_population_tuned.amp(counter_tag).(event_type_name){counter_amp, counter_ang} = nan(num_pCells, length_trace);
                 VM_population_tuned.amp(counter_tag).(event_type_name){counter_amp, counter_ang} = nan(num_pCells, length_trace);
                 VT_population_tuned.amp(counter_tag).(event_type_name){counter_amp, counter_ang} = nan(num_pCells, length_trace);
                 num_sac_tuned.amp(counter_tag).(event_type_name){counter_amp, counter_ang} = zeros(num_pCells, 1);
+                end
             end
             for counter_vel = 1 : num_vel_bin
                 if flag_build_absol
@@ -1307,12 +1350,13 @@ for counter_tag = 1 : num_tag_bin
                 VT_population_absol.vel(counter_tag).(event_type_name){counter_vel, counter_ang} = nan(num_pCells, length_trace);
                 num_sac_absol.vel(counter_tag).(event_type_name){counter_vel, counter_ang} = zeros(num_pCells, 1);
                 end
-                
+                if flag_build_tuned
                 SS_population_tuned.vel(counter_tag).(event_type_name){counter_vel, counter_ang} = nan(num_pCells, length_trace);
                 CS_population_tuned.vel(counter_tag).(event_type_name){counter_vel, counter_ang} = nan(num_pCells, length_trace);
                 VM_population_tuned.vel(counter_tag).(event_type_name){counter_vel, counter_ang} = nan(num_pCells, length_trace);
                 VT_population_tuned.vel(counter_tag).(event_type_name){counter_vel, counter_ang} = nan(num_pCells, length_trace);
                 num_sac_tuned.vel(counter_tag).(event_type_name){counter_vel, counter_ang} = zeros(num_pCells, 1);
+                end
             end
         end
     end
@@ -1344,7 +1388,7 @@ for counter_pCell = 1 : num_pCells
             idx_tag = (SACS_ALL_DATA.tag == tag_bin(counter_tag));
             for counter_ang = 1 : num_ang_bin
                 idx_ang_absol = (CS_on_data.visual_ang_bin == counter_ang);
-                idx_ang_tuned = (CS_on_data.visual_ang_bin_tuned == counter_ang);
+                idx_ang_tuned = (CS_on_data.visual_ang_bin == CS_on_data.idx_CS_tuned(counter_ang));
                 for counter_amp = 1 : num_amp_bin
                     idx_amp = (SACS_amp_bin == counter_amp);
                     
@@ -1361,7 +1405,7 @@ for counter_pCell = 1 : num_pCells
                     num_sac_absol.amp(counter_tag).(event_type_name){counter_amp, counter_ang}(counter_pCell, :) = ...
                         nansum(idx_absol);
                     end
-                    
+                    if flag_build_tuned
                     idx_tuned = idx_tag & idx_amp & idx_ang_tuned;
                     SS_population_tuned.amp(counter_tag).(event_type_name){counter_amp, counter_ang}(counter_pCell, :) = ...
                         reshape(nanmean( SACS_ALL_DATA.(['neuro_SS' '_' event_type_name])(:,idx_tuned), 2), 1, length_trace);
@@ -1373,11 +1417,10 @@ for counter_pCell = 1 : num_pCells
                         reshape(nanmean( SACS_ALL_DATA.(['eye_vt' '_' event_type_name])(:,idx_tuned), 2), 1, length_trace);
                     num_sac_tuned.amp(counter_tag).(event_type_name){counter_amp, counter_ang}(counter_pCell, :) = ...
                         nansum(idx_tuned);
-                    
+                    end
                 end
                 for counter_vel = 1 : num_vel_bin
                     idx_vel = (SACS_vel_bin == counter_vel);
-                    
                     if flag_build_absol
                     idx_absol = idx_tag & idx_vel & idx_ang_absol;
                     SS_population_absol.vel(counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pCell, :) = ...
@@ -1391,7 +1434,7 @@ for counter_pCell = 1 : num_pCells
                     num_sac_absol.vel(counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pCell, :) = ...
                         nansum(idx_absol);
                     end
-                    
+                    if flag_build_tuned
                     idx_tuned = idx_tag & idx_vel & idx_ang_tuned;
                     SS_population_tuned.vel(counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pCell, :) = ...
                         reshape(nanmean( SACS_ALL_DATA.(['neuro_SS' '_' event_type_name])(:,idx_tuned), 2), 1, length_trace);
@@ -1403,6 +1446,7 @@ for counter_pCell = 1 : num_pCells
                         reshape(nanmean( SACS_ALL_DATA.(['eye_vt' '_' event_type_name])(:,idx_tuned), 2), 1, length_trace);
                     num_sac_tuned.vel(counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pCell, :) = ...
                         nansum(idx_tuned);
+                    end
                 end
             end
         end
@@ -1420,18 +1464,19 @@ save([path_cell_data '..' filesep 'VM_population_absol' '.mat'], 'VM_population_
 save([path_cell_data '..' filesep 'VT_population_absol' '.mat'], 'VT_population_absol', '-v7.3');
 save([path_cell_data '..' filesep 'num_sac_absol' '.mat'], 'num_sac_absol', '-v7.3');
 end
-
+if flag_build_tuned
 save([path_cell_data '..' filesep 'SS_population_tuned' '.mat'], 'SS_population_tuned', '-v7.3');
 save([path_cell_data '..' filesep 'CS_population_tuned' '.mat'], 'CS_population_tuned', '-v7.3');
 save([path_cell_data '..' filesep 'VM_population_tuned' '.mat'], 'VM_population_tuned', '-v7.3');
 save([path_cell_data '..' filesep 'VT_population_tuned' '.mat'], 'VT_population_tuned', '-v7.3');
 save([path_cell_data '..' filesep 'num_sac_tuned' '.mat'], 'num_sac_tuned', '-v7.3');
+end
 fprintf(' --> Completed. \n')
 
 end
 
-%% function average_over_population_data
-function [population_data_avg, num_sac_data_avg] = average_over_population_data(population_data, num_sac_data, variable, dim)
+%% function population_data_avg_over_levels
+function [population_avg_levels, num_sac_data_avg] = population_data_avg_over_levels(population_data, num_sac_data, variable, dim)
 %% Handle inputs
 
 % variable = 'amp' or 'vel'
@@ -1444,19 +1489,23 @@ if nargin < 3
     variable = 'vel';
 end
 if nargin < 2
-    population_data_avg = [];
+    population_avg_levels = [];
     return;
 end
 
 %% Calc necessary variables
 global event_type_list inds_span
+if isempty(event_type_list)
+    fprintf('ERROR: Global variables are empty.\n');
+    return;
+end
 length_trace = length(inds_span);
 num_pCells  = size(population_data.(variable)(1).onset{1, 1}, 1);
 num_tag_bin = length(population_data.(variable));
 num_ang_bin = size(population_data.(variable)(1).onset, 2);
 num_var_bin = size(population_data.(variable)(1).onset, 1);
 
-%% Init population_data_avg
+%% Init population_avg_levels
 if dim == 1
     num_ang_bin_avg = num_ang_bin;
     num_var_bin_avg = 1;
@@ -1471,19 +1520,19 @@ end
 for counter_tag = 1 : num_tag_bin
     for counter_event_type = 1 : length(event_type_list)
         event_type_name = event_type_list{counter_event_type};
-        population_data_avg.(variable)(counter_tag).(event_type_name) = cell(num_var_bin_avg, num_ang_bin_avg);
+        population_avg_levels.(variable)(counter_tag).(event_type_name) = cell(num_var_bin_avg, num_ang_bin_avg);
         num_sac_data_avg.(variable)(counter_tag).(event_type_name) = cell(num_var_bin_avg, num_ang_bin_avg);
         for counter_ang = 1 : num_ang_bin_avg
             for counter_var = 1 : num_var_bin_avg
-                population_data_avg.(variable)(counter_tag).(event_type_name){counter_var, counter_ang} = nan(num_pCells, length_trace);
+                population_avg_levels.(variable)(counter_tag).(event_type_name){counter_var, counter_ang} = nan(num_pCells, length_trace);
                 num_sac_data_avg.(variable)(counter_tag).(event_type_name){counter_var, counter_ang} = zeros(num_pCells, 1);
             end
         end
     end
 end
 
-%% Compute population_data_avg
-fprintf(['average_over_population_data' ' ...'])
+%% Compute population_avg_levels
+fprintf(['population_data_avg_over_levels' ' ...'])
 for counter_event_type = 1 : length(event_type_list)
     event_type_name = event_type_list{counter_event_type};
     for counter_tag = 1 : num_tag_bin
@@ -1501,7 +1550,7 @@ for counter_event_type = 1 : length(event_type_list)
                     event_data_avg_ = event_data_avg_ + (event_data_ .* num_sac_);
                     num_sac_avg_    = num_sac_avg_    + num_sac_;
                 end
-                population_data_avg.(variable)(counter_tag).(event_type_name){1, counter_ang} = event_data_avg_ ./ num_sac_avg_;
+                population_avg_levels.(variable)(counter_tag).(event_type_name){1, counter_ang} = event_data_avg_ ./ num_sac_avg_;
                 num_sac_data_avg.(variable)(counter_tag).(event_type_name){1, counter_ang} = num_sac_avg_(:,1);
             end
         elseif dim == 2
@@ -1518,7 +1567,7 @@ for counter_event_type = 1 : length(event_type_list)
                     event_data_avg_ = event_data_avg_ + (event_data_ .* num_sac_);
                     num_sac_avg_    = num_sac_avg_    + num_sac_;
                 end
-                population_data_avg.(variable)(counter_tag).(event_type_name){counter_var, 1} = event_data_avg_ ./ num_sac_avg_;
+                population_avg_levels.(variable)(counter_tag).(event_type_name){counter_var, 1} = event_data_avg_ ./ num_sac_avg_;
                 num_sac_data_avg.(variable)(counter_tag).(event_type_name){counter_var, 1} = num_sac_avg_(:,1);
             end
         end
@@ -1527,35 +1576,122 @@ end
 fprintf(' --> Completed. \n')
 end
 
+%% function subtract_baseline_from_neural_data
+function population_data_baseline = subtract_baseline_from_neural_data(population_data, firing_rate, variable)
+%% Handle inputs
+
+% variable = 'amp' or 'vel'
+% dim = 1 -> average over different varibale amp/vel levels
+% dim = 2 -> average over different ang levels
+if nargin < 3
+    variable = 'vel';
+end
+if nargin < 2
+    population_data_baseline = [];
+    return;
+end
+
+%% Calc necessary variables
+global event_type_list inds_span
+if isempty(event_type_list)
+    fprintf('ERROR: Global variables are empty.\n');
+    return;
+end
+length_trace = length(inds_span);
+num_pCells  = size(population_data.(variable)(1).onset{1, 1}, 1);
+num_tag_bin = length(population_data.(variable));
+num_ang_bin = size(population_data.(variable)(1).onset, 2);
+num_var_bin = size(population_data.(variable)(1).onset, 1);
+
+%% Compute population_data_baseline
+fprintf(['subtract_baseline_from_neural_data' ' ...'])
+population_data_baseline = struct;
+population_data_baseline.(variable) = population_data.(variable);
+firing_rate = repmat(firing_rate(:), 1, length_trace) ./ 1000.0; % to convert Hz back to probability we should devide by 1000.
+for counter_event_type = 1 : length(event_type_list)
+    event_type_name = event_type_list{counter_event_type};
+    for counter_tag = 1 : num_tag_bin
+        for counter_ang = 1 : num_ang_bin
+            for counter_var = 1 : num_var_bin
+                event_data_ = ...
+                    population_data.(variable)(counter_tag).(event_type_name){counter_var, counter_ang};
+                event_data_baseline_ = event_data_ - firing_rate;
+                population_data_baseline.(variable)(counter_tag).(event_type_name){counter_var, counter_ang} = event_data_baseline_;
+            end
+        end
+    end
+end
+fprintf(' --> Completed. \n')
+
+end
+
 %% function plot_population_data
-function plot_population_data(fig_num, data_ang_avg, data_ang_avg_avg, params)
+function plot_population_data(fig_num, data_ang_avg, data_ang_avg_avg, params, data_ang_std, data_ang_std_avg)
+%% Handle inputs
+if nargin < 5
+    flag_std = false;
+elseif (nargin >= 5) && (nargin <= 6)
+    flag_std = true;
+end
 %% Init plot
 hFig = figure(fig_num);
 clf(hFig)
 num_row_fig = 3;
 num_col_fig = 3;
-ax_ang_id = [6, 3, 2, 1, 4, 7, 8, 9];
-ax_center_id = 5;
+ax_ang_id = [6, 3, 2, 1, 4, 7, 8, 9, 5];
 
 num_ang_bin = size(data_ang_avg, 2);
 num_var_bin = size(data_ang_avg, 1);
 
 line_colors_ = [0,0,0; pink(round(1.5*num_var_bin))];
 
-% pCell_dix_ = [1:65, 90:134];
-pCell_dix_ = 1:size(data_ang_avg{1, 1}, 1);
+
 %% Plot
-global inds_span length_trace
+global inds_span ang_values tag_name_list
+if isempty(inds_span)
+    fprintf('ERROR: Global variables are empty.\n');
+    return;
+end
+ang_values_ = [ang_values nan];
 clearvars h_ax
-for counter_ang = 1 : num_ang_bin
+for counter_ang = 1 : num_ang_bin+1
     h_ax(counter_ang) = subplot(num_row_fig, num_col_fig, ax_ang_id(counter_ang));
     hold on;
     for counter_var = 1 : num_var_bin
-        data_pCells = data_ang_avg{counter_var, counter_ang}(pCell_dix_,:);
-        data_mean_ = nanmean(data_pCells);
+        if counter_ang == (num_ang_bin+1)
+            data_pCells = data_ang_avg_avg{counter_var, 1};
+            if flag_std
+                data_sem_ = data_ang_std_avg{counter_var, 1};
+            end
+        else
+            data_pCells = data_ang_avg{counter_var, counter_ang};
+            if flag_std
+                data_sem_ = data_ang_std{counter_var, counter_ang};
+            end
+        end
+        num_rows_data_ = size(data_pCells, 1);
+        if num_rows_data_ > 1
+            data_pCells = data_pCells(params.pCell_idx,:);
+        end
+        if strcmp(params.data_type, 'SS') || strcmp(params.data_type, 'CS')
+            data_pCells = data_pCells .* 1000.0; % convert Pr to Firing/Hz
+            if flag_std
+                data_sem_ = data_sem_ .* 1000.0;
+            end
+        end
+        if num_rows_data_ == 1
+            data_mean_ = data_pCells;
+            if ~flag_std
+                data_sem_ = zeros(size(data_mean_));
+            end
+        else
+            data_mean_ = nanmean(data_pCells);
+            if ~flag_std
+                data_sem_ = nanstd(data_pCells) ./ sqrt(nansum(~isnan(data_pCells)));
+            end
+        end
         data_mean_x_axis = reshape(inds_span, 1, []);
-        data_sem_ = nanstd(data_pCells) ./ sqrt(nansum(~isnan(data_pCells)));
-        if params.flag_smooth_plot
+        if (strcmp(params.data_type, 'SS') || strcmp(params.data_type, 'CS')) && params.flag_smooth_plot
             data_mean_ = ESN_smooth(data_mean_);
             data_sem_  = ESN_smooth(data_sem_);
         end
@@ -1563,49 +1699,285 @@ for counter_ang = 1 : num_ang_bin
         data_sem_m_ = data_mean_ - data_sem_;
         data_sem_y_axis_ = [(data_sem_p_) flip(data_sem_m_)];
         data_sem_x_axis_ = [(data_mean_x_axis) flip(data_mean_x_axis)];
-        xline(data_mean_x_axis(round(length_trace/2)))
-%         plot(data_sem_x_axis_, data_sem_y_axis_, 'LineWidth', 0.25, 'Color', line_colors_(counter_var, :))
+        xline(50)
+        xline(-50)
+        xline(0)
+        plot(data_sem_x_axis_, data_sem_y_axis_, 'LineWidth', 0.25, 'Color', line_colors_(counter_var, :))
         plot(data_mean_x_axis, data_mean_, 'LineWidth', 1, 'Color', line_colors_(counter_var, :))
+        if counter_ang == (num_ang_bin+1)
+            title('all dir.')
+        else
+            title([num2str(ang_values_(counter_ang)) ' dir.'])
+        end
+        if ang_values_(counter_ang) == 270
+            xlabel(['Time from ' params.event_type_name ' (ms)']);
+        end
+        if ang_values_(counter_ang) == 180
+            if strcmp(params.data_type, 'SS')
+                ylabel('SS firing (change, Hz)');
+            elseif strcmp(params.data_type, 'CS')
+                ylabel('CS firing (change, Hz)');
+            elseif strcmp(params.data_type, 'VT')
+                ylabel('Tangent velocity (deg/s)');
+            elseif strcmp(params.data_type, 'VM')
+                ylabel('Velocity magnitude (deg/s)');
+            end
+        end
     end
-end
-
-h_ax(counter_ang+1) = subplot(num_row_fig, num_col_fig, ax_center_id);
-hold on;
-for counter_var = 1 : num_var_bin
-    data_pCells = data_ang_avg_avg{counter_var, 1}(pCell_dix_, :);
-    data_mean_ = nanmean(data_pCells);
-    data_mean_x_axis = reshape(inds_span, 1, []);
-    data_sem_ = nanstd(data_pCells) ./ sqrt(nansum(~isnan(data_pCells)));
-    if params.flag_smooth_plot
-        data_mean_ = ESN_smooth(data_mean_);
-        data_sem_  = ESN_smooth(data_sem_);
-    end
-    data_sem_p_ = data_mean_ + data_sem_;
-    data_sem_m_ = data_mean_ - data_sem_;
-    data_sem_y_axis_ = [(data_sem_p_) flip(data_sem_m_)];
-    data_sem_x_axis_ = [(data_mean_x_axis) flip(data_mean_x_axis)];
-    xline(data_mean_x_axis(round(length_trace/2)))
-%     plot(data_sem_x_axis_, data_sem_y_axis_, 'LineWidth', 0.25, 'Color', line_colors_(counter_var, :))
-    plot(data_mean_x_axis, data_mean_, 'LineWidth', 1, 'Color', line_colors_(counter_var, :))
 end
 
 y_lim_ = zeros(length(h_ax), 2);
 for counter_ax = 1 : length(h_ax)
     y_lim_(counter_ax, :) = ylim(h_ax(counter_ax));
 end
-y_lim__ = [min(y_lim_(:,1)) max(y_lim_(:,2))];
+if strcmp(params.data_type, 'SS')
+    y_lim__ = [-15 +25];
+elseif strcmp(params.data_type, 'CS')
+    y_lim__ = [-1 +2];
+elseif strcmp(params.data_type, 'VT')
+    y_lim__ = [-25 +650];
+elseif strcmp(params.data_type, 'VM')
+    y_lim__ = [-25 +650];
+else
+    y_lim__ = [min(y_lim_(:,1)) max(y_lim_(:,2))];
+end
+
 for counter_ax = 1 : length(h_ax)
     set(h_ax(counter_ax), 'ylim', y_lim__);
 end
 %% ESN_Beautify_Plot
-sgtitle([params.data_type ', ' ...
+sgtitle([...
+    tag_name_list{params.tag_id} ', ' ...
+    params.data_type ', ' ...
     params.CSYS_type ', ' ...
-    'tag: ' num2str(params.tag_id) ', ' ...
-    'time: ' params.event_type_name ', ' ...
+    params.event_type_name ', ' ...
     params.variable ...
     ], ...
-    'interpret', 'none');
+    'interpret', 'none', 'FontSize', 12);
 
 ESN_Beautify_Plot(hFig, [4, 4], 8)
 
+end
+
+%% function plot_population_data_iteratively
+function plot_population_data_iteratively(fig_num)
+%% Set variables
+global event_type_list tag_name_list
+data_type_list = {'SS', 'CS', 'VT', 'VM'};
+CSYS_type_list = {'tuned', 'absol'};
+num_tag = 10;
+%% Load population_neural_properties
+path_cell_data = uigetdir;
+if ~strcmp(path_cell_data(end), filesep);path_cell_data = [path_cell_data filesep];end
+path_cell_data = [path_cell_data '..' filesep];
+
+if ~exist([path_cell_data 'population_figs'], 'dir')
+    mkdir([path_cell_data 'population_figs']);
+end
+
+%% Loop over conditions
+params.variable        = 'amp';
+if ~exist('population_neural_properties', 'var')
+    load([path_cell_data 'population_neural_properties' '.mat'], 'population_neural_properties')
+end
+for counter_CSYS_type = 1 : length(CSYS_type_list)
+    params.CSYS_type       = CSYS_type_list{counter_CSYS_type};
+    if ~exist(['num_sac_' params.CSYS_type], 'var')
+        load([path_cell_data 'num_sac_' params.CSYS_type '.mat'], ['num_sac_' params.CSYS_type])
+    end
+    eval(['num_sac_data = ' 'num_sac_' params.CSYS_type ';']);
+    clearvars(['num_sac_' params.CSYS_type]);
+for counter_data_type = 1 : length(data_type_list)
+    params.data_type       = data_type_list{counter_data_type};
+    if ~exist([params.data_type '_population_' params.CSYS_type], 'var')
+        load([path_cell_data params.data_type '_population_' params.CSYS_type '.mat'], [params.data_type '_population_' params.CSYS_type])
+    end
+    eval(['population_data = ' params.data_type '_population_' params.CSYS_type ';']);
+    clearvars([params.data_type '_population_' params.CSYS_type]);
+    if strcmp(params.data_type, 'SS') || strcmp(params.data_type, 'CS')
+        eval(['firing_rate = population_neural_properties.' params.data_type '_firing_rate'  ';']);
+        population_data = subtract_baseline_from_neural_data(population_data, firing_rate, params.variable);
+    end
+    [population_avg_levels, num_sac_data_avg] = population_data_avg_over_levels(population_data, num_sac_data, params.variable, 1);
+     population_avg_sacs = population_data_avg_over_sacs(population_avg_levels, num_sac_data_avg, params.variable);
+    [population_std_sacs, ~] = population_data_std_over_sacs(population_avg_levels, num_sac_data_avg, params.variable);
+
+    [population_avg_levels_avg, num_sac_data_avg_avg] = population_data_avg_over_levels(population_avg_levels, num_sac_data_avg, params.variable, 2);
+     population_avg_sacs_avg = population_data_avg_over_sacs(population_avg_levels_avg, num_sac_data_avg_avg, params.variable);
+    [population_std_sacs_avg, ~] = population_data_std_over_sacs(population_avg_levels_avg, num_sac_data_avg_avg, params.variable);
+for counter_event_type = 1 : length(event_type_list)
+    params.event_type_name = event_type_list{counter_event_type};
+    
+    params.pCell_idx = 1:size(population_data.(params.variable)(1).onset{1, 1}, 1);
+    % params.pCell_idx = [1:65, 90:134];
+for counter_tag = 1 : num_tag
+    
+    params.tag_id          = counter_tag;
+    params.flag_smooth_plot = true;
+    params.fig_num = fig_num;
+    fprintf(['### Plotting: ' params.CSYS_type ', ' params.data_type ', ' params.event_type_name ', ' tag_name_list{counter_tag} '. ###\n'])
+    
+    % data_ang_avg     = population_avg_levels.(params.variable)(params.tag_id).(params.event_type_name);
+    data_ang_avg     = population_avg_sacs.(params.variable)(params.tag_id).(params.event_type_name);
+    data_ang_std     = population_std_sacs.(params.variable)(params.tag_id).(params.event_type_name);
+
+    % data_ang_avg_avg = population_avg_levels_avg.(params.variable)(params.tag_id).(params.event_type_name);
+    data_ang_avg_avg = population_avg_sacs_avg.(params.variable)(params.tag_id).(params.event_type_name);
+    data_ang_std_avg = population_std_sacs_avg.(params.variable)(params.tag_id).(params.event_type_name);
+    
+    % plot_population_data(params.fig_num, data_ang_avg, data_ang_avg_avg, params);
+    plot_population_data(params.fig_num, data_ang_avg, data_ang_avg_avg, params, data_ang_std, data_ang_std_avg);
+    
+    %% Save figs
+    path_fig_ = [path_cell_data 'population_figs' filesep params.CSYS_type filesep params.data_type filesep num2str(counter_tag) '_' tag_name_list{counter_tag}];
+    if ~exist(path_fig_, 'dir')
+        mkdir(path_fig_);
+    end
+    file_name_fig_ = [params.CSYS_type '_' params.data_type '_' num2str(counter_tag) '_' tag_name_list{counter_tag} '_' params.event_type_name];
+    hFig_ = figure(params.fig_num);
+    saveas(hFig_,[path_fig_ filesep file_name_fig_], 'pdf');
+%             saveas(hFig_,[path_fig_ filesep file_name_fig_], 'png');
+    close(hFig_)
+end
+end % counter_event_type
+clearvars([params.data_type '_population_' params.CSYS_type], 'population_data');
+end % counter_data_type
+clearvars(['num_sac_' params.CSYS_type], 'num_sac_data');
+end % counter_CSYS_type
+fprintf('### ALL DONE. ###\n')
+
+end
+
+%% function population_data_avg_over_sacs
+function population_avg_sacs = population_data_avg_over_sacs(population_data, num_sac_data, variable)
+%% Handle inputs
+if nargin < 3
+    variable = 'vel';
+end
+if nargin < 2
+    population_avg_sacs = [];
+    return;
+end
+
+%% Calc necessary variables
+global event_type_list inds_span
+if isempty(event_type_list)
+    fprintf('ERROR: Global variables are empty.\n');
+    return;
+end
+length_trace = length(inds_span);
+num_pCells  = size(population_data.(variable)(1).onset{1, 1}, 1);
+num_tag_bin = length(population_data.(variable));
+num_ang_bin = size(population_data.(variable)(1).onset, 2);
+num_var_bin = size(population_data.(variable)(1).onset, 1);
+
+%% Init population_avg_pCells
+population_avg_sacs = struct;
+population_avg_sacs.(variable) = population_data.(variable);
+
+%% Compute population_avg_pCells
+fprintf(['population_data_avg_over_sacs' ' ...'])
+for counter_event_type = 1 : length(event_type_list)
+    event_type_name = event_type_list{counter_event_type};
+    for counter_tag = 1 : num_tag_bin
+        for counter_ang = 1 : num_ang_bin
+            for counter_var = 1 : num_var_bin
+                event_data_ = ...
+                    population_data.(variable)(counter_tag).(event_type_name){counter_var, counter_ang};
+                event_data_(isnan(event_data_)) = 0;
+                num_sac_ = ...
+                       num_sac_data.(variable)(counter_tag).(event_type_name){counter_var, counter_ang};
+                num_sac_ = repmat(num_sac_, 1, length_trace);
+                event_data_avg_ = nansum(event_data_ .* num_sac_) ./ nansum(num_sac_);
+                population_avg_sacs.(variable)(counter_tag).(event_type_name){counter_var, counter_ang} = event_data_avg_;
+            end
+        end
+    end
+end
+fprintf(' --> Completed. \n')
+end
+
+%% function population_data_std_over_sacs
+function [population_std_sacs, population_avg_sacs] = population_data_std_over_sacs(population_data, num_sac_data, variable)
+%% Handle inputs
+if nargin < 3
+    variable = 'vel';
+end
+if nargin < 2
+    population_std_sacs = [];
+    return;
+end
+
+%% Calc necessary variables
+global event_type_list inds_span
+if isempty(event_type_list)
+    fprintf('ERROR: Global variables are empty.\n');
+    return;
+end
+length_trace = length(inds_span);
+num_pCells  = size(population_data.(variable)(1).onset{1, 1}, 1);
+num_tag_bin = length(population_data.(variable));
+num_ang_bin = size(population_data.(variable)(1).onset, 2);
+num_var_bin = size(population_data.(variable)(1).onset, 1);
+num_iterations = 1000;
+
+%% Init population_std_sacs
+population_std_sacs = struct;
+population_std_sacs.(variable) = population_data.(variable);
+population_avg_sacs = struct;
+population_avg_sacs.(variable) = population_data.(variable);
+
+%% Init population_std_sacs_perm
+% fprintf(['Initializing the population_std_sacs_perm' ' ...'])
+% for counter_tag = 1 : num_tag_bin
+%     for counter_event_type = 1 : length(event_type_list)
+%         event_type_name = event_type_list{counter_event_type};
+%         population_std_sacs_perm.(variable)(counter_tag).(event_type_name) = cell(num_var_bin, num_ang_bin);
+%         for counter_ang = 1 : num_ang_bin
+%             for counter_var = 1 : num_var_bin
+%                 population_std_sacs_perm.(variable)(counter_tag).(event_type_name){counter_var, counter_ang} = nan(num_iterations, length_trace);
+%             end
+%         end
+%     end
+% end
+% fprintf(' --> Completed. \n')
+%% Compute population_avg_pCells
+fprintf(['population_data_std_over_sacs' ' ...'])
+for counter_event_type = 1 : length(event_type_list)
+    event_type_name = event_type_list{counter_event_type};
+    for counter_tag = 1 : num_tag_bin
+        for counter_ang = 1 : num_ang_bin
+            for counter_var = 1 : num_var_bin
+                event_data_ = ...
+                    population_data.(variable)(counter_tag).(event_type_name){counter_var, counter_ang};
+                event_data_(isnan(event_data_)) = 0;
+                num_sac_ = ...
+                       num_sac_data.(variable)(counter_tag).(event_type_name){counter_var, counter_ang};
+                num_sac_total_ = nansum(num_sac_);
+                idx_edges_ = [1; num_sac_];
+                idx_edges_ = cumsum(idx_edges_);
+                num_sac_matrix_ = repmat(num_sac_, 1, length_trace);
+                count_data_ = event_data_ .* num_sac_matrix_;
+                
+                event_data_perm_ = nan(num_iterations, length_trace);
+                for counter_iteration = 1 : num_iterations
+                    idx_iteration_ = randi(num_sac_total_, 1, num_sac_total_);
+                    [N_idx_edges_,~] = histcounts(idx_iteration_,idx_edges_);
+                    weight_cell_ = N_idx_edges_' ./ num_sac_;
+                    weight_cell_matrix_ = repmat(weight_cell_, 1, length_trace);
+                    event_data_iteration_ = count_data_ .* weight_cell_matrix_;
+                    event_data_iteration_ = nansum(event_data_iteration_) ./ num_sac_total_;
+                    event_data_perm_(counter_iteration, :) = event_data_iteration_;
+                end
+                event_data_perm_avg = nanmean(event_data_perm_);
+                event_data_perm_std = nanstd(event_data_perm_);
+                event_data_avg_ = nansum(event_data_ .* num_sac_matrix_) ./ nansum(num_sac_matrix_);
+                event_data_std_ = nanstd(event_data_);
+                population_std_sacs.(variable)(counter_tag).(event_type_name){counter_var, counter_ang} = event_data_perm_std;
+                population_avg_sacs.(variable)(counter_tag).(event_type_name){counter_var, counter_ang} = event_data_perm_avg;
+            end
+        end
+    end
+end
+fprintf(' --> Completed. \n')
 end

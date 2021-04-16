@@ -47,6 +47,7 @@ for counter = 1 : 1 : length(AxesChildren)
 %     AxesChildren(counter).XColor        = [0 0 0];
 %     AxesChildren(counter).YColor        = [0 0 0];
     AxesChildren(counter).LineWidth     = 1;
+    AxesChildren(counter).Clipping      = 'off';
     
     AxesChildren(counter).XLabel.FontName  = font_name;
     AxesChildren(counter).XLabel.FontUnits = 'points';
@@ -58,7 +59,6 @@ for counter = 1 : 1 : length(AxesChildren)
     AxesChildren(counter).Title.FontUnits  = 'points';
     AxesChildren(counter).Title.FontSize   = font_size;
     AxesChildren(counter).Title.FontWeight = 'bold';
-    
     hold(AxesChildren(counter), 'off');
 end
 
@@ -74,6 +74,7 @@ for counter = 1 : 1 : length(TextChildren)
     TextChildren(counter).FontName  = font_name;
     TextChildren(counter).FontUnits = 'points';
     TextChildren(counter).FontSize  = font_size;
+    TextChildren(counter).Clipping  = 'off';
 end
 
 

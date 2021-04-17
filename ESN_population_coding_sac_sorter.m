@@ -42,8 +42,8 @@ tic
 % (2) re_run_add_ephys_sac_sorter(); % this func will fuse the eye & neuro data and save the results with _sac name
 % (3) combine_sac_files(); % combine the _sac files and form one file per cell. save the data in the ALL_PCELL_### folder.
 % (4) CS_on_analysis(); % load cell_data files (_combine_) and add the CS_on_analysis  to them.
-% (6) build_neural_properties(); % load cell_data files (_combine_) and form properties data.
-% (5) build_population_data(); % load cell_data files (_combine_) and form population data.
+% (5) build_neural_properties(); % load cell_data files (_combine_) and form properties data.
+% (6) build_population_data(); % load cell_data files (_combine_) and form population data.
 toc
 
 %% Plot functions
@@ -53,7 +53,7 @@ toc
 
 %% Plot population_data
 %{
-params.data_type       = 'SS';
+params.data_type       = 'CS';
 params.CSYS_type       = 'tuned';
 params.event_type_name = 'onset';
 params.variable        = 'amp';
@@ -82,20 +82,20 @@ params.pCell_idx = 1:size(population_data.(params.variable)(1).onset{1, 1}, 1);
 %
 [population_avg_levels, num_sac_data_avg] = population_data_avg_over_levels(population_data, num_sac_data, params.variable, 1);
 % population_avg_sacs = population_data_avg_over_sacs(population_avg_levels, num_sac_data_avg, params.variable);
-[population_std_sacs, population_avg_sacs] = population_data_std_over_sacs(population_avg_levels, num_sac_data_avg, params.variable);
+% [population_std_sacs, population_avg_sacs] = population_data_std_over_sacs(population_avg_levels, num_sac_data_avg, params.variable);
 
 [population_avg_levels_avg, num_sac_data_avg_avg] = population_data_avg_over_levels(population_avg_levels, num_sac_data_avg, params.variable, 2);
 % population_avg_sacs_avg = population_data_avg_over_sacs(population_avg_levels_avg, num_sac_data_avg_avg, params.variable);
-[population_std_sacs_avg, population_avg_sacs_avg] = population_data_std_over_sacs(population_avg_levels_avg, num_sac_data_avg_avg, params.variable);
+% [population_std_sacs_avg, population_avg_sacs_avg] = population_data_std_over_sacs(population_avg_levels_avg, num_sac_data_avg_avg, params.variable);
 
 % data_ang_avg     = population_avg_levels.(params.variable)(params.tag_id).(params.event_type_name);
-data_ang_avg     = population_avg_sacs.(params.variable)(params.tag_id).(params.event_type_name);
-data_ang_std     = population_std_sacs.(params.variable)(params.tag_id).(params.event_type_name);
+data_ang_avg     = population_avg_levels.(params.variable)(params.tag_id).(params.event_type_name);
+% data_ang_std     = population_std_sacs.(params.variable)(params.tag_id).(params.event_type_name);
 % data_ang_avg_avg = population_avg_levels_avg.(params.variable)(params.tag_id).(params.event_type_name);
-data_ang_avg_avg = population_avg_sacs_avg.(params.variable)(params.tag_id).(params.event_type_name);
-data_ang_std_avg = population_std_sacs_avg.(params.variable)(params.tag_id).(params.event_type_name);
+data_ang_avg_avg = population_avg_levels_avg.(params.variable)(params.tag_id).(params.event_type_name);
+% data_ang_std_avg = population_std_sacs_avg.(params.variable)(params.tag_id).(params.event_type_name);
 %
-plot_population_data(params.fig_num, data_ang_avg, data_ang_avg_avg, params, data_ang_std, data_ang_std_avg);
+plot_population_data(params.fig_num, data_ang_avg, data_ang_avg_avg, params);
 
 % data_ang_avg     = population_data.(params.variable)(params.tag_id).(params.event_type_name);
 % population_avg_levels_avg = population_data_avg_over_levels(population_data, num_sac_data, params.variable, 2);
@@ -1310,7 +1310,7 @@ end
 function [population_std_sacs, population_avg_sacs] = population_data_std_over_sacs(population_data, num_sac_data, variable)
 %% Handle inputs
 if nargin < 3
-    variable = 'vel';
+    variable = 'amp';
 end
 if nargin < 2
     population_std_sacs = [];
@@ -1332,24 +1332,20 @@ num_iterations = 1000;
 
 %% Init population_std_sacs
 population_std_sacs = struct;
-population_std_sacs.(variable) = population_data.(variable);
 population_avg_sacs = struct;
-population_avg_sacs.(variable) = population_data.(variable);
-
-%% Init population_std_sacs_perm
-% fprintf(['Initializing the population_std_sacs_perm' ' ...'])
-% for counter_tag = 1 : num_tag_bin
-%     for counter_event_type = 1 : length(event_type_list)
-%         event_type_name = event_type_list{counter_event_type};
-%         population_std_sacs_perm.(variable)(counter_tag).(event_type_name) = cell(num_var_bin, num_ang_bin);
-%         for counter_ang = 1 : num_ang_bin
-%             for counter_var = 1 : num_var_bin
-%                 population_std_sacs_perm.(variable)(counter_tag).(event_type_name){counter_var, counter_ang} = nan(num_iterations, length_trace);
-%             end
-%         end
-%     end
-% end
-% fprintf(' --> Completed. \n')
+for counter_tag = 1 : num_tag_bin
+    for counter_event_type = 1 : length(event_type_list)
+        event_type_name = event_type_list{counter_event_type};
+        population_std_sacs.(variable)(counter_tag).(event_type_name) = cell(num_var_bin, num_ang_bin);
+        population_avg_sacs.(variable)(counter_tag).(event_type_name) = cell(num_var_bin, num_ang_bin);
+        for counter_ang = 1 : num_ang_bin
+            for counter_var = 1 : num_var_bin
+                population_std_sacs.(variable)(counter_tag).(event_type_name){counter_var, counter_ang} = nan(1, length_trace);
+                population_avg_sacs.(variable)(counter_tag).(event_type_name){counter_var, counter_ang} = nan(1, length_trace);
+            end
+        end
+    end
+end
 %% Compute population_avg_pCells
 fprintf(['population_data_std_over_sacs' ' ...'])
 for counter_event_type = 1 : length(event_type_list)
@@ -1362,12 +1358,14 @@ for counter_event_type = 1 : length(event_type_list)
                 event_data_(isnan(event_data_)) = 0;
                 num_sac_ = ...
                        num_sac_data.(variable)(counter_tag).(event_type_name){counter_var, counter_ang};
+                num_sac_matrix_ = repmat(num_sac_, 1, length_trace);
+                   
+                % SEM based on bootstrapping on trials
+                %
                 num_sac_total_ = nansum(num_sac_);
                 idx_edges_ = [1; num_sac_];
                 idx_edges_ = cumsum(idx_edges_);
-                num_sac_matrix_ = repmat(num_sac_, 1, length_trace);
                 count_data_ = event_data_ .* num_sac_matrix_;
-                
                 event_data_perm_ = nan(num_iterations, length_trace);
                 for counter_iteration = 1 : num_iterations
                     idx_iteration_ = randi(num_sac_total_, 1, num_sac_total_);
@@ -1378,12 +1376,25 @@ for counter_event_type = 1 : length(event_type_list)
                     event_data_iteration_ = nansum(event_data_iteration_) ./ num_sac_total_;
                     event_data_perm_(counter_iteration, :) = event_data_iteration_;
                 end
+                %}
+                
+                % SEM based on bootstrapping on pCells
+                %
+                event_data_perm_ = nan(num_iterations, length_trace);
+                for counter_iteration = 1 : num_iterations
+                    idx_iteration_ = randi(num_pCells, 1, num_pCells);
+                    event_data_iteration_ = event_data_(idx_iteration_, :);
+                    num_sac_iteration_    = num_sac_matrix_(   idx_iteration_, :);
+                    avg_data_iteration_ = nansum(event_data_iteration_ .* num_sac_iteration_) ./ nansum(num_sac_iteration_);
+                    event_data_perm_(counter_iteration, :) = avg_data_iteration_;
+                end
+                %}
                 event_data_perm_avg = nanmean(event_data_perm_);
-                event_data_perm_std = nanstd(event_data_perm_);
-                event_data_avg_ = nansum(event_data_ .* num_sac_matrix_) ./ nansum(num_sac_matrix_);
-                event_data_std_ = nanstd(event_data_);
-                population_std_sacs.(variable)(counter_tag).(event_type_name){counter_var, counter_ang} = event_data_perm_std;
-                population_avg_sacs.(variable)(counter_tag).(event_type_name){counter_var, counter_ang} = event_data_perm_avg;
+                event_data_perm_std = nanstd(event_data_perm_) ./ sqrt(num_pCells);
+%                 event_data_avg_ = nansum(event_data_ .* num_sac_matrix_) ./ nansum(num_sac_matrix_);
+%                 event_data_std_ = nanstd(event_data_)./ sqrt(num_pCells);
+                population_std_sacs.(variable)(counter_tag).(event_type_name){counter_var, counter_ang}(1,:) = event_data_perm_std;
+                population_avg_sacs.(variable)(counter_tag).(event_type_name){counter_var, counter_ang}(1,:) = event_data_perm_avg;
             end
         end
     end
@@ -1831,12 +1842,14 @@ for counter_data_type = 1 : length(data_type_list)
         population_data = subtract_baseline_from_neural_data(population_data, firing_rate, params.variable);
     end
     [population_avg_levels, num_sac_data_avg] = population_data_avg_over_levels(population_data, num_sac_data, params.variable, 1);
-     population_avg_sacs = population_data_avg_over_sacs(population_avg_levels, num_sac_data_avg, params.variable);
-    [population_std_sacs, ~] = population_data_std_over_sacs(population_avg_levels, num_sac_data_avg, params.variable);
+    population_avg_sacs = population_avg_levels;
+%      population_avg_sacs = population_data_avg_over_sacs(population_avg_levels, num_sac_data_avg, params.variable);
+%     [population_std_sacs, ~] = population_data_std_over_sacs(population_avg_levels, num_sac_data_avg, params.variable);
 
     [population_avg_levels_avg, num_sac_data_avg_avg] = population_data_avg_over_levels(population_avg_levels, num_sac_data_avg, params.variable, 2);
-     population_avg_sacs_avg = population_data_avg_over_sacs(population_avg_levels_avg, num_sac_data_avg_avg, params.variable);
-    [population_std_sacs_avg, ~] = population_data_std_over_sacs(population_avg_levels_avg, num_sac_data_avg_avg, params.variable);
+    population_avg_sacs_avg = population_avg_levels_avg;
+%      population_avg_sacs_avg = population_data_avg_over_sacs(population_avg_levels_avg, num_sac_data_avg_avg, params.variable);
+%     [population_std_sacs_avg, ~] = population_data_std_over_sacs(population_avg_levels_avg, num_sac_data_avg_avg, params.variable);
 for counter_event_type = 1 : length(event_type_list)
     params.event_type_name = event_type_list{counter_event_type};
     
@@ -1851,14 +1864,14 @@ for counter_tag = 1 : num_tag
     
     % data_ang_avg     = population_avg_levels.(params.variable)(params.tag_id).(params.event_type_name);
     data_ang_avg     = population_avg_sacs.(params.variable)(params.tag_id).(params.event_type_name);
-    data_ang_std     = population_std_sacs.(params.variable)(params.tag_id).(params.event_type_name);
+%     data_ang_std     = population_std_sacs.(params.variable)(params.tag_id).(params.event_type_name);
 
     % data_ang_avg_avg = population_avg_levels_avg.(params.variable)(params.tag_id).(params.event_type_name);
     data_ang_avg_avg = population_avg_sacs_avg.(params.variable)(params.tag_id).(params.event_type_name);
-    data_ang_std_avg = population_std_sacs_avg.(params.variable)(params.tag_id).(params.event_type_name);
+%     data_ang_std_avg = population_std_sacs_avg.(params.variable)(params.tag_id).(params.event_type_name);
     
-    % plot_population_data(params.fig_num, data_ang_avg, data_ang_avg_avg, params);
-    plot_population_data(params.fig_num, data_ang_avg, data_ang_avg_avg, params, data_ang_std, data_ang_std_avg);
+    plot_population_data(params.fig_num, data_ang_avg, data_ang_avg_avg, params);
+%     plot_population_data(params.fig_num, data_ang_avg, data_ang_avg_avg, params, data_ang_std, data_ang_std_avg);
     
     %% Save figs
     path_fig_ = [path_cell_data 'population_figs' filesep params.CSYS_type filesep params.data_type filesep num2str(counter_tag) '_' tag_name_list{counter_tag}];
@@ -1932,6 +1945,9 @@ for counter_ang = 1 : num_ang_bin+1
             if flag_std
                 data_sem_ = data_sem_ .* 1000.0;
             end
+        end
+        if (strcmp(params.data_type, 'SS') || strcmp(params.data_type, 'CS')) && params.flag_smooth_plot
+            data_pCells = ESN_smooth(data_pCells,2);
         end
         if num_rows_data_ == 1
             data_mean_ = data_pCells;
@@ -2013,5 +2029,146 @@ ESN_Beautify_Plot(hFig, [4, 4], 8)
 
 end
 
+%% SCRATCH AREA %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function scratch()
+%%
+eval(['num_sac_data = ' 'num_sac_' params.CSYS_type ';']);
+eval(['population_data = ' params.data_type '_population_' params.CSYS_type ';']);
+eval(['firing_rate = population_neural_properties.' params.data_type '_firing_rate'  ';']);
+% population_data = subtract_baseline_from_neural_data(population_data, firing_rate, params.variable);
+[population_avg_levels, num_sac_data_avg] = population_data_avg_over_levels(population_data, num_sac_data, params.variable, 1);
+
+population_data = population_avg_levels;
+num_sac_data = num_sac_data_avg;
+
+event_data_raw = ...
+    population_data.(variable)(counter_tag).(event_type_name){counter_var, counter_ang};
+
+baseline_ = nanmean(event_data_raw(:,50:150),2);
+event_data_raw = event_data_raw - repmat(baseline_, 1, length_trace);
+
+event_data_raw(isnan(event_data_raw)) = 0;
+event_data_ = ESN_smooth(event_data_raw, 2);
+
+num_sac_ = ...
+    num_sac_data.(variable)(counter_tag).(event_type_name){counter_var, counter_ang};
+num_sac_matrix_ = repmat(num_sac_, 1, length_trace);
+
+% SEM based on bootstrapping on trials
+%
+% num_sac_total_ = nansum(num_sac_);
+% idx_edges_ = [1; num_sac_];
+% idx_edges_ = cumsum(idx_edges_);
+% count_data_ = event_data_ .* num_sac_matrix_;
+% event_data_perm_ = nan(num_iterations, length_trace);
+% for counter_iteration = 1 : num_iterations
+%     idx_iteration_ = randi(num_sac_total_, 1, num_sac_total_);
+%     [N_idx_edges_,~] = histcounts(idx_iteration_,idx_edges_);
+%     weight_cell_ = N_idx_edges_' ./ num_sac_;
+%     weight_cell_matrix_ = repmat(weight_cell_, 1, length_trace);
+%     event_data_iteration_ = count_data_ .* weight_cell_matrix_;
+%     event_data_iteration_ = nansum(event_data_iteration_) ./ num_sac_total_;
+%     event_data_perm_(counter_iteration, :) = event_data_iteration_;
+% end
+% avg_perm_sac = nanmean(event_data_perm_);
+% std_perm_sac = nanstd(event_data_perm_);
+%}
+
+% SEM based on bootstrapping on pCells
+%
+num_pCells_perm_1 = num_pCells;
+event_data_perm_ = nan(num_iterations, length_trace);
+for counter_iteration = 1 : num_iterations
+    idx_iteration_ = randi(num_pCells, 1, num_pCells_perm_1);
+    event_data_iteration_ = event_data_(idx_iteration_, :);
+    num_sac_iteration_    = num_sac_matrix_(   idx_iteration_, :);
+    avg_data_iteration_ = nansum(event_data_iteration_ .* num_sac_iteration_) ./ nansum(num_sac_iteration_);
+    event_data_perm_(counter_iteration, :) = avg_data_iteration_;
+end
+%}
+avg_perm_pCell_1 = nanmean(event_data_perm_);
+std_perm_pCell_1 = nanstd(event_data_perm_);
+sem_perm_pCell_1 = nanstd(event_data_perm_) ./ sqrt(num_pCells_perm_1);
+
+% num_pCells_perm_2 = 50;
+% event_data_perm_ = nan(num_iterations, length_trace);
+% for counter_iteration = 1 : num_iterations
+%     idx_iteration_ = randi(num_pCells, 1, num_pCells_perm_2);
+%     event_data_iteration_ = event_data_(idx_iteration_, :);
+%     num_sac_iteration_    = num_sac_matrix_(   idx_iteration_, :);
+%     avg_data_iteration_ = nansum(event_data_iteration_ .* num_sac_iteration_) ./ nansum(num_sac_iteration_);
+%     event_data_perm_(counter_iteration, :) = avg_data_iteration_;
+% end
+%}
+% avg_perm_pCell_2 = nanmean(event_data_perm_);
+% std_perm_pCell_2 = nanstd(event_data_perm_);
+% sem_perm_pCell_2 = nanstd(event_data_perm_) ./ sqrt(num_pCells_perm_2);
 
 
+% avg_traces_no_weight = nanmean(event_data_);
+avg_traces_sac_weight = nansum(event_data_ .* num_sac_matrix_) ./ nansum(num_sac_matrix_);
+sem_traces = nanstd(event_data_)./ sqrt(num_pCells);
+
+avg_raw = nansum(event_data_raw .* num_sac_matrix_) ./ nansum(num_sac_matrix_);
+sem_raw = nanstd(event_data_raw)./ sqrt(num_pCells);
+
+%
+hFig_ = figure(1);
+clf(hFig_)
+subplot(2,1,1)
+hold on
+% plot(avg_traces_no_weight, 'linewidth', 1)
+plot(avg_raw, 'linewidth', 1)
+plot(avg_traces_sac_weight, 'linewidth', 1)
+plot(avg_perm_pCell_1, 'linewidth', 1)
+% plot(avg_perm_pCell_2, 'linewidth', 1)
+% plot(avg_perm_sac, 'linewidth', 1)
+legend({'avg_raw'...
+    'avg_traces',...
+    ['avg_perm_pCell_' num2str(num_pCells_perm_1)],...
+    }, ...
+    'interpreter', 'none', 'location', 'eastoutside')
+% legend({'traces_no_weight',...
+%     'traces_sac_weight',...
+%     ['perm_pCell_' num2str(num_pCells_perm_1)],...
+%     ['perm_pCell_' num2str(num_pCells_perm_2)],...
+%     'perm_sac'}, ...
+%     'interpreter', 'none', 'location', 'eastoutside')
+
+subplot(2,1,2)
+hold on
+plot(sem_raw, 'linewidth', 1)
+% plot(std_perm_sac, 'linewidth', 1)
+plot(sem_perm_pCell_1, 'linewidth', 1)
+% plot(sem_perm_pCell_2, 'linewidth', 1)
+plot(std_perm_pCell_1, 'linewidth', 1)
+% plot(std_perm_pCell_2, 'linewidth', 1)
+plot(sem_traces, 'linewidth', 1)
+legend({'sem_raw'...
+    ['sem_perm_pCell_' num2str(num_pCells_perm_1)],...
+    ['std_perm_pCell_' num2str(num_pCells_perm_1)],...
+    'sem_traces'},...
+    'interpreter', 'none', 'location', 'eastoutside')
+% legend({'std_perm_sac',...
+%     ['sem_perm_pCell_' num2str(num_pCells_perm_1)],...
+%     ['sem_perm_pCell_' num2str(num_pCells_perm_2)],...
+%     ['std_perm_pCell_' num2str(num_pCells_perm_1)],...
+%     ['std_perm_pCell_' num2str(num_pCells_perm_2)],...
+%     'sem_traces'},...
+%     'interpreter', 'none', 'location', 'eastoutside')
+
+% subplot(3,1,3)
+% hold on
+% plot(std_perm_sac, 'linewidth', 1)
+% plot(sem_perm_pCell_1, 'linewidth', 1)
+% plot(sem_perm_pCell_2, 'linewidth', 1)
+% legend({'std_perm_sac',...
+%     ['sem_perm_pCell_' num2str(num_pCells_perm_1)]...
+%     ['sem_perm_pCell_' num2str(num_pCells_perm_2)]...
+%     }, ...
+%     'interpreter', 'none', 'location', 'eastoutside')
+
+ESN_Beautify_Plot(hFig_, [8, 5], 12)
+%%
+end

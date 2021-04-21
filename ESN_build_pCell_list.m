@@ -1,17 +1,26 @@
 %% function ESN_build_pCell_list
-function pCell_list = ESN_build_pCell_list()
-% build pCell_list, this is a hard coded cell with the id of all of the pCells and the bundles
+function pCell_list = ESN_build_pCell_list(flag_pair_list)
+%% Handle inputs
+if nargin < 1
+    flag_pair_list = false;
+end
+
+%% build pCell_list, this is a hard coded cell with the id of all of the pCells and the bundles
+if ~flag_pair_list
+%% build
 pCell_list_1 = build_pCell_list_Mirza_pre201906();
 pCell_list_2 = build_pCell_list_Mirza_post201906();
 pCell_list_3 = build_pCell_list_Mirza_post202011();
 pCell_list_4 = build_pCell_list_Ramon();
 pCell_list = vertcat(pCell_list_1, pCell_list_2, pCell_list_3, pCell_list_4);
-
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Build pair list
+%% Build pair list
+if flag_pair_list
+%% build
 pair_list_full = build_pair_list_full();
-% pCell_list = pair_list_full;
-
+pCell_list = pair_list_full;
+end
 end
 
 %% function build_pCell_list_Mirza_pre201906
@@ -291,7 +300,8 @@ pair_list_full_Ramon(20, 1:1) = {'200122_133020_04_sorted_RSh'};
 pair_list_full = vertcat(pair_list_full_Mirza_pre201906, pair_list_full_Mirza_post201906, pair_list_full_Mirza_post202011, pair_list_full_Ramon);
 end
 
-%% DISCONTINUE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% DISCONTINUED %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% function build_pair_list_Mirza_pre201906
 function pair_list = build_pair_list_Mirza_pre201906()
 %% build pCell_list

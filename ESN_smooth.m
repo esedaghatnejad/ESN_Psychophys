@@ -35,7 +35,7 @@ function smooth_data_ = smooth_data(data_)
 % smooth_data_ = smooth(data_, method);
 %
 order = 2;
-num_points = 21;
+num_points = 31;
 smooth_data_ = smooth(data_, num_points, 'sgolay', order);
 %}
 

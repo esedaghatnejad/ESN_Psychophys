@@ -29,6 +29,9 @@ EXPERIMENT_PARAMS.sac_tag_list = { ...
     'back_center_irrelev', ... % tag 8
     'target_irrelev', ... % tag 9
     'other_irrelev', ... % tag 10
+    'prim_no_corr',... % tag 11; prim. sac. that is not followed by corr. sac.
+    'db_corr_success',... % tag 12; sac. that follows first corr. sac., back to 2nd jumped cue
+    'corr_no_db_corr',... % tag 13; corr. sac. that is not followed by another corr. sac.
     ... % Add more tags here, do not reorder or change the tags defined above.
     };
 
@@ -36,9 +39,10 @@ EXPERIMENT_PARAMS.sac_tag_list = { ...
 clearvars -except EXPERIMENT_PARAMS TRIALS_DATA;
 num_trials = length(TRIALS_DATA.time_1K);
 fprintf([EXPERIMENT_PARAMS.file_name ': Analyzing TRIALS ...'])
+counter_valid_trial = 1; % keeps track of number of valid trials
 for counter_trial = 1 : 1 : num_trials
     %% Clear variables
-    clearvars -except EXPERIMENT_PARAMS TRIALS_DATA counter_trial num_trials SACS_ALL
+    clearvars -except EXPERIMENT_PARAMS TRIALS_DATA counter_trial num_trials SACS_ALL counter_valid_trial
     
     %% Extract Trial Varibales
     TRIAL.start_x       = TRIALS_DATA.start_x(1,counter_trial);
@@ -90,9 +94,18 @@ for counter_trial = 1 : 1 : num_trials
     TRIAL.eye_r_vx_filt = TRIALS_DATA.eye_r_vx_filt{1,counter_trial};
     TRIAL.eye_r_vy_filt = TRIALS_DATA.eye_r_vy_filt{1,counter_trial};
     TRIAL.eye_r_vm_filt = TRIALS_DATA.eye_r_vm_filt{1,counter_trial};
-    
+    % Backstep exp. parameters
+    if isfield(TRIALS_DATA, 'time_state_dwell_on')
+        TRIAL.time_state_dwell_on = TRIALS_DATA.time_state_dwell_on{1,counter_trial};
+        TRIAL.time_dwell = TRIALS_DATA.time_dwell(1,counter_trial);
+        % If dwell time is too long, the trial might have ended w/o tgt. jumping back to cue, so 
+        % time state dwell off may not exist
+        if isfield(TRIALS_DATA, 'time_state_dwell_off')
+            TRIAL.time_state_dwell_off = TRIALS_DATA.time_state_dwell_off{1,counter_trial};
+        end
+    end
     %% Extract Saccades
-    clearvars -except EXPERIMENT_PARAMS TRIALS_DATA counter_trial num_trials TRIAL SACS_ALL
+    clearvars -except EXPERIMENT_PARAMS TRIALS_DATA counter_trial num_trials TRIAL SACS_ALL counter_valid_trial
 
     threshold = 75; % deg/s
     eye_vm_ = TRIAL.eye_r_vm_filt;
@@ -184,6 +197,10 @@ for counter_trial = 1 : 1 : num_trials
     all_sac_inds       = all_sac_inds_(:,all_sac_validity_);
     all_sac_validity   = true(size(all_sac_ind_onset));
     
+    % Skip the trial if no saccade valid
+    if isempty(all_sac_validity)
+        continue
+    end
     
     %% Init SACS_ALL and add common params
     SACS_ALL_TRIAL = struct;
@@ -195,7 +212,13 @@ for counter_trial = 1 : 1 : num_trials
     SACS_ALL_TRIAL.time_onset  = reshape(TRIAL.time_1K(all_sac_ind_onset), 1, []);
     SACS_ALL_TRIAL.time_vmax   = reshape(TRIAL.time_1K(all_sac_ind_vmax),  1, []);
     SACS_ALL_TRIAL.time_offset = reshape(TRIAL.time_1K(all_sac_ind_offset),1, []);
-    
+    SACS_ALL_TRIAL.start_x = ones(size(all_sac_ind_onset))*TRIAL.start_x;
+    SACS_ALL_TRIAL.start_y = ones(size(all_sac_ind_onset))*TRIAL.start_y;
+    SACS_ALL_TRIAL.cue_x = ones(size(all_sac_ind_onset))*TRIAL.cue_x;
+    SACS_ALL_TRIAL.cue_y = ones(size(all_sac_ind_onset))*TRIAL.cue_y;
+    SACS_ALL_TRIAL.end_x = ones(size(all_sac_ind_onset))*TRIAL.end_x;
+    SACS_ALL_TRIAL.end_y = ones(size(all_sac_ind_onset))*TRIAL.end_y;
+       
     SACS_ALL_TRIAL.time_visual      = nan(size(all_sac_validity));
     SACS_ALL_TRIAL.time_auditory    = nan(size(all_sac_validity));
     SACS_ALL_TRIAL.visual_px_onset  = nan(size(all_sac_validity));
@@ -225,9 +248,20 @@ for counter_trial = 1 : 1 : num_trials
     SACS_ALL_TRIAL.tgt_px_offset    = reshape(TRIAL.tgt_px(all_sac_ind_offset), 1, []);
     SACS_ALL_TRIAL.tgt_py_onset     = reshape(TRIAL.tgt_py(all_sac_ind_onset),  1, []);
     SACS_ALL_TRIAL.tgt_py_offset    = reshape(TRIAL.tgt_py(all_sac_ind_offset), 1, []);
-    
+    % Backstep exp. parameters
+    if isfield(TRIAL, 'time_state_dwell_on')
+        SACS_ALL_TRIAL.time_state_dwell_on = ones(size(all_sac_ind_onset))*TRIAL.time_state_dwell_on(end);
+        SACS_ALL_TRIAL.time_dwell = ones(size(all_sac_ind_onset))*TRIAL.time_dwell; 
+        % If dwell time is too long, the trial might have ended w/o tgt. jumping back to cue, so 
+        % time state dwell off may not exist
+        if isfield(TRIAL, 'time_state_dwell_off')
+            SACS_ALL_TRIAL.time_state_dwell_off = ones(size(all_sac_ind_onset))*TRIAL.time_state_dwell_off(end);
+        else
+            SACS_ALL_TRIAL.time_state_dwell_off = ones(size(all_sac_ind_onset))*nan;
+        end
+    end
     %% Tag saccades
-    threshold_pos = 1.5; % deg
+    threshold_pos = 1.7; % deg
     threshold_ang = 45.0; % deg
     
     % Tag the primary saccades
@@ -258,7 +292,7 @@ for counter_trial = 1 : 1 : num_trials
             visual_amp_y_ = SACS_ALL_TRIAL.visual_py_offset(idx_sac) - SACS_ALL_TRIAL.eye_r_py_onset(idx_sac);
             visual_amp_m_ = sqrt(visual_amp_x_.^2 + visual_amp_y_.^2);
             eye_r_amp_x_ = SACS_ALL_TRIAL.eye_r_amp_x(idx_sac);
-            eye_r_amp_y_ = SACS_ALL_TRIAL.eye_r_amp_x(idx_sac);
+            eye_r_amp_y_ = SACS_ALL_TRIAL.eye_r_amp_y(idx_sac);
             eye_r_amp_m_ = SACS_ALL_TRIAL.eye_r_amp_m(idx_sac);
             SACS_ALL_TRIAL.diff_start(idx_sac)  = sqrt( ...
                 ((SACS_ALL_TRIAL.eye_r_px_onset( idx_sac) - SACS_ALL_TRIAL.visual_px_onset( idx_sac)).^2) + ...
@@ -549,6 +583,84 @@ for counter_trial = 1 : 1 : num_trials
 
     SACS_ALL_TRIAL.tag(             idx_other_irrelev) = 10; % 'other_irrelev' tag 10
     
+    % Tag the prim. sac. that is not followed by corr. sac.
+    % Sac. is prim_success, but visual info. is what occurs at its offset
+    % Onset time is either the end of trial or onset of next sac.
+    % Offset time is the same as that of prim_success: offset of sac.
+    % Visual time the offset time
+    num_saccades = length(SACS_ALL_TRIAL.validity); % number of detected saccades; this should not change
+    idx_prim_success = find(SACS_ALL_TRIAL.tag == 1); % find prim_success
+    if ~isempty(idx_prim_success)
+        for counter_prim = 1 : length(idx_prim_success)
+            idx_prim = idx_prim_success(counter_prim);
+            next_idx_prim = idx_prim + 1; % index after the prim_success
+            diff_finish = sqrt( ...
+                ((SACS_ALL_TRIAL.tgt_px_offset( idx_prim) - SACS_ALL_TRIAL.eye_r_px_offset( idx_prim)).^2) + ...
+                ((SACS_ALL_TRIAL.tgt_py_offset( idx_prim) - SACS_ALL_TRIAL.eye_r_py_offset( idx_prim)).^2) );
+            % If (the prim. is the last saccade of trial || (the next saccade exists && isn't corr_success)) &&
+            % @ prim. sac. offset, tgt. is at diff. pos. from where it lands, 
+            % then it is counted as 'prim_no_corr'
+            if (((next_idx_prim > num_saccades) || ...
+                    ((next_idx_prim <= num_saccades) && ~(SACS_ALL_TRIAL.tag(next_idx_prim) == 4))) && ...
+                    (diff_finish > threshold_pos))
+                % Append the saccade data, mostly using the the prim. data
+                SACS_ALL_TRIAL.validity(end+1) = SACS_ALL_TRIAL.validity(idx_prim);
+                SACS_ALL_TRIAL.trial_num(end+1) = SACS_ALL_TRIAL.trial_num(idx_prim);
+                SACS_ALL_TRIAL.tag(end+1) = 11;
+                SACS_ALL_TRIAL.count(end+1) = SACS_ALL_TRIAL.count(idx_prim);
+                SACS_ALL_TRIAL.flag_last_cue(end+1) = SACS_ALL_TRIAL.flag_last_cue(idx_prim);
+                SACS_ALL_TRIAL.start_x(end+1) = SACS_ALL_TRIAL.start_x(idx_prim);
+                SACS_ALL_TRIAL.start_y(end+1) = SACS_ALL_TRIAL.start_y(idx_prim);
+                SACS_ALL_TRIAL.cue_x(end+1) = SACS_ALL_TRIAL.cue_x(idx_prim);
+                SACS_ALL_TRIAL.cue_y(end+1) = SACS_ALL_TRIAL.cue_y(idx_prim);
+                SACS_ALL_TRIAL.end_x(end+1) = SACS_ALL_TRIAL.end_x(idx_prim);
+                SACS_ALL_TRIAL.end_y(end+1) = SACS_ALL_TRIAL.end_y(idx_prim);
+                SACS_ALL_TRIAL.time_auditory(end+1) = SACS_ALL_TRIAL.time_auditory(idx_prim);
+                SACS_ALL_TRIAL.time_vmax(end+1) = SACS_ALL_TRIAL.time_vmax(idx_prim);
+                if (next_idx_prim > num_saccades)
+                    SACS_ALL_TRIAL.time_onset(end+1) = TRIAL.time_end;
+                else
+                    SACS_ALL_TRIAL.time_onset(end+1) = SACS_ALL_TRIAL.time_onset(next_idx_prim);
+                end
+                SACS_ALL_TRIAL.time_visual(end+1) = SACS_ALL_TRIAL.time_offset(idx_prim);
+                SACS_ALL_TRIAL.time_offset(end+1) = SACS_ALL_TRIAL.time_offset(idx_prim);
+                SACS_ALL_TRIAL.visual_px_onset(end+1) = SACS_ALL_TRIAL.eye_r_px_offset(idx_prim); 
+                SACS_ALL_TRIAL.visual_py_onset(end+1) = SACS_ALL_TRIAL.eye_r_py_offset(idx_prim);
+                SACS_ALL_TRIAL.visual_px_offset(end+1) = SACS_ALL_TRIAL.tgt_px_offset(idx_prim);
+                SACS_ALL_TRIAL.visual_py_offset(end+1) = SACS_ALL_TRIAL.tgt_py_offset(idx_prim);
+                SACS_ALL_TRIAL.reaction(end+1) = SACS_ALL_TRIAL.reaction(idx_prim);
+                SACS_ALL_TRIAL.visual_amp_x(end+1) = (SACS_ALL_TRIAL.visual_px_offset(next_idx_prim) - SACS_ALL_TRIAL.visual_px_onset(next_idx_prim));
+                SACS_ALL_TRIAL.visual_amp_y(end+1) = (SACS_ALL_TRIAL.visual_py_offset(next_idx_prim) - SACS_ALL_TRIAL.visual_py_onset(next_idx_prim));
+                SACS_ALL_TRIAL.visual_amp_m(end+1) = sqrt((SACS_ALL_TRIAL.visual_amp_x(next_idx_prim).^2) + (SACS_ALL_TRIAL.visual_amp_y(next_idx_prim).^2));
+                SACS_ALL_TRIAL.visual_ang(end+1) = atan2d(SACS_ALL_TRIAL.visual_amp_y(next_idx_prim), SACS_ALL_TRIAL.visual_amp_x(next_idx_prim));
+                SACS_ALL_TRIAL.diff_start(end+1) = SACS_ALL_TRIAL.diff_start(idx_prim);
+                SACS_ALL_TRIAL.diff_finish(end+1) = SACS_ALL_TRIAL.diff_finish(idx_prim);
+                SACS_ALL_TRIAL.diff_ang(end+1) = SACS_ALL_TRIAL.diff_ang(idx_prim);
+                SACS_ALL_TRIAL.duration(end+1) = SACS_ALL_TRIAL.duration(idx_prim);
+                SACS_ALL_TRIAL.eye_r_vm_max(end+1) = SACS_ALL_TRIAL.eye_r_vm_max(idx_prim);
+                % Offset of prim. sac. as 'eye onset'; 'eye offset' the same 
+                SACS_ALL_TRIAL.eye_r_px_onset(end+1) = SACS_ALL_TRIAL.eye_r_px_offset(idx_prim);
+                SACS_ALL_TRIAL.eye_r_py_onset(end+1) = SACS_ALL_TRIAL.eye_r_py_offset(idx_prim);
+                SACS_ALL_TRIAL.eye_r_px_offset(end+1) = SACS_ALL_TRIAL.eye_r_px_offset(idx_prim);
+                SACS_ALL_TRIAL.eye_r_py_offset(end+1) = SACS_ALL_TRIAL.eye_r_py_offset(idx_prim);
+                SACS_ALL_TRIAL.eye_r_amp_x(end+1) = SACS_ALL_TRIAL.eye_r_amp_x(idx_prim);
+                SACS_ALL_TRIAL.eye_r_amp_y(end+1) = SACS_ALL_TRIAL.eye_r_amp_y(idx_prim);
+                SACS_ALL_TRIAL.eye_r_amp_m(end+1) = SACS_ALL_TRIAL.eye_r_amp_m(idx_prim);
+                SACS_ALL_TRIAL.eye_r_ang(end+1) = SACS_ALL_TRIAL.eye_r_ang(idx_prim);                
+                SACS_ALL_TRIAL.tgt_px_onset(end+1) = SACS_ALL_TRIAL.tgt_px_onset(idx_prim);
+                SACS_ALL_TRIAL.tgt_px_offset(end+1) = SACS_ALL_TRIAL.tgt_px_offset(idx_prim);
+                SACS_ALL_TRIAL.tgt_py_onset(end+1) = SACS_ALL_TRIAL.tgt_py_onset(idx_prim);
+                SACS_ALL_TRIAL.tgt_py_offset(end+1) = SACS_ALL_TRIAL.tgt_py_offset(idx_prim);  
+                % Backstep exp. parameters
+                if isfield(TRIAL, 'time_state_dwell_on')
+                    SACS_ALL_TRIAL.time_state_dwell_on(end+1) = SACS_ALL_TRIAL.time_state_dwell_on(idx_prim);
+                    SACS_ALL_TRIAL.time_dwell(end+1) = SACS_ALL_TRIAL.time_dwell(idx_prim);
+                    SACS_ALL_TRIAL.time_state_dwell_off(end+1) = SACS_ALL_TRIAL.time_state_dwell_off(idx_prim);
+                end
+            end
+        end
+    end
+    
     % Fill up the nan values
     idx_nan_visual_values = isnan(SACS_ALL_TRIAL.visual_amp_x);
     SACS_ALL_TRIAL.visual_amp_x(idx_nan_visual_values)     = (SACS_ALL_TRIAL.visual_px_offset(idx_nan_visual_values) - SACS_ALL_TRIAL.visual_px_onset(idx_nan_visual_values));
@@ -581,6 +693,115 @@ for counter_trial = 1 : 1 : num_trials
         end
     end
     
+    % Re-tag the irrelevant sac. possibly as db_corr_success; most are target_irrelevant sac. but some were found to be classified as 
+    % irrelevant sac. bc. it comes late in the trial, so the tgt. has jumped back to start by the time db_corr sac. lands at cue tgt. 
+    % @ the previous corr_success offset, tgt. should have jumped to a different location from where corr_success was aiming;
+    % dwell time could be long enough that tgt. doesn't jump back to cue bf. the first corr_success ends, in which case,
+    % there is no "corrective" saccade to be made
+    idx_irrelev = find((SACS_ALL_TRIAL.tag==9) | (SACS_ALL_TRIAL.tag==10));
+    if ~isempty(idx_irrelev)
+        for counter_irrelev = 1 : length(idx_irrelev)
+            idx_sac = idx_irrelev(counter_irrelev);
+            prev_idx_sac = idx_sac - 1; % index before the target_irrelevant sac.
+            % Make sure there is a previous saccade
+            if (prev_idx_sac >= 1) 
+                start_pos_drift = sqrt((SACS_ALL_TRIAL.eye_r_px_onset(idx_sac)-SACS_ALL_TRIAL.eye_r_px_offset(prev_idx_sac)).^2 + ...
+                    (SACS_ALL_TRIAL.eye_r_py_onset(idx_sac)-SACS_ALL_TRIAL.eye_r_py_offset(prev_idx_sac)).^2); 
+                sac_offset_dist_to_prev_sac_tgt = sqrt((SACS_ALL_TRIAL.eye_r_px_offset(idx_sac)-SACS_ALL_TRIAL.tgt_px_offset(prev_idx_sac)).^2 + ...
+                    (SACS_ALL_TRIAL.eye_r_py_offset(idx_sac)-SACS_ALL_TRIAL.tgt_py_offset(prev_idx_sac)).^2);
+                diff_finish = sqrt( ...
+                    ((SACS_ALL_TRIAL.eye_r_px_offset(prev_idx_sac) - SACS_ALL_TRIAL.tgt_px_offset(prev_idx_sac)).^2) + ...
+                    ((SACS_ALL_TRIAL.eye_r_py_offset(prev_idx_sac) - SACS_ALL_TRIAL.tgt_py_offset(prev_idx_sac)).^2) );
+                % If the previous sac. is corr_success && current sac. lands where tgt. was @ prev. sac. offset &&
+                % eye didn't drift away from where it landed @ prev. sac. offset when it starts &&
+                % tgt. @ prev. sac. offset is away from where eye lands, then tag 12
+                if  ((SACS_ALL_TRIAL.tag(prev_idx_sac) == 4) && (sac_offset_dist_to_prev_sac_tgt < threshold_pos) && ...
+                        (start_pos_drift < 0.5) && (diff_finish > 1.0))
+                    SACS_ALL_TRIAL.tag(idx_sac) = 12;
+                end
+            end     
+        end
+    end
+   
+    % Tag the corr. sac. that is not followed by another corr. sac.
+    % Sac. is corr_success, but visual info. is what occurs at its offset
+    % Onset time is either the end of the trial or onset of next saccade
+    % Offset time is the same as that of corr_success: offset of sac.
+    % Visual time is the offset time
+    % @ its offset, tgt. should have jumped to a different location from where corr_success was aiming;
+    % dwell time could be long enough that tgt. doesn't jump back to cue bf. the first corr_success ends, in which case,
+    % there is no "corrective" saccade to be made
+    idx_corr_success = find(SACS_ALL_TRIAL.tag == 4); % find corr_success
+    if ~isempty(idx_corr_success)
+        for counter_corr = 1 : length(idx_corr_success)
+            idx_corr = idx_corr_success(counter_corr);
+            next_idx_corr = idx_corr + 1; % index after the corr_success
+            diff_finish = sqrt( ...
+                ((SACS_ALL_TRIAL.tgt_px_offset( idx_corr) - SACS_ALL_TRIAL.eye_r_px_offset( idx_corr)).^2) + ...
+                ((SACS_ALL_TRIAL.tgt_py_offset( idx_corr) - SACS_ALL_TRIAL.eye_r_py_offset( idx_corr)).^2) );
+            % If (the corr. is the last saccade of trial || (the next saccade exists && isn't db_corr_success)) &&
+            % && tgt. @ prev. sac. offset is away from where eye lands, then count as tag 13
+            if (((next_idx_corr > num_saccades) || ((next_idx_corr <= num_saccades) && (SACS_ALL_TRIAL.tag(next_idx_corr) ~= 12))) && ...
+                    (diff_finish > 1.0))
+                SACS_ALL_TRIAL.validity(end+1) = SACS_ALL_TRIAL.validity(idx_corr);
+                SACS_ALL_TRIAL.trial_num(end+1) = SACS_ALL_TRIAL.trial_num(idx_corr);
+                SACS_ALL_TRIAL.tag(end+1) = 13;
+                SACS_ALL_TRIAL.count(end+1) = SACS_ALL_TRIAL.count(idx_corr);
+                SACS_ALL_TRIAL.flag_last_cue(end+1) = SACS_ALL_TRIAL.flag_last_cue(idx_corr);
+                SACS_ALL_TRIAL.start_x(end+1) = SACS_ALL_TRIAL.start_x(idx_corr);
+                SACS_ALL_TRIAL.start_y(end+1) = SACS_ALL_TRIAL.start_y(idx_corr);
+                SACS_ALL_TRIAL.cue_x(end+1) = SACS_ALL_TRIAL.cue_x(idx_corr);
+                SACS_ALL_TRIAL.cue_y(end+1) = SACS_ALL_TRIAL.cue_y(idx_corr);
+                SACS_ALL_TRIAL.end_x(end+1) = SACS_ALL_TRIAL.end_x(idx_corr);
+                SACS_ALL_TRIAL.end_y(end+1) = SACS_ALL_TRIAL.end_y(idx_corr);
+                SACS_ALL_TRIAL.time_auditory(end+1) = SACS_ALL_TRIAL.time_auditory(idx_corr); 
+                SACS_ALL_TRIAL.time_vmax(end+1) = SACS_ALL_TRIAL.time_vmax(idx_corr);
+                if (next_idx_corr > num_saccades)
+                    SACS_ALL_TRIAL.time_onset(end+1) = TRIAL.time_end;
+                else
+                    SACS_ALL_TRIAL.time_onset(end+1) = SACS_ALL_TRIAL.time_onset(next_idx_corr);
+                end
+                SACS_ALL_TRIAL.time_visual(end+1) = SACS_ALL_TRIAL.time_offset(idx_corr);
+                SACS_ALL_TRIAL.time_offset(end+1) = SACS_ALL_TRIAL.time_offset(idx_corr);
+                
+                SACS_ALL_TRIAL.visual_px_onset(end+1) = SACS_ALL_TRIAL.eye_r_px_offset(idx_corr); 
+                SACS_ALL_TRIAL.visual_py_onset(end+1) = SACS_ALL_TRIAL.eye_r_py_offset(idx_corr);
+                SACS_ALL_TRIAL.visual_px_offset(end+1) = SACS_ALL_TRIAL.tgt_px_offset(idx_corr);
+                SACS_ALL_TRIAL.visual_py_offset(end+1) = SACS_ALL_TRIAL.tgt_py_offset(idx_corr);
+                SACS_ALL_TRIAL.reaction(end+1) = SACS_ALL_TRIAL.reaction(idx_corr);
+                SACS_ALL_TRIAL.visual_amp_x(end+1) = (SACS_ALL_TRIAL.visual_px_offset(next_idx_corr) - SACS_ALL_TRIAL.visual_px_onset(next_idx_corr));
+                SACS_ALL_TRIAL.visual_amp_y(end+1) = (SACS_ALL_TRIAL.visual_py_offset(next_idx_corr) - SACS_ALL_TRIAL.visual_py_onset(next_idx_corr));
+                SACS_ALL_TRIAL.visual_amp_m(end+1) = sqrt((SACS_ALL_TRIAL.visual_amp_x(next_idx_corr).^2) + (SACS_ALL_TRIAL.visual_amp_y(next_idx_corr).^2));
+                SACS_ALL_TRIAL.visual_ang(end+1) = atan2d(SACS_ALL_TRIAL.visual_amp_y(next_idx_corr), SACS_ALL_TRIAL.visual_amp_x(next_idx_corr));
+                SACS_ALL_TRIAL.diff_start(end+1) = SACS_ALL_TRIAL.diff_start(idx_corr);
+                SACS_ALL_TRIAL.diff_finish(end+1) = SACS_ALL_TRIAL.diff_finish(idx_corr);
+                SACS_ALL_TRIAL.diff_ang(end+1) = SACS_ALL_TRIAL.diff_ang(idx_corr);
+                SACS_ALL_TRIAL.duration(end+1) = SACS_ALL_TRIAL.duration(idx_corr);
+                SACS_ALL_TRIAL.eye_r_vm_max(end+1) = SACS_ALL_TRIAL.eye_r_vm_max(idx_corr);
+                % Offset of corr. sac. as 'eye onset'; 'eye offset' the same 
+                SACS_ALL_TRIAL.eye_r_px_onset(end+1) = SACS_ALL_TRIAL.eye_r_px_offset(idx_corr);
+                SACS_ALL_TRIAL.eye_r_py_onset(end+1) = SACS_ALL_TRIAL.eye_r_py_offset(idx_corr);
+                SACS_ALL_TRIAL.eye_r_px_offset(end+1) = SACS_ALL_TRIAL.eye_r_px_offset(idx_corr);
+                SACS_ALL_TRIAL.eye_r_py_offset(end+1) = SACS_ALL_TRIAL.eye_r_py_offset(idx_corr);
+                SACS_ALL_TRIAL.eye_r_amp_x(end+1) = SACS_ALL_TRIAL.eye_r_amp_x(idx_corr);
+                SACS_ALL_TRIAL.eye_r_amp_y(end+1) = SACS_ALL_TRIAL.eye_r_amp_y(idx_corr);
+                SACS_ALL_TRIAL.eye_r_amp_m(end+1) = SACS_ALL_TRIAL.eye_r_amp_m(idx_corr);
+                SACS_ALL_TRIAL.eye_r_ang(end+1) = SACS_ALL_TRIAL.eye_r_ang(idx_corr);                
+                SACS_ALL_TRIAL.tgt_px_onset(end+1) = SACS_ALL_TRIAL.tgt_px_onset(idx_corr);
+                SACS_ALL_TRIAL.tgt_px_offset(end+1) = SACS_ALL_TRIAL.tgt_px_offset(idx_corr);
+                SACS_ALL_TRIAL.tgt_py_onset(end+1) = SACS_ALL_TRIAL.tgt_py_onset(idx_corr);
+                SACS_ALL_TRIAL.tgt_py_offset(end+1) = SACS_ALL_TRIAL.tgt_py_offset(idx_corr); 
+                % Backstep exp. parameters
+                if isfield(TRIAL, 'time_state_dwell_on')
+                    SACS_ALL_TRIAL.time_state_dwell_on(end+1) = SACS_ALL_TRIAL.time_state_dwell_on(idx_corr);
+                    SACS_ALL_TRIAL.time_dwell(end+1) = SACS_ALL_TRIAL.time_dwell(idx_corr);
+                    SACS_ALL_TRIAL.time_state_dwell_off(end+1) = SACS_ALL_TRIAL.time_state_dwell_off(idx_corr);
+                end
+            end
+        end
+    end
+    
+      
     % Re-tag the 1st saccade as back_center_success if it landed at start
     % Handles case when there is 'back_center_success' but eye makes irrelevant saccades before the saccade twrd. target that initiates cue present.
     idx_sac = 1;
@@ -617,10 +838,18 @@ for counter_trial = 1 : 1 : num_trials
     if sum(prim_tags) > 0
         SACS_ALL_TRIAL.count(prim_tags) = 1 : sum(prim_tags);
     end
+    prim_no_corr_tags = SACS_ALL_TRIAL.tag == 11; % 'prim_no_corr' tag 11 
+    if sum(prim_tags) > 0
+        SACS_ALL_TRIAL.count(prim_no_corr_tags) = 1 : sum(prim_no_corr_tags);
+    end
     corr_tags = (SACS_ALL_TRIAL.tag==4) | (SACS_ALL_TRIAL.tag==5); % 'corr_success' tag 4 % 'cord_fail' tag 5
     if sum(corr_tags) > 0
         SACS_ALL_TRIAL.count(corr_tags) = 1 : sum(corr_tags);
     end
+    db_corr_tags = SACS_ALL_TRIAL.tag == 12; % 'db_corr_sac' tag 12
+    if sum(db_corr_tags) > 0
+        SACS_ALL_TRIAL.count(db_corr_tags) = 1 : sum(db_corr_tags);
+    end 
     back_center_tags = (SACS_ALL_TRIAL.tag==6) | (SACS_ALL_TRIAL.tag==7); % 'back_center_success' tag 6 % 'back_center_prim' tag 7
     if sum(back_center_tags) > 0
         SACS_ALL_TRIAL.count(back_center_tags) = 1 : sum(back_center_tags);
@@ -630,9 +859,10 @@ for counter_trial = 1 : 1 : num_trials
     if sum(irrelev_tags) > 0
         SACS_ALL_TRIAL.count(irrelev_tags) = 1 : sum(irrelev_tags);
     end
+
     
     %% Plot trial
-    flag_plot_trial = 1;
+    flag_plot_trial = 0;
     if flag_plot_trial
     trial_num = counter_trial;
     
@@ -651,7 +881,7 @@ for counter_trial = 1 : 1 : num_trials
     plot(TRIAL.time_state_reward', zeros(size(TRIAL.time_state_reward')), '*b')
     plot(TRIAL.time_state_iti', zeros(size(TRIAL.time_state_iti')), '*g')
     plot(SACS_ALL_TRIAL.time_visual(SACS_ALL_TRIAL.tag==7)', zeros(size(SACS_ALL_TRIAL.time_visual(SACS_ALL_TRIAL.tag==7)')), 'sk')
-    ylim([-10 10])
+    ylim([-12 12])
 %     xlabel('Time (s)')
 %     set(gca,'xtick',[])
     ylabel('Horz. Eye (deg)')
@@ -669,7 +899,7 @@ for counter_trial = 1 : 1 : num_trials
     plot(TRIAL.time_state_reward', zeros(size(TRIAL.time_state_reward')), '*b')
     plot(TRIAL.time_state_iti', zeros(size(TRIAL.time_state_iti')), '*g')
     plot(SACS_ALL_TRIAL.time_visual(SACS_ALL_TRIAL.tag==7)', zeros(size(SACS_ALL_TRIAL.time_visual(SACS_ALL_TRIAL.tag==7)')), 'sk')
-    ylim([-10 10])
+    ylim([-12 12])
 %     xlabel('Time (s)')
 %     set(gca,'xtick',[])
     ylabel('Vert. Eye (deg)')
@@ -712,13 +942,38 @@ for counter_trial = 1 : 1 : num_trials
             color_ = [0.6 0.6 0.6];
         elseif tag_==10
             color_ = [0.6 0.6 0.6];
+        elseif tag_ == 11
+            color_ = [0.4660 0.6740 0.1880]; % greenish
+        elseif tag_ == 13
+            color_ = [0.3010 0.7450 0.9330];
+        elseif ((tag_ == 14) || (tag_ == 15)) % for tag 14 and 15, ignore
+            continue;
         else
             color_ = [0.6 0.6 0.6];
         end
         label_ = [EXPERIMENT_PARAMS.sac_tag_list{tag_} '_' num2str(SACS_ALL_TRIAL.count(counter_sac))];
-        xline(hAx_(1), SACS_ALL_TRIAL.time_onset(counter_sac), '-', label_, 'color', color_, 'interpret', 'none', 'FontSize', 12)
-        xline(hAx_(2), SACS_ALL_TRIAL.time_onset(counter_sac), '-', label_, 'color', color_, 'interpret', 'none', 'FontSize', 12)
-        xline(hAx_(3), SACS_ALL_TRIAL.time_onset(counter_sac), '-', label_, 'color', color_, 'interpret', 'none', 'FontSize', 12)
+        if ((tag_ == 11) || (tag_== 13)) 
+            if tag_ == 11
+                legend_text_ = 'prim no corr';
+            elseif tag_ == 13
+                legend_text_ = 'corr no db corr';
+            end
+            x_1 = xline(hAx_(1), SACS_ALL_TRIAL.time_offset(counter_sac), '-','LineWidth',2 ,'color', color_);
+            legend(x_1,legend_text_);
+            legend(hAx_(1),'boxoff');
+            x_2 = xline(hAx_(2), SACS_ALL_TRIAL.time_offset(counter_sac), '-','LineWidth',2 ,'color', color_);
+            legend(x_2,legend_text_);
+            legend(hAx_(2),'boxoff');
+            x_3 = xline(hAx_(3), SACS_ALL_TRIAL.time_offset(counter_sac), '-','LineWidth',2 ,'color', color_);
+            legend(x_3,legend_text_);
+            legend(hAx_(3),'boxoff');
+
+        else
+            xline(hAx_(1), SACS_ALL_TRIAL.time_onset(counter_sac), '-', label_, 'color', color_, 'interpret', 'none', 'FontSize', 12)
+            xline(hAx_(2), SACS_ALL_TRIAL.time_onset(counter_sac), '-', label_, 'color', color_, 'interpret', 'none', 'FontSize', 12)
+            xline(hAx_(3), SACS_ALL_TRIAL.time_onset(counter_sac), '-', label_, 'color', color_, 'interpret', 'none', 'FontSize', 12)
+        end
+        
 %         linkaxes(hAx_,'x')
     end
     w = waitforbuttonpress;
@@ -726,8 +981,8 @@ for counter_trial = 1 : 1 : num_trials
     end
     
     %% Save Saccades
-    SACS_ALL(counter_trial) = SACS_ALL_TRIAL;
-    
+    SACS_ALL(counter_valid_trial) = SACS_ALL_TRIAL;
+    counter_valid_trial = counter_valid_trial + 1;
     %% print a dot every 20 trials
     if rem(counter_trial, 20) == 0
         fprintf('.');

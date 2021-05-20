@@ -1329,15 +1329,15 @@ function scratch_plot4
 hFig = figure(4);
 clf(hFig)
 
-variable_name_category = 'all'; % 'corrSac'; % 'primSac'; % 'nonTask'; % 'toTgtStr'; % 'fromCenter'; % 
-event_type = 'start'; % 'vmax'; % 'finish'; % 
-spike_type = 'SS';
+variable_name_category = 'tgtPrimSac'; % 'corrSac'; % 'all'; % 'primSac'; % 'nonTask'; % 'toTgtStr'; % 'fromCenter'; % 
+event_type = 'finish'; % 'start'; % 'vmax'; % 
+spike_type = 'CS';
 flag_cs_180_minus_cs_on = false;
 variable_name_spike    = [spike_type '_train_' event_type];
 variable_name_velocity = [spike_type '_velocity_' event_type];
 variable_name_num_sac  = [spike_type '_num_sac_' event_type];
 variable_name_firing   = [spike_type '_firing_rate'];
-ind_amp = 6;
+ind_amp = 1;
 ind_ang = 5;
 ind_ang_cs_180 = 5;
 if contains(spike_type,'CS')
@@ -1349,7 +1349,7 @@ end
 idx_pCells =  1:size(ALL_PCELL_all_saccades.all.SS_train_start{1,1},1); % idx_pauser; % idx_burster; % 
 num_pCells = length(idx_pCells);
 
-ALL_PCELL_DATA_1 = ALL_PCELL_all_saccades_tuned;
+ALL_PCELL_DATA_1 = ALL_PCELL_all_saccades_tuned_ang;
 % ALL_PCELL_DATA_1 = ALL_PCELL_all_saccades_tuned_90_270_amp_ang;
 
 

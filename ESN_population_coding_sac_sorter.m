@@ -17,14 +17,16 @@ tic
 toc
 
 %% Plot functions
+clc; clear;
+tic
 % (1) plot_neural_properties(1); % load population_neural_properties and plot neural_properties
 % (2) plot_CS_on_properties(2); % load population_neural_properties and plot CS_on properties
 % (3) plot_population_data_iteratively(3);
 % (3) plot_population_data_single_condition();
 % (4) plot_synch_ratio();
 % (5) plot_modulation_z_score(4);
-% (6) plot_single_session_modulation(5);
-
+% (6) plot_single_session_modulation();
+toc
 end
 
 %% UTIL FUNCTIONS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -50,6 +52,28 @@ for counter_pCell = 1 : num_pCells
     cell_file_name = [id_ '_' 'combine' '_' num2str(num_recording)];
     pCell_ids{counter_pCell, 1} = cell_file_name;
 end
+end
+
+%% function idx_mirza_ramon()
+function [idx_mirza, idx_ramon] = idx_mirza_ramon(flag_pair_list)
+pCell_ids = build_pCell_ids(flag_pair_list);
+num_pCells = size(pCell_ids, 1);
+idx_mirza = false(num_pCells, 1);
+idx_ramon = false(num_pCells, 1);
+if flag_pair_list
+    if num_pCells ~= 80
+        error('mirza_ramon_idx: number of P-cells is not 80. Please modify the code.')
+    end
+    idx_mirza(1:54,1)  = true;
+    idx_ramon(55:80,1) = true;
+else
+    if num_pCells ~= 143
+        error('mirza_ramon_idx: number of P-cells is not 143. Please modify the code.')
+    end
+    idx_mirza(1:90,1)   = true;
+    idx_ramon(91:143,1) = true;
+end
+
 end
 
 %% function expand_index_event_data(event_data)
@@ -106,6 +130,104 @@ for state_1 = [true false]
         MI_(isnan(MI_)) = 0;
         MI = MI + MI_;
     end
+end
+
+end
+
+%% function estimate_pair_distance()
+function pCell_contact_distance = estimate_pair_distance()
+%% get pair_list
+flag_pair_list = true;   % This should be true. DO NOT change it to false
+ESN_global_variables(flag_pair_list);
+pCell_ids = build_pCell_ids(flag_pair_list);
+num_pCells = size(pCell_ids, 1);
+path_data_monkey_sorted = uigetdir;
+if ~strcmp(path_data_monkey_sorted(end), filesep);path_data_monkey_sorted = [path_data_monkey_sorted filesep];end
+
+%% extract ch_num and electrode_type
+pCell_ch_num = nan(num_pCells, 1);
+pCell_electrode_ch_num = nan(num_pCells, 1);
+pCell_ch_level = nan(num_pCells, 1);
+% Loop over pCells
+for counter_pCell = 1 : 1 : num_pCells
+    %% build address
+    file_name_cell = pCell_ids{counter_pCell,1}(1:13);
+    year_ = file_name_cell(1:2);
+    month_ = file_name_cell(3:4);
+    day_ = file_name_cell(5:6);
+    hour_ = file_name_cell(8:9);
+    minute_ = file_name_cell(10:11);
+    second_ = file_name_cell(12:13);
+    subFolder_month = ['20' year_ '-' month_ filesep];
+    subFolder_day = ['20' year_ '-' month_ '-' day_ filesep];
+    subFolder_recording = ['20' year_ '-' month_ '-' day_ '_' hour_ '-' minute_ '-' second_ filesep];
+    subFolder_data = ['analyzed_data' filesep];
+    %% load meta_data
+    file_path = [path_data_monkey_sorted subFolder_month subFolder_day subFolder_recording subFolder_data];
+    file_name = [file_name_cell '_meta_data.json'];
+    fname = [file_path file_name];
+    fid = fopen(fname);
+    raw = fread(fid,inf);
+    str = char(raw');
+    fclose(fid);
+    meta_data_ = jsondecode(str);
+    num_of_channels = meta_data_.num_of_channels;
+    contact_ch_num = str2double(pCell_ids{counter_pCell,1}(15:16));
+    ch_level_ = 0;
+    if num_of_channels==4
+        if contact_ch_num==2
+            ch_level_ = 1;
+        elseif (contact_ch_num==1)||(contact_ch_num==3)||(contact_ch_num==4)
+            ch_level_ = 2;
+        else
+            error('estimate_pair_distance: wrong ch_num for Tetrode.');
+        end
+    elseif num_of_channels==7
+        if contact_ch_num==4
+            ch_level_ = 1;
+        elseif (contact_ch_num==3)||(contact_ch_num==5)||(contact_ch_num==6)
+            ch_level_ = 2;
+        elseif (contact_ch_num==1)||(contact_ch_num==2)||(contact_ch_num==7)
+            ch_level_ = 3;
+        else
+            error('estimate_pair_distance: wrong ch_num for Heptode.')
+        end
+    elseif num_of_channels==64
+        ch_level_ = 1;
+    else
+        error('estimate_pair_distance: unknown electrode type.')
+    end
+    %% store results
+    pCell_electrode_ch_num(counter_pCell, 1) = num_of_channels;
+    pCell_ch_num(counter_pCell, 1) = contact_ch_num;
+    pCell_ch_level(counter_pCell, 1) = ch_level_;
+end
+
+%% estimate contact_distance
+pCell_contact_distance = nan(num_pCells, 1);
+for counter_pair = 1 : num_pCells/2
+%     electrode_ch_num_1 = pCell_electrode_ch_num(2*counter_pair-1, 1);
+%     electrode_ch_num_2 = pCell_electrode_ch_num(2*counter_pair,   1);
+%     ch_num_1 = pCell_ch_num(2*counter_pair-1, 1);
+%     ch_num_2 = pCell_ch_num(2*counter_pair,   1);
+    ch_level_1_ = pCell_ch_level(2*counter_pair-1, 1);
+    ch_level_2_ = pCell_ch_level(2*counter_pair,   1);
+    ch_level_1 = min([ch_level_1_, ch_level_2_]);
+    ch_level_2 = max([ch_level_1_, ch_level_2_]);
+    contact_distance_ = 0;
+    if ch_level_1 == ch_level_2
+        contact_distance_ = 50;
+    elseif (ch_level_1==1) && (ch_level_2==2)
+        contact_distance_ = 100;
+    elseif (ch_level_1==1) && (ch_level_2==3)
+        contact_distance_ = 200;
+    elseif (ch_level_1==2) && (ch_level_2==3)
+        contact_distance_ = 110;
+    else
+        error('estimate_pair_distance: undefined condition.')
+    end
+    pCell_contact_distance(2*counter_pair-1, 1) = contact_distance_;
+    pCell_contact_distance(2*counter_pair,   1) = contact_distance_;
 end
 
 end
@@ -857,7 +979,7 @@ path_cell_data = uigetdir;
 if ~strcmp(path_cell_data(end), filesep);path_cell_data = [path_cell_data filesep];end
 pCell_ids = build_pCell_ids(flag_pair_list);
 num_pCells = size(pCell_ids, 1);
-
+clearvars CS_on_population
 %% Loop over pCells
 for counter_pCell = 1 : num_pCells
     fprintf(['### ' 'Analyzing pCell no. ', num2str(counter_pCell), ' / ' num2str(num_pCells) ' ###' '\n']);
@@ -907,9 +1029,9 @@ for counter_pCell = 1 : num_pCells
     CS_prob_sum = nansum(CS_prob,2); % sum of weights
     CS_rho = abs(r) ./ CS_prob_sum; % Computes mean resultant vector length for circular data.
     
-    CS_count_avg  = CS_count( 1, :) + CS_count( 4, :) + CS_count( 8, :);
-    sac_count_avg = sac_count(1, :) + sac_count(4, :) + sac_count(8, :);
-    % 'prim_success' tag 1 % 'corr_success' tag 4
+    CS_count_avg  = CS_count( 1, :) + CS_count( 4, :) + CS_count( 8, :); % CS_count( 8, :); % 
+    sac_count_avg = sac_count(1, :) + sac_count(4, :) + sac_count(8, :); % sac_count(8, :); % 
+    % 'prim_success' tag 1 % 'corr_success' tag 4 % 'back_center_irrelev' tag 8
     CS_prob_avg = CS_count_avg ./ sac_count_avg;
     
     r_avg = nansum(CS_prob_avg.* exp(1i*deg2rad(ang_values)) , 2); % compute weighted sum of cos and sin of angles
@@ -965,9 +1087,10 @@ for counter_pCell = 1 : num_pCells
     
     %% Append CS_on_data to cell_data
     save([path_cell_data cell_file_name], 'CS_on_data', '-append');
-    
+    CS_on_population(counter_pCell) = CS_on_data;
 end
 fprintf('### ALL DONE. ###\n')
+save([path_cell_data '..' filesep 'CS_on_population.mat'], 'CS_on_population');
 end
 
 %% function sac_modulation_index()
@@ -990,6 +1113,7 @@ pCell_ids = build_pCell_ids(flag_pair_list);
 num_pCells = size(pCell_ids, 1);
 counter_not_modulated = 1;
 %% Loop over pCells
+pCell_z_score = nan(num_pCells, 1);
 for counter_pCell = 1 : num_pCells
     fprintf(['### ' 'Analyzing pCell no. ', num2str(counter_pCell), ' / ' num2str(num_pCells) ' ###' '\n']);
     %% load SACS_ALL_DATA
@@ -1000,15 +1124,6 @@ for counter_pCell = 1 : num_pCells
     SS_ISI = diff(SS_time);
     SS_ISI(abs(SS_ISI)>5)=0;
     SS_baseline = (length(SS_ISI)+1) ./ sum(SS_ISI) * 0.001; % 1ms probability
-    
-    num_iteration = floor(sum(SS_ISI) ./ 30); % 30 sec long window
-    window_edges = ceil(linspace(1, length(SS_ISI),num_iteration));
-    SS_prob_baseline_perm = nan(num_iteration-1, 1);
-    for counter = 1 : num_iteration-1
-        SS_ISI_ = SS_ISI(window_edges(counter):window_edges(counter+1),1);
-        SS_prob_baseline_perm(counter,1) = (length(SS_ISI_)+1) ./ sum(SS_ISI_) * 0.001; % 1ms probability
-    end
-    SS_baseline_stdv = std(SS_prob_baseline_perm);
     
     %% Compute modulation_z_score
     neuro_SS_onset = SACS_ALL_DATA.neuro_SS_onset;
@@ -1028,12 +1143,26 @@ for counter_pCell = 1 : num_pCells
     end
     
     SS_train = neuro_SS_onset(:, idx_);
-    modulation_trace = ESN_smooth(nanmean(SS_train,2));
+    
+    num_sacs = sum(idx_);
+    num_perm = 2000;
+    modulation_range_perm = nan(1, num_perm);
+    modulation_trace_perm = nan(length_trace, num_perm);
+    for counter_perm = 1 : num_perm
+        idx_perm_ = randi(num_sacs, 1, num_sacs);
+        modulation_trace_perm_ = smooth(nanmean(SS_train(:,idx_perm_),2), 3, 'sgolay', 2);
+        modulation_range_perm_ = max(modulation_trace_perm_(201:350,1)) - min(modulation_trace_perm_(201:350,1));
+        modulation_trace_perm(:, counter_perm) = modulation_trace_perm_;
+        modulation_range_perm(:, counter_perm) = modulation_range_perm_;
+    end
+    
+    modulation_trace_mean = ESN_smooth(nanmean(SS_train,2));
+    modulation_trace_stdv = nanstd(modulation_trace_perm,0,2);
+    modulation_range_mean = max(modulation_trace_mean(201:350,1)) - min(modulation_trace_mean(201:350,1));
+    modulation_range_stdv = nanstd(modulation_range_perm,0,2);
+    modulation_z_score = modulation_range_mean ./ modulation_range_stdv;
     modulation_baseline = nanmean(nanmean(SS_train(26:125,:),2));
-    modulation_stdv  = SS_baseline_stdv;
-    modulation_range = max(modulation_trace(201:350,1)) - min(modulation_trace(201:350,1));
-    modulation_z_score_trace = (modulation_trace - modulation_baseline) ./ modulation_stdv;
-    modulation_z_score = modulation_range ./ modulation_stdv;
+    
     modulation_thresold = 3.0;
     is_modulated = (modulation_z_score > modulation_thresold);
     
@@ -1044,21 +1173,21 @@ for counter_pCell = 1 : num_pCells
     
     %% Build sac_modulation
     sac_modulation.SS_baseline           = SS_baseline;
-    sac_modulation.SS_baseline_stdv      = SS_baseline_stdv;
-    sac_modulation.modulation_thresold   = modulation_thresold;
-    sac_modulation.modulation_trace      = modulation_trace;
+    sac_modulation.modulation_trace_mean = modulation_trace_mean;
+    sac_modulation.modulation_trace_stdv = modulation_trace_stdv;
+    sac_modulation.modulation_range_mean = modulation_range_mean;
+    sac_modulation.modulation_range_stdv = modulation_range_stdv;
     sac_modulation.modulation_baseline   = modulation_baseline;
-    sac_modulation.modulation_range      = modulation_range;
-    sac_modulation.modulation_stdv       = modulation_stdv;
     sac_modulation.modulation_z_score    = modulation_z_score;
-    sac_modulation.modulation_z_score_trace = modulation_z_score_trace;
     sac_modulation.is_modulated          = is_modulated;
-    
+    pCell_z_score(counter_pCell, 1) = modulation_z_score;
     %% Append sac_modulation to cell_data
     save([path_cell_data cell_file_name], 'sac_modulation', '-append');
     
 end
 fprintf('### ALL DONE. ###\n')
+figure();
+histogram(pCell_z_score, 0:1:(max(pCell_z_score)+1));
 end
 
 %% BUILD FUNCTIONS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1506,9 +1635,9 @@ for counter_pCell = 1 : 2 : (num_pCells-1)
     cell_2.CS_on_data.idx_CS_pair_tuned   = idx_CS_pair_tuned;
     
     %% Save CS_on_pair results
-    CS_on_data = cell_1.CS_on_data;
+%     CS_on_data = cell_1.CS_on_data;
 %     save([path_cell_data cell_file_name_1], 'CS_on_data', '-append');
-    CS_on_data = cell_2.CS_on_data;
+%     CS_on_data = cell_2.CS_on_data;
 %     save([path_cell_data cell_file_name_2], 'CS_on_data', '-append');
     
     %% Compute data
@@ -2831,33 +2960,6 @@ plot(avg_prob_TUNED_mean(plot_order_), '-k', 'LineWidth', 1)
 ylim([0.05 0.25])
 title('CS Tuning', 'Interpreter', 'none');
 
-%% Plot CS tuning linear, CS-on on side
-%{
-subplot(num_row_fig, num_col_fig, 8);
-hold on
-plot_order_ = [6 7 8 1 2 3 4 5 6];
-% plot_order_ = [5 6 7 8 1 2 3 4 5];
-plot(overall_prob_TUNED_stdv_p(plot_order_), '-k', 'LineWidth', 0.5)
-plot(overall_prob_TUNED_stdv_m(plot_order_), '-k', 'LineWidth', 0.5)
-plot(overall_prob_TUNED_mean(plot_order_), '-k', 'LineWidth', 1)
-ylabel('CS probability');
-xlabel('Direction')
-set(gca, 'XTick', 1:1:8, 'XTickLabel', {'', '-90','','ON','','90','','180',''})
-% set(gca, 'XTick', 1:1:9, 'XTickLabel', {'-180', '', '-90','','ON','','90','','180'})
-
-avg_prob_TUNED_mean = nanmean(nanmean(CS_prob_avg_tuned, 2));
-avg_prob_TUNED_stdv = nanstd(nanmean(CS_prob_avg_tuned, 2), 0, 1) ./ sqrt(num_pCells);
-avg_prob_TUNED_mean = repmat(avg_prob_TUNED_mean, 1, size(CS_prob_avg_tuned,2));
-avg_prob_TUNED_stdv = repmat(avg_prob_TUNED_stdv, 1, size(CS_prob_avg_tuned,2));
-avg_prob_TUNED_stdv_p = avg_prob_TUNED_mean + avg_prob_TUNED_stdv;
-avg_prob_TUNED_stdv_m = avg_prob_TUNED_mean - avg_prob_TUNED_stdv;
-
-plot(avg_prob_TUNED_stdv_p(plot_order_), '-k', 'LineWidth', 0.5)
-plot(avg_prob_TUNED_stdv_m(plot_order_), '-k', 'LineWidth', 0.5)
-plot(avg_prob_TUNED_mean(plot_order_), '-k', 'LineWidth', 1)
-ylim([0.05 0.25])
-title('CS Tuning', 'Interpreter', 'none');
-%}
 %% ESN_Beautify_Plot
 ESN_Beautify_Plot(hFig, [8, 2], 8)
 
@@ -2869,6 +2971,117 @@ end
 file_name_fig_ = 'CS_on_properties';
 saveas(hFig,[path_fig_ filesep file_name_fig_], 'pdf');
 
+%% CS-on distributiona for different vermal areas
+if num_pCells ~= 143
+    error('plot_CS_on_properties: number of P-cells is not 143. Please modify the code.')
+end
+
+hFig = figure(fig_num+1);
+clf(hFig)
+num_row_fig = 2;
+num_col_fig = 3;
+
+subplot(num_row_fig, num_col_fig, 2);
+idx_pCells = [1:18, 52:68];
+polarhistogram(deg2rad(CS_ang_avg(idx_pCells)), deg2rad(ang_edges), 'DisplayStyle', 'bar','FaceColor',[0.6 0.6 0.6], 'EdgeColor', 'none')
+hold on
+polarhistogram(deg2rad(CS_ang_avg(idx_pCells)), deg2rad(ang_edges), 'DisplayStyle', 'stairs','FaceColor','none', 'EdgeColor', 'r', 'linewidth', 1)
+rlim([0 10])
+set(gca, 'ThetaTick', 0:45:315, 'RTick', 0:5:10,...
+    'RTickLabel', {'', '', '10'}, 'ThetaTickLabel', {'0','','90','', '180','','270', ''})
+title(['(M) center, n=', num2str(length(idx_pCells))])
+
+subplot(num_row_fig, num_col_fig, 3);
+idx_pCells = 19:51;
+polarhistogram(deg2rad(CS_ang_avg(idx_pCells)), deg2rad(ang_edges), 'DisplayStyle', 'bar','FaceColor',[0.6 0.6 0.6], 'EdgeColor', 'none')
+hold on
+polarhistogram(deg2rad(CS_ang_avg(idx_pCells)), deg2rad(ang_edges), 'DisplayStyle', 'stairs','FaceColor','none', 'EdgeColor', 'r', 'linewidth', 1)
+rlim([0 10])
+set(gca, 'ThetaTick', 0:45:315, 'RTick', 0:5:10,...
+    'RTickLabel', {'', '', '10'}, 'ThetaTickLabel', {'0','','90','', '180','','270', ''})
+title(['(M) right, n=', num2str(length(idx_pCells))])
+
+subplot(num_row_fig, num_col_fig, 1);
+idx_pCells = 69:90;
+polarhistogram(deg2rad(CS_ang_avg(idx_pCells)), deg2rad(ang_edges), 'DisplayStyle', 'bar','FaceColor',[0.6 0.6 0.6], 'EdgeColor', 'none')
+hold on
+polarhistogram(deg2rad(CS_ang_avg(idx_pCells)), deg2rad(ang_edges), 'DisplayStyle', 'stairs','FaceColor','none', 'EdgeColor', 'r', 'linewidth', 1)
+rlim([0 10])
+set(gca, 'ThetaTick', 0:45:315, 'RTick', 0:5:10,...
+    'RTickLabel', {'', '', '10'}, 'ThetaTickLabel', {'0','','90','', '180','','270', ''})
+title(['(M) left, n=', num2str(length(idx_pCells))])
+
+subplot(num_row_fig, num_col_fig, 6);
+idx_pCells = 91:143;
+polarhistogram(deg2rad(CS_ang_avg(idx_pCells)), deg2rad(ang_edges), 'DisplayStyle', 'bar','FaceColor',[0.6 0.6 0.6], 'EdgeColor', 'none')
+hold on
+polarhistogram(deg2rad(CS_ang_avg(idx_pCells)), deg2rad(ang_edges), 'DisplayStyle', 'stairs','FaceColor','none', 'EdgeColor', 'r', 'linewidth', 1)
+rlim([0 15])
+set(gca, 'ThetaTick', 0:45:315, 'RTick', 0:5:15,...
+    'RTickLabel', {'', '', '10', ''}, 'ThetaTickLabel', {'0','','90','', '180','','270', ''})
+title(['(R) right, n=', num2str(length(idx_pCells))])
+
+ESN_Beautify_Plot(hFig, [6, 4], 8)
+file_name_fig_ = 'CS_on_properties_2';
+saveas(hFig,[path_fig_ filesep file_name_fig_], 'pdf');
+
+%% PAIR CS-on difference
+% Load CS_on_population_pairs
+path_pair_data = uigetdir;
+if ~strcmp(path_pair_data(end), filesep);path_pair_data = [path_pair_data filesep];end
+path_pair_data = [path_pair_data '..' filesep];
+load([path_pair_data, 'CS_on_population_pairs.mat'],'CS_on_population');
+num_pairs = length(CS_on_population)/2;
+CS_ang_avg_pairs = nan(num_pairs,2);
+for counter_pair = 1 : num_pairs
+    CS_ang_avg_pairs(counter_pair, 1) = CS_on_population(2*counter_pair-1).CS_ang_avg;
+    CS_ang_avg_pairs(counter_pair, 2) = CS_on_population(2*counter_pair  ).CS_ang_avg;
+end
+x_values_ = cosd(CS_ang_avg_pairs); 
+y_values_ = sind(CS_ang_avg_pairs);
+diff_ang = acosd( (x_values_(:,1) .* x_values_(:,2)) + (y_values_(:,1) .* y_values_(:,2)) );
+vec_1 = [x_values_(:,1)'; y_values_(:,1)'; zeros(1,num_pairs)];
+vec_2 = [x_values_(:,2)'; y_values_(:,2)'; zeros(1,num_pairs)];
+cross_ang = cross(vec_1, vec_2);
+diff_CS_ang_avg_pairs = diff_ang .* sign(cross_ang(3,:)');
+
+step_size_ = 22.5;
+ang_edges = -135-(step_size_/2):step_size_:135+(step_size_/2);
+
+pair_distance = estimate_pair_distance();
+pair_distance = pair_distance(1:2:end);
+
+hFig = figure(fig_num+2);
+clf(hFig)
+subplot(1,2,1)
+hold on
+histogram(diff_CS_ang_avg_pairs, ang_edges, 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'r')
+histogram(diff_CS_ang_avg_pairs, ang_edges, 'DisplayStyle', 'stairs', 'EdgeColor', 'r', 'FaceColor', 'none', 'linewidth', 1)
+xline(mean(diff_CS_ang_avg_pairs),'Color', 'r', 'linewidth', 1)
+set(gca, 'XTick', -135:45:135)
+ylabel('count')
+xlabel('diff in CS-on dir (deg)')
+title('CS-on Pairs')
+
+subplot(1,2,2)
+hold on
+x_axis_data = pair_distance;
+y_axis_data = diff_ang;
+plot(x_axis_data, y_axis_data, 'o','MarkerSize',3, 'MarkerFaceColor', 'k', 'MarkerEdgeColor', 'None')
+
+P_ = polyfit(x_axis_data, y_axis_data, 1);
+y_axis_hat = polyval(P_,x_axis_data);
+plot(x_axis_data, y_axis_hat, '-', 'LineWidth', 1)
+
+[b,~,~,~,stats] = regress(y_axis_data,[ones(size(x_axis_data)) x_axis_data]);
+% p_value = stats(3)
+
+xlabel('Contact distance (um)')
+ylabel('Absolute CS-on diff. (deg)')
+
+ESN_Beautify_Plot(hFig, [3 1.5], 8)
+file_name_fig_ = 'CS_on_properties_3';
+saveas(hFig,[path_fig_ filesep file_name_fig_], 'pdf');
 end
 
 %% function plot_modulation_z_score()
@@ -2883,10 +3096,12 @@ if ~strcmp(path_cell_data(end), filesep);path_cell_data = [path_cell_data filese
 pCell_ids = build_pCell_ids(flag_pair_list);
 num_pCells = size(pCell_ids, 1);
 
-modulation_trace    = nan(length_trace, num_pCells);
+modulation_trace_mean    = nan(length_trace, num_pCells);
+modulation_trace_stdv    = nan(length_trace, num_pCells);
+modulation_range_mean    = nan(1, num_pCells);
+modulation_range_stdv    = nan(1, num_pCells);
 modulation_z_score  = nan(1, num_pCells);
 modulation_baseline = nan(1, num_pCells);
-SS_baseline_stdv    = nan(1, num_pCells);
 is_modulated        = false(1, num_pCells);
 % Loop over pCells
 fprintf('\nLoading sac_modulation ')
@@ -2896,22 +3111,24 @@ for counter_pCell = 1 : num_pCells
     cell_file_name = pCell_ids{counter_pCell, 1};
     load([path_cell_data cell_file_name], 'sac_modulation');
     %% Stack data
-    modulation_trace(:,counter_pCell)    = sac_modulation.modulation_trace;
-    modulation_z_score(:,counter_pCell)  = sac_modulation.modulation_z_score;
-    modulation_baseline(:,counter_pCell) = sac_modulation.modulation_baseline;
-    SS_baseline_stdv(:,counter_pCell) = sac_modulation.SS_baseline_stdv;
-    is_modulated(:,counter_pCell)        = sac_modulation.is_modulated;
+    modulation_trace_mean(:,counter_pCell) = sac_modulation.modulation_trace_mean;
+    modulation_trace_stdv(:,counter_pCell) = sac_modulation.modulation_trace_stdv;
+    modulation_range_mean(:,counter_pCell) = sac_modulation.modulation_range_mean;
+    modulation_range_stdv(:,counter_pCell) = sac_modulation.modulation_range_stdv;
+    modulation_z_score(:,counter_pCell)    = sac_modulation.modulation_z_score;
+    modulation_baseline(:,counter_pCell)   = sac_modulation.modulation_baseline;
+    is_modulated(:,counter_pCell)          = sac_modulation.is_modulated;
 end
-fprintf(' --> Completed. \n')
-
-%% Cluster Using UMAP
 if length_trace ~= 500
     error('sac_modulation_index: length_trace is not 500. Please modify the code.')
 end
 data_baseline = repmat(modulation_baseline, length_trace, 1);
-data_trace = (modulation_trace - data_baseline)' * 1000;
+data_trace = (modulation_trace_mean - data_baseline)' * 1000;
 data_smooth = data_trace(:,201:350);
 
+fprintf(' --> Completed. \n')
+
+%% Cluster Using UMAP
 [~, pca_mat, ~] = pca(data_smooth);
 [reduction, umap, clusterIdentifiers, extras]=run_umap(data_smooth);
 
@@ -2920,8 +3137,28 @@ data_gmm_ = [reduction(:, 1), reduction(:, 2)];
 n_component_gmm_ = 2;
 gmm_model_ = fitgmdist(data_gmm_,n_component_gmm_);
 idx = cluster(gmm_model_,data_gmm_);
+
+% Set pauser as idx_1, burster as idx_2, not_modulated as idx_3
 idx(~is_modulated) = 3;
+trace_idx_1 = nanmean(data_smooth(idx==1,:));
+trace_idx_2 = nanmean(data_smooth(idx==2,:));
+if max(trace_idx_1) > max(trace_idx_2)
+    idx(idx==1) = 4;
+    idx(idx==2) = 1;
+    idx(idx==4) = 2;
+end
 [sum(idx==1) sum(idx==2) sum(idx==3)]
+
+%% Save umap_data
+idx_pauser = (idx==1);
+idx_burster = (idx==2);
+idx_modulated = ~(idx==3);
+idx_not_modulated = (idx==3);
+save([path_cell_data '..' filesep 'umap_data.mat'], ...
+    'idx', 'idx_pauser','idx_burster','idx_modulated','idx_not_modulated', ...
+    'pca_mat', 'reduction', 'umap', 'clusterIdentifiers', ...
+    'data_gmm_', 'n_component_gmm_', 'gmm_model_', ...
+    '-v7.3');
 
 %% Init plot
 close all;
@@ -2932,7 +3169,7 @@ num_col_fig = 3;
 
 %% Plot modulation_z_score distribution
 subplot(num_row_fig, num_col_fig, [1 4]);
-z_score_edges = 0 : 0.5 : 20; 
+z_score_edges = 0 : 1 : 21; 
 histogram(modulation_z_score, z_score_edges,'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', [0.6 0.6 0.6])
 hold on
 histogram(modulation_z_score, z_score_edges,'DisplayStyle', 'stairs', 'EdgeColor', 'k', 'FaceColor', 'none', 'linewidth', 1)
@@ -2957,7 +3194,7 @@ plot((-49:100)',data_smooth(idx==3,:)', 'k')
 plot((-49:100)',nanmean(data_smooth(idx==3,:))', 'k', 'LineWidth', 2)
 % plot((-49:100)',data_smooth(110,:)', 'm')
 % plot((-49:100)',data_smooth(23,:)', 'c')
-ylim([-100 100])
+ylim([-50 50])
 
 subplot(num_row_fig, num_col_fig, [8]);
 hold on
@@ -2974,19 +3211,19 @@ MarkerSize_ = 3;
 subplot(num_row_fig, num_col_fig, [2 5]);
 hold on
 plot(reduction(idx==1, 1), reduction(idx==1, 2), 'ob',...
-    'MarkerFaceColor', 'b', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
+    'MarkerFaceColor', 'b','MarkerEdgeColor', 'None', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
 % plot(reduction(9, 1), reduction(9, 2), 'ob',...
 %     'MarkerFaceColor', 'm', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
 % plot(reduction(27, 1), reduction(27, 2), 'ob',...
 %     'MarkerFaceColor', 'c', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
 plot(reduction(idx==2, 1), reduction(idx==2, 2), 'or', ...
-    'MarkerFaceColor', 'r', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
+    'MarkerFaceColor', 'r','MarkerEdgeColor', 'None', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
 % plot(reduction(110, 1), reduction(110, 2), 'or',...
 %     'MarkerFaceColor', 'm', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
 % plot(reduction(23, 1), reduction(23, 2), 'or',...
 %     'MarkerFaceColor', 'c', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
 plot(reduction(idx==3, 1), reduction(idx==3, 2), 'ok', ...
-    'MarkerFaceColor', 'k', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
+    'MarkerFaceColor', 'k','MarkerEdgeColor', 'None', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
 xlabel('umap 1')
 ylabel('umap 2')
 title('umap')
@@ -2994,19 +3231,19 @@ title('umap')
 subplot(num_row_fig, num_col_fig, [3 6]);
 hold on
 plot(pca_mat(idx==1, 1), pca_mat(idx==1, 2), 'ob',...
-    'MarkerFaceColor', 'b', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
+    'MarkerFaceColor', 'b','MarkerEdgeColor', 'None', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
 % plot(pca_mat(9, 1), pca_mat(9, 2), 'ob',...
 %     'MarkerFaceColor', 'm', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
 % plot(pca_mat(27, 1), pca_mat(27, 2), 'ob',...
 %     'MarkerFaceColor', 'c', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
 plot(pca_mat(idx==2, 1), pca_mat(idx==2, 2), 'or', ...
-    'MarkerFaceColor', 'r', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
+    'MarkerFaceColor', 'r','MarkerEdgeColor', 'None', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
 % plot(pca_mat(110, 1), pca_mat(110, 2), 'or',...
 %     'MarkerFaceColor', 'm', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
 % plot(pca_mat(23, 1), pca_mat(23, 2), 'or',...
 %     'MarkerFaceColor', 'c', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
 plot(pca_mat(idx==3, 1), pca_mat(idx==3, 2), 'ok', ...
-    'MarkerFaceColor', 'k', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
+    'MarkerFaceColor', 'k','MarkerEdgeColor', 'None', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
 xlabel('pca 1')
 ylabel('pca 2')
 title('pca')
@@ -3017,15 +3254,23 @@ ESN_Beautify_Plot(hFig, [6,3], 8)
 hFig = figure;
 hold on
 id_pCell = 42;
-plot((-49:100)', data_smooth(id_pCell,:), 'k', 'LineWidth', 1)
-yline(SS_baseline_stdv(1,id_pCell)*1000)
-yline(-SS_baseline_stdv(1,id_pCell)*1000)
-yline(0)
+y_mean = data_trace(id_pCell,201:350)';
+y_stdv = modulation_trace_stdv(201:350,id_pCell)*1000;
+y_stdv_p = y_mean + y_stdv;
+y_stdv_m = y_mean - y_stdv;
+x_mean = (-49:100)';
+plot(x_mean, y_stdv_p, 'k', 'LineWidth', 0.5)
+plot(x_mean, y_stdv_m, 'k', 'LineWidth', 0.5)
+plot(x_mean, y_mean, 'k', 'LineWidth', 1)
+yline(max(y_mean))
+yline(min(y_mean))
+yline(max(y_mean)-(modulation_range_stdv(1,id_pCell)*1000))
 xlabel('Saccade onset (ms)')
 ylabel('SS firing rate')
-range_ = max(data_smooth(id_pCell,:)) - min(data_smooth(id_pCell,:));
-fprintf(['range: ' num2str(range_) '\n'])
-fprintf(['stdv: ' num2str(SS_baseline_stdv(1,id_pCell)*1000) '\n'])
+
+fprintf(['range mean: ' num2str(modulation_range_mean(1,id_pCell)*1000) '\n'])
+fprintf(['range stdv: ' num2str(modulation_range_stdv(1,id_pCell)*1000) '\n'])
+fprintf(['z-score: ' num2str(modulation_z_score(1,id_pCell)) '\n'])
 
 ESN_Beautify_Plot(hFig, [1.7,1.4], 8)
 
@@ -3048,9 +3293,16 @@ path_cell_data = [path_cell_data '..' filesep];
 if ~exist([path_cell_data 'population_figs'], 'dir')
     mkdir([path_cell_data 'population_figs']);
 end
+load('umap_data.mat', 'idx_pauser', 'idx_burster','idx_modulated','idx_not_modulated');
+flag_pair_list = false; [idx_mirza, idx_ramon] = idx_mirza_ramon(flag_pair_list);
 
 %% Loop over conditions
 params.variable        = 'amp';
+% idx_pCells: is a boolean array. 1 for including a pCell, and 0 for exluding a pCell
+% idx_mirza; % idx_ramon; % idx_pauser; % idx_burster; % idx_modulated; % idx_not_modulated;
+% params.idx_pCells = idx_mirza | idx_ramon;
+params.idx_pCells = idx_ramon;
+
 if ~exist('population_neural_properties', 'var')
     load([path_cell_data 'population_neural_properties' '.mat'], 'population_neural_properties')
 end
@@ -3076,6 +3328,7 @@ for counter_CSYS_type = 1 : length(CSYS_type_list)
         [population_dir, num_sac_dir] = population_data_combine_levels(population_dir, num_sac_dir, params.variable, 2, [3 7]);
         [population_dir, num_sac_dir] = population_data_combine_levels(population_dir, num_sac_dir, params.variable, 2, [2 8]);
         [population_dir, num_sac_dir] = population_data_combine_levels(population_dir, num_sac_dir, params.variable, 2, [4 6]);
+        [population_dir, num_sac_dir] = population_data_idx_pCells(population_dir, num_sac_dir, params.variable, params.idx_pCells);
         if strcmp(params.data_type, 'SS') || strcmp(params.data_type, 'CS')
             population_dir = population_data_smooth_pCells(population_dir, num_sac_dir, params.variable);
         end
@@ -3085,7 +3338,6 @@ for counter_CSYS_type = 1 : length(CSYS_type_list)
         [population_avg_allDir, population_sem_allDir] = population_data_avg_over_pCells(population_allDir, num_sac_allDir, params.variable);
         for counter_event_type = 1 : length(event_type_list)
             params.event_type_name = event_type_list{counter_event_type};
-            params.pCell_idx = 1:size(population_data.(params.variable)(1).onset{1, 1}, 1);
             for counter_tag = 1 : num_tag
                 params.tag_id          = counter_tag;
                 params.fig_num = fig_num;
@@ -3265,16 +3517,17 @@ clc; clear;
 close all;
 %% set params
 params.data_type       = 'SS';
-params.CSYS_type       = 'tuned';
+params.CSYS_type       = 'tuned'; % tuned % absol
 params.event_type_name = 'onset';
 params.variable        = 'vel';
-params.tag_id          = 8;
+params.tag_id          = 1;
 params.flag_smooth_plot = true; % false; % 
 params.fig_num = 3;
-params.plot_mode = 2; % mode=1 collapse the amp/vel, mode=2 plots the amp/vel
+params.plot_mode = 1; % mode=1 collapse the amp/vel, mode=2 plots the amp/vel
 fprintf('params --> Completed. \n')
 %% Load data
-load('umap_data.mat', 'idx_*');
+load('umap_data.mat', 'idx_pauser', 'idx_burster','idx_modulated','idx_not_modulated');
+flag_pair_list = false; [idx_mirza, idx_ramon] = idx_mirza_ramon(flag_pair_list);
 if ~exist([params.data_type '_population_' params.CSYS_type], 'var')
     load([params.data_type '_population_' params.CSYS_type '.mat'], [params.data_type '_population_' params.CSYS_type])
 end
@@ -3293,20 +3546,18 @@ end
 fprintf('Load data --> Completed. \n')
 %% MODE 1 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 if params.plot_mode == 1
-[population_dir, num_sac_dir] = population_data_avg_over_levels(population_data, num_sac_data, params.variable, 1, [3 4 5 6]);
+[population_dir, num_sac_dir] = population_data_avg_over_levels(population_data, num_sac_data, params.variable, 1, [3 4 5 6 7]); % based on vel, 250-750
 
 [population_dir, num_sac_dir] = population_data_combine_levels(population_dir, num_sac_dir, params.variable, 2, [3 7]);
 [population_dir, num_sac_dir] = population_data_combine_levels(population_dir, num_sac_dir, params.variable, 2, [2 8]);
 [population_dir, num_sac_dir] = population_data_combine_levels(population_dir, num_sac_dir, params.variable, 2, [4 6]);
 [population_dir, num_sac_dir] = population_data_combine_tags(  population_dir, num_sac_dir, params.variable, [1 4 6 7 8]);
+% [population_dir, num_sac_dir] = population_data_combine_tags(  population_dir, num_sac_dir, params.variable, [1 4 8]);
 
-% remove douplicates
 % idx_pCells: is a boolean array. 1 for including a pCell, and 0 for exluding a pCell
-% num_pCells = size(population_dir.vel(1).visual{1,1},1);
-% idx_pCells = false(num_pCells, 1); 
-% idx_pCells(90:1:num_pCells, 1) = true; % Ramon
-% idx_pCells(1:1:89, 1) = true; % Mirza
-idx_pCells = idx_modulated(:);% & idx_ramon(:);
+% idx_mirza; % idx_ramon; % idx_pauser; % idx_burster; % idx_modulated; % idx_not_modulated;
+idx_pCells = idx_mirza | idx_ramon;
+% idx_pCells = idx_pauser;
 [population_dir, num_sac_dir] = population_data_idx_pCells(population_dir, num_sac_dir, params.variable, idx_pCells);
 
 %
@@ -3332,7 +3583,9 @@ if params.plot_mode == 2
 [population_data, num_sac_data] = population_data_combine_levels(population_data, num_sac_data, params.variable, 2, [4 6]);
 [population_data, num_sac_data] = population_data_combine_tags(  population_data, num_sac_data, params.variable, [8]);
 
-idx_pCells = idx_modulated(:);% & idx_ramon(:);
+% idx_pCells: is a boolean array. 1 for including a pCell, and 0 for exluding a pCell
+% idx_mirza; % idx_ramon; % idx_pauser; % idx_burster; % idx_modulated; % idx_not_modulated;
+idx_pCells = idx_mirza | idx_ramon;
 [population_data, num_sac_data] = population_data_idx_pCells(population_data, num_sac_data, params.variable, idx_pCells);
 
 if strcmp(params.data_type, 'SS') || strcmp(params.data_type, 'CS')
@@ -3612,30 +3865,326 @@ plot_population_data(params.fig_num, data_avg_dir, data_avg_allDir, params, data
 end
 
 %% function plot_single_session_modulation
-function plot_single_session_modulation(fig_num)
+function plot_single_session_modulation()
 %% clear
 clc; clear;
 %% close all
 close all;
-%% set params
-params.tag_id          = 8;
-params.fig_num = fig_num;
-fprintf('params --> Completed. \n')
-%% Load data
-[session_filename,session_filepath] = uigetfile('*_combine_*.mat','Select single session data from cell_data folder.');
-load([session_filepath session_filename], 'SACS_ALL_DATA', 'CS_on_data')
-fprintf('Load data --> Completed. \n')
-%%
-sac_data.idx_sacs = (SACS_ALL_DATA.tag == params.tag_id);
-sac_data.SS = SACS_ALL_DATA.neuro_SS_onset;
 
+%% set params
+flag_pair_list = false;
+ESN_global_variables(flag_pair_list);
+global ang_edges ang_values length_trace range_cell_with_4dir_behave
+params.pCell_id = '190903_160127_01_combine_2';
+params.tag_ids  = [1 4 8];
+params.fig_num = 5;
+fprintf('params --> Completed. \n')
+
+%% Load data
+path_cell_data = uigetdir;
+if ~strcmp(path_cell_data(end), filesep);path_cell_data = [path_cell_data filesep];end
+load([path_cell_data params.pCell_id '.mat'], 'SACS_ALL_DATA', 'CS_on_data')
+pCell_ids = build_pCell_ids(flag_pair_list);
+counter_pCell = find(strcmp(pCell_ids, params.pCell_id));
+fprintf('Load data --> Completed. \n')
+
+%% Build sac_data
+idx_sacs    = false(size(SACS_ALL_DATA.validity));
+for counter_tag = 1 : length(params.tag_ids)
+    idx_sacs    = idx_sacs | (SACS_ALL_DATA.tag == params.tag_ids(counter_tag));
+end
+idx_sacs    = idx_sacs & SACS_ALL_DATA.validity;
+
+sac_data.time_onset  = SACS_ALL_DATA.time_onset(     :,idx_sacs);
+sac_data.time_visual = SACS_ALL_DATA.time_visual(    :,idx_sacs);
+sac_data.time_offset = SACS_ALL_DATA.time_offset(    :,idx_sacs);
+sac_data.SS_onset    = SACS_ALL_DATA.neuro_SS_onset( :,idx_sacs);
+sac_data.CS_onset    = SACS_ALL_DATA.neuro_CS_onset( :,idx_sacs);
+sac_data.SS_visual   = SACS_ALL_DATA.neuro_SS_visual(:,idx_sacs);
+sac_data.CS_visual   = SACS_ALL_DATA.neuro_CS_visual(:,idx_sacs);
+sac_data.eye_vx_onset  = SACS_ALL_DATA.eye_vx_onset( :,idx_sacs);
+sac_data.eye_vy_onset  = SACS_ALL_DATA.eye_vy_onset( :,idx_sacs);
+sac_data.eye_vx_visual = SACS_ALL_DATA.eye_vx_visual(:,idx_sacs);
+sac_data.eye_vy_visual = SACS_ALL_DATA.eye_vy_visual(:,idx_sacs);
+sac_data.visual_px_offset = SACS_ALL_DATA.visual_px_offset(:,idx_sacs);
+sac_data.visual_py_offset = SACS_ALL_DATA.visual_py_offset(:,idx_sacs);
+sac_data.eye_r_px_onset   = SACS_ALL_DATA.eye_r_px_onset(  :,idx_sacs);
+sac_data.eye_r_py_onset   = SACS_ALL_DATA.eye_r_py_onset(  :,idx_sacs);
+
+sac_data.eye_vm_onset  = sqrt(sac_data.eye_vx_onset.^2  + sac_data.eye_vy_onset.^2 );
+sac_data.eye_vm_visual = sqrt(sac_data.eye_vx_visual.^2 + sac_data.eye_vy_visual.^2);
+sac_data.time_diff_visual_onset = sac_data.time_onset - sac_data.time_visual;
+sac_data.time_diff_onset_offset = sac_data.time_offset - sac_data.time_onset;
+
+%% Build sac_data_dir
+sac_data.delta_x = sac_data.visual_px_offset - sac_data.eye_r_px_onset;
+sac_data.delta_y = sac_data.visual_py_offset - sac_data.eye_r_py_onset;
+sac_data.visual_ang = wrapTo360(atan2d(sac_data.delta_y, sac_data.delta_x));
+if (counter_pCell >= range_cell_with_4dir_behave(1)) && (counter_pCell <= range_cell_with_4dir_behave(2))
+    sac_data.visual_ang_bin = discretize(ESN_Round(sac_data.visual_ang, 90.0, 'round'), ang_edges);
+else
+    sac_data.visual_ang_bin = discretize(sac_data.visual_ang, ang_edges);
+end
+last_bin_id = length(ang_edges) - 1;
+sac_data.visual_ang_bin(sac_data.visual_ang_bin == last_bin_id) = 1; % wrap the circle around
+% 1: 0deg % 2: 45deg % 3: 90deg % 4: 135deg % 5: 180deg % 6: 225deg % 7: 270deg % 8: 315deg
+
+if length(ang_values) ~= 8
+    error('plot_single_session_modulation: length ang_values is not 8. Please modify the code.')
+end
+if length_trace ~= 500
+    error('sac_modulation_index: length_trace is not 500. Please modify the code.')
+end
+
+field_names_sac_data = fieldnames(sac_data);
+sac_data_dir = struct;
+for counter_dir = 1 : 8
+for counter_field = 1 : length(field_names_sac_data)
+    field_name = field_names_sac_data{counter_field};
+    idx_ang = (sac_data.visual_ang_bin == counter_dir);
+    sac_data_dir(counter_dir).(field_name) = sac_data.(field_name)(:,idx_ang);
+end
+end
+
+%% Init Plot
+hFig = figure(params.fig_num);
+clf(hFig)
+num_row_fig = 9;
+num_col_fig = 9;
+ax_ang_id = [6, 3, 2, 1, 4, 7, 8, 9];
+
+% Figure parameters
+Line_Color = lines(7);
+color_SS     = Line_Color(1,:);
+color_CS     = Line_Color(7,:);
+color_visual = Line_Color(2,:);
+color_onset  = Line_Color(2,:);
+color_offset = Line_Color(2,:);
+color_SS_firing = [0    0.3    0.5];
+color_vm     = Line_Color(5,:);
+clearvars h_ax
+
+num_trial_dir = zeros(1,8);
+for counter_dir = 1 : 8
+    num_trial_dir(counter_dir) = size(sac_data_dir(counter_dir).time_onset,2);
+end
+num_trial_dir_max = round(median(num_trial_dir));
+
+%% Plot data, Loop over dirs
+for counter_dir = 1 : 8
+    if isempty(sac_data_dir(counter_dir).SS_onset)
+        continue;
+    end
+    ax_ang_id_ = ax_ang_id(counter_dir);
+    row_ = ceil(ax_ang_id_ / 3);
+    col_ = mod(ax_ang_id_ , 3);
+    if col_==0
+        col_ = 3;
+    end
+    rows_ = ((row_-1)*3) + [1 2 3]';
+    cols_ = ((col_-1)*3) + [1 2 3];
+    rows_ = repmat(rows_,1,3);
+    cols_ = repmat(cols_,3,1);
+    ax_ids = ( (rows_-1)*9 ) + cols_;
+    num_trial_dir_max_ = min([num_trial_dir_max size(sac_data_dir(counter_dir).time_onset,2)]);
+    
+    %% Plot visual raster
+    h_ax(ax_ang_id_, 1) = subplot(num_row_fig, num_col_fig, [ax_ids(1,1) ax_ids(2,1)]);
+    hold on
+    train_data_logic_SS_ = sac_data_dir(counter_dir).SS_visual(250:400,1:num_trial_dir_max_)';
+    firing_SS_ = mean(sac_data_dir(counter_dir).SS_visual(:,1:num_trial_dir_max_)') * 1000;
+    firing_SS_ = ESN_smooth(firing_SS_); % smooth(firing_SS_(:), 21, 'sgolay', 2)'; % 
+    firing_SS_(firing_SS_<0)=0;
+    firing_SS_ = firing_SS_(1, 250:400);
+    train_data_logic_CS_ = sac_data_dir(counter_dir).CS_visual(250:400,1:num_trial_dir_max_)';
+    train_data_logic_visual = false(size(train_data_logic_SS_));
+    train_data_logic_visual(:,1) = true;
+    train_data_logic_onset = false(size(train_data_logic_SS_));
+    ind_onset = round(sac_data_dir(counter_dir).time_diff_visual_onset(:,1:num_trial_dir_max_) * 1000); % convert sec to ms
+    ind_onset_out_of_range = false(size(ind_onset));
+    ind_onset_out_of_range(ind_onset>150) = true; ind_onset_out_of_range(ind_onset<1) = true;
+    onset_row_number_ = 1:size(train_data_logic_onset,1);
+    onset_row_number_ = onset_row_number_(~ind_onset_out_of_range);
+    ind_onset = ind_onset(~ind_onset_out_of_range);
+    for counter_ind = 1 : sum(~ind_onset_out_of_range)
+        onset_row_number__ = onset_row_number_(counter_ind);
+        onset_col_number__ = ind_onset(counter_ind);
+        train_data_logic_onset(onset_row_number__,onset_col_number__) = true;
+    end
+
+    inds_span = 0 : 150;
+    [x_axis_SS_, y_axis_SS_] = ESN_raster_plot_axes(train_data_logic_SS_, inds_span, 0.5);
+    plot(x_axis_SS_(:), y_axis_SS_(:), 'LineWidth', 1, 'Color', color_SS)
+    [x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_CS_, inds_span, 1);
+    plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 3, 'Color', color_CS)
+%     [x_axis_visual_, y_axis_visual_] = ESN_raster_plot_axes(train_data_logic_visual, inds_span, 0.1);
+%     plot(x_axis_visual_(:), y_axis_visual_(:), 'LineWidth', 2, 'Color', color_visual);
+%     [x_axis_onset_, y_axis_onset_] = ESN_raster_plot_axes(train_data_logic_onset, inds_span, 0.1);
+%     plot(x_axis_onset_(:), y_axis_onset_(:), 'LineWidth', 2, 'Color', color_onset);
+    xlim([0 150])
+    ylim([1 size(train_data_logic_SS_,1)])
+    set(gca, 'XTick', [0 150])
+    set(gca, 'XTickLabel', {'',''})
+    
+    yyaxis right;
+    plot(inds_span, firing_SS_, 'LineWidth', 1, 'Color', color_SS_firing)
+    ylim([0 200])
+    xlim([0 150])
+    set(gca, 'YColor', color_SS_firing)
+    if (ax_ang_id_==1) || (ax_ang_id_==4) || (ax_ang_id_==7)
+        xlabel('Trial')
+    end
+    
+    %% Plot onset raster
+    h_ax(ax_ang_id_, 2) = subplot(num_row_fig, num_col_fig, [ax_ids(1,2) ax_ids(1,3) ax_ids(2,2) ax_ids(2,3)]);
+    hold on
+    train_data_logic_SS_ = sac_data_dir(counter_dir).SS_onset(200:350,1:num_trial_dir_max_)';
+    firing_SS_ = mean(sac_data_dir(counter_dir).SS_onset(:,1:num_trial_dir_max_)') * 1000;
+    firing_SS_ = ESN_smooth(firing_SS_); % smooth(firing_SS_(:), 21, 'sgolay', 2)'; % 
+    firing_SS_(firing_SS_<0)=0;
+    firing_SS_ = firing_SS_(1, 200:350);
+    train_data_logic_CS_ = sac_data_dir(counter_dir).CS_onset(200:350,1:num_trial_dir_max_)';
+    train_data_logic_onset = false(size(train_data_logic_SS_));
+    train_data_logic_onset(:,51) = true;
+    train_data_logic_offset = false(size(train_data_logic_SS_));
+    ind_offset = round(sac_data_dir(counter_dir).time_diff_onset_offset(:,1:num_trial_dir_max_) * 1000)+51; % convert sec to ms
+    ind_offset_out_of_range = false(size(ind_offset));
+    ind_offset_out_of_range(ind_offset>100) = true; ind_offset_out_of_range(ind_offset<1) = true;
+    offset_row_number_ = 1:size(train_data_logic_offset,1);
+    offset_row_number_ = offset_row_number_(~ind_offset_out_of_range);
+    ind_offset = ind_offset(~ind_offset_out_of_range);
+    for counter_ind = 1 : sum(~ind_offset_out_of_range)
+        offset_row_number__ = offset_row_number_(counter_ind);
+        offset_col_number__ = ind_offset(counter_ind);
+        train_data_logic_offset(offset_row_number__,offset_col_number__) = true;
+    end
+    
+    inds_span = -50 : 100;
+    [x_axis_SS_, y_axis_SS_] = ESN_raster_plot_axes(train_data_logic_SS_, inds_span, 0.5);
+    plot(x_axis_SS_(:), y_axis_SS_(:), 'LineWidth', 1, 'Color', color_SS)
+    [x_axis_CS_, y_axis_CS_] = ESN_raster_plot_axes(train_data_logic_CS_, inds_span, 1);
+    plot(x_axis_CS_(:), y_axis_CS_(:), 'LineWidth', 3, 'Color', color_CS)
+    [x_axis_onset_, y_axis_onset_] = ESN_raster_plot_axes(train_data_logic_onset, inds_span, 0.5);
+    plot(x_axis_onset_(:), y_axis_onset_(:), 'LineWidth', 2, 'Color', color_onset);
+    [x_axis_offset_, y_axis_offset_] = ESN_raster_plot_axes(train_data_logic_offset, inds_span, 0.5);
+    plot(x_axis_offset_(:), y_axis_offset_(:), 'LineWidth', 2, 'Color', color_offset);
+    xlim([-50 100])
+    ylim([1 size(train_data_logic_SS_,1)])
+    set(gca, 'XTick', [-50 0 50 100])
+    set(gca, 'XTickLabel', {'','','', ''})
+    set(gca, 'YTickLabel', [])
+    
+    yyaxis right;
+    
+    plot(inds_span, firing_SS_, 'LineWidth', 1, 'Color', color_SS_firing)
+    ylim([0 200])
+    xlim([-50 100])
+    set(gca, 'YColor', color_SS_firing)
+    if (ax_ang_id_==3) || (ax_ang_id_==6) || (ax_ang_id_==9)
+        ylabel('SS Firing (spk/s)')
+        set(gca, 'YTick', [0 50 100 150 200])
+        set(gca, 'YTickLabel', {'0','','100', '', '200'})
+    else
+        set(gca, 'YTick', [0 50 100 150 200])
+        set(gca, 'YTickLabel', {'','','', '', ''})
+    end
+    
+    
+    %% Plot cue vm
+    h_ax(ax_ang_id_, 3) = subplot(num_row_fig, num_col_fig, ax_ids(3,1));
+    hold on
+%     train_data_logic_CS_ = sac_data_dir(counter_dir).CS_visual(250:400,1:num_trial_dir_max_)';
+    firing_CS_ = mean(sac_data_dir(counter_dir).CS_visual(:,1:num_trial_dir_max_)') * 1000;
+    firing_CS_ = ESN_smooth(firing_CS_); % smooth(firing_SS_(:), 21, 'sgolay', 2)'; % 
+    firing_CS_(firing_CS_<0)=0;
+    firing_CS_ = firing_CS_(1, 250:400);
+    inds_span = 0 : 150;
+    plot(inds_span, firing_CS_, '-', 'LineWidth', 0.5, 'color', color_CS)
+    ylim([0 3])
+    xlim([0 150])
+%     vm_ = sac_data_dir(counter_dir).eye_vm_visual(250:400,1:num_trial_dir_max_)';
+%     inds_span = 0 : 150;
+%     vm_ = nanmean(vm_);
+%     plot(inds_span, vm_, '-k', 'LineWidth', 0.5)
+%     ylim([0 600])
+%     xlim([0 150])
+%     set(gca, 'XTick', [0 150])
+%     set(gca, 'YTick', [0 300 600])
+%     set(gca, 'XTickLabel', {'0', '150'})
+%     
+%     if (ax_ang_id_==1) || (ax_ang_id_==4) || (ax_ang_id_==7)
+%         ylabel('Sac. vel.')
+%     end
+    
+    %% Plot onset vm
+    h_ax(ax_ang_id_, 4) = subplot(num_row_fig, num_col_fig, [ax_ids(3,2) ax_ids(3,3)]);
+    hold on
+    vm_ = sac_data_dir(counter_dir).eye_vm_onset(200:350,1:num_trial_dir_max_)';
+    inds_span = -50 : 100;
+    vm_ = nanmean(vm_);
+    firing_CS_ = mean(sac_data_dir(counter_dir).CS_visual(:,1:num_trial_dir_max_)') * 1000;
+    firing_CS_ = ESN_smooth(firing_CS_); % smooth(firing_SS_(:), 21, 'sgolay', 2)'; % 
+    firing_CS_(firing_CS_<0)=0;
+    firing_CS_ = firing_CS_(1, 200:350);
+    
+    plot(inds_span, vm_, '-k', 'LineWidth', 0.5)
+    xlim([-50 100])
+    ylim([0 600])
+    set(gca, 'XTick', [-50 0 50 100])
+    set(gca, 'YTick', [0 300 600])
+    set(gca, 'XTickLabel', {'-50' ,'0','', '100'})
+    set(gca, 'YTickLabel', {'' ,'',''})
+    
+    yyaxis right;
+    plot(inds_span, firing_CS_, '-', 'LineWidth', 0.5, 'color', color_CS)
+    ylim([0 3])
+    xlim([-50 100])
+    set(gca, 'YColor', color_CS)
+    
+end
+% Plot CS-Tuning
+ax_ang_id_ = 5;
+row_ = ceil(ax_ang_id_ / 3);
+col_ = mod(ax_ang_id_ , 3);
+if col_==0
+    col_ = 3;
+end
+rows_ = ((row_-1)*3) + [1 2 3]';
+cols_ = ((col_-1)*3) + [1 2 3];
+rows_ = repmat(rows_,1,3);
+cols_ = repmat(cols_,3,1);
+ax_ids = ( (rows_-1)*9 ) + cols_;
+h_ax(ax_ang_id_, 1) = subplot(num_row_fig, num_col_fig, ax_ids(:));
+prob_amplitude = CS_on_data.CS_prob_avg;
+
+vonMises_std = CS_on_data.vonMises_std;
+CS_ang_avg = CS_on_data.CS_ang_avg;
+CS_rho_avg = CS_on_data.CS_rho_avg;
+std_curv_ang = (CS_on_data.CS_ang_avg-vonMises_std) : 2 : (CS_on_data.CS_ang_avg+vonMises_std);
+std_curv_amp = repmat(CS_rho_avg, length(std_curv_ang), 1);
+
+plot_data_amp_mean = [prob_amplitude, prob_amplitude(1), nan]';
+plot_data_deg_mean = [ang_values, ang_values(1), nan]';
+polarplot(deg2rad(plot_data_deg_mean),plot_data_amp_mean, '-', 'LineWidth', 1, 'Color', color_CS)
+hold on
+polarplot(deg2rad(std_curv_ang), std_curv_amp, '-', 'LineWidth', 1.5, 'Color', color_CS)
+polarplot([0 deg2rad(CS_ang_avg)],[0 CS_rho_avg], '-', 'LineWidth', 1.5, 'Color', color_CS)
+rlim([0 0.25])
+set(gca, 'ThetaTick', 0:45:315, 'RTick', 0:0.05:0.25, ...
+    'RTickLabel', {'', '', '0.1', '', '0.2', ''}, 'ThetaTickLabel', {'0','','90','', '180','','270', ''})
+title('CS Tuning', 'Interpreter', 'none', 'Color',color_CS);
+
+%
+ESN_Beautify_Plot(hFig, [8 8], 8)
+% ESN_Beautify_Plot(hFig, [8 8], 12)
+saveas(hFig,'single_session_modulation', 'pdf');
 
 end
 
 %% SCRATCH AREA %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% function scratch()
-function scratch()
+%% function scratch_permutation_ss_population()
+function scratch_permutation_ss_population()
 %%
 clc;
 ESN_global_variables();
@@ -3732,6 +4281,10 @@ legend({...
 
 ESN_Beautify_Plot(hFig_, [8, 5], 12)
 %%
+end
+
+%% function scratch_plot_vmax_vs_ss_modulation()
+function scratch_plot_vmax_vs_ss_modulation()
 %% for ploting vmax vs. ss_max_modulation: set ss_max
 ss_max_avg = nan(8,8);
 ss_max_sem = nan(8,8);
@@ -3871,5 +4424,190 @@ ESN_Beautify_Plot(gcf, [1.5 1.5], 8)
 [b,~,~,~,stats] = regress(y_axis_data,[ones(size(x_axis_data)) x_axis_data]);
 p_value = stats(3)
 
+end
 
+%% function scratch_compare_cs_on_001_004_008_148()
+function scratch_compare_cs_on_001_004_008_148()
+%% Compare CS_on_population_001, CS_on_population_004, CS_on_population_008
+CS_on_population_001 = load('CS_on_population_001.mat');
+CS_on_population_004 = load('CS_on_population_004.mat');
+CS_on_population_008 = load('CS_on_population_008.mat');
+CS_on_population_148 = load('CS_on_population_148.mat');
+num_pCells = length(CS_on_population_148.CS_on_population);
+for counter_pCell = 1 : num_pCells
+    CS_on_population_001.CS_ang_avg(counter_pCell,1) = CS_on_population_001.CS_on_population(counter_pCell).CS_ang_avg;
+    CS_on_population_004.CS_ang_avg(counter_pCell,1) = CS_on_population_004.CS_on_population(counter_pCell).CS_ang_avg;
+    CS_on_population_008.CS_ang_avg(counter_pCell,1) = CS_on_population_008.CS_on_population(counter_pCell).CS_ang_avg;
+    CS_on_population_148.CS_ang_avg(counter_pCell,1) = CS_on_population_148.CS_on_population(counter_pCell).CS_ang_avg;
+end
+CS_ang_avg_001 = CS_on_population_001.CS_ang_avg;
+CS_ang_avg_004 = CS_on_population_004.CS_ang_avg;
+% CS_ang_avg_008 = CS_on_population_008.CS_ang_avg;
+CS_ang_avg_148 = CS_on_population_148.CS_ang_avg;
+%
+CS_ang_pairs = [CS_ang_avg_001 CS_ang_avg_004];
+x_values_ = cosd(CS_ang_pairs); 
+y_values_ = sind(CS_ang_pairs);
+diff_ang = acosd( (x_values_(:,1) .* x_values_(:,2)) + (y_values_(:,1) .* y_values_(:,2)) );
+vec_1 = [x_values_(:,1)'; y_values_(:,1)'; zeros(1,num_pCells)];
+vec_2 = [x_values_(:,2)'; y_values_(:,2)'; zeros(1,num_pCells)];
+cross_ang = cross(vec_1, vec_2);
+diff_ang_001_004 = diff_ang .* sign(cross_ang(3,:)');
+
+CS_ang_pairs = [CS_ang_avg_001 CS_ang_avg_148];
+x_values_ = cosd(CS_ang_pairs); 
+y_values_ = sind(CS_ang_pairs);
+diff_ang = acosd( (x_values_(:,1) .* x_values_(:,2)) + (y_values_(:,1) .* y_values_(:,2)) );
+vec_1 = [x_values_(:,1)'; y_values_(:,1)'; zeros(1,num_pCells)];
+vec_2 = [x_values_(:,2)'; y_values_(:,2)'; zeros(1,num_pCells)];
+cross_ang = cross(vec_1, vec_2);
+diff_ang_001_148 = diff_ang .* sign(cross_ang(3,:)');
+
+CS_ang_pairs = [CS_ang_avg_004 CS_ang_avg_148];
+x_values_ = cosd(CS_ang_pairs); 
+y_values_ = sind(CS_ang_pairs);
+diff_ang = acosd( (x_values_(:,1) .* x_values_(:,2)) + (y_values_(:,1) .* y_values_(:,2)) );
+vec_1 = [x_values_(:,1)'; y_values_(:,1)'; zeros(1,num_pCells)];
+vec_2 = [x_values_(:,2)'; y_values_(:,2)'; zeros(1,num_pCells)];
+cross_ang = cross(vec_1, vec_2);
+diff_ang_004_148 = diff_ang .* sign(cross_ang(3,:)');
+
+step_size_ = 22.5;
+ang_edges = -135-(step_size_/2):step_size_:135+(step_size_/2);
+
+hFig = figure(7);
+clf(hFig)
+
+subplot(1,3,1)
+hold on
+histogram(diff_ang_001_004, ang_edges, 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'r')
+histogram(diff_ang_001_004, ang_edges, 'DisplayStyle', 'stairs', 'EdgeColor', 'r', 'FaceColor', 'none', 'linewidth', 1)
+xline(mean(diff_ang_001_004),'Color', 'r', 'linewidth', 1)
+set(gca, 'XTick', -135:45:135)
+ylim([0 70])
+ylabel('Count')
+title('tag1 - tag4')
+
+subplot(1,3,2)
+hold on
+histogram(diff_ang_001_148, ang_edges, 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'r')
+histogram(diff_ang_001_148, ang_edges, 'DisplayStyle', 'stairs', 'EdgeColor', 'r', 'FaceColor', 'none', 'linewidth', 1)
+xline(mean(diff_ang_001_148),'Color', 'r', 'linewidth', 1)
+set(gca, 'XTick', -135:45:135)
+ylim([0 70])
+title('tag1 - tag148')
+
+subplot(1,3,3)
+hold on
+histogram(diff_ang_004_148, ang_edges, 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'r')
+histogram(diff_ang_004_148, ang_edges, 'DisplayStyle', 'stairs', 'EdgeColor', 'r', 'FaceColor', 'none', 'linewidth', 1)
+xline(mean(diff_ang_004_148),'Color', 'r', 'linewidth', 1)
+set(gca, 'XTick', -135:45:135)
+ylim([0 70])
+title('tag4 - tag148')
+
+ESN_Beautify_Plot(hFig, [4 1.5], 8)
+
+fprintf(['diff_ang_001_004, mean: ' num2str(mean(diff_ang_001_004)) '\n'])
+fprintf(['diff_ang_001_004, sem : ' num2str(std( diff_ang_001_004)./sqrt(num_pCells)) '\n'])
+
+fprintf(['diff_ang_001_148, mean: ' num2str(mean(diff_ang_001_148)) '\n'])
+fprintf(['diff_ang_001_148, sem : ' num2str(std( diff_ang_001_148)./sqrt(num_pCells)) '\n'])
+
+fprintf(['diff_ang_004_148, mean: ' num2str(mean(diff_ang_004_148)) '\n'])
+fprintf(['diff_ang_004_148, sem : ' num2str(std( diff_ang_004_148)./sqrt(num_pCells)) '\n'])
+
+% num_perm = 5000;
+% diff_ang_001_004_perm = nan(num_perm, 1);
+% diff_ang_001_148_perm = nan(num_perm, 1);
+% diff_ang_004_148_perm = nan(num_perm, 1);
+% for counter_perm = 1 : num_perm
+%     diff_ang_001_004_perm(counter_perm, 1) = median(diff_ang_001_004(randi(num_pCells, num_pCells, 1)));
+%     diff_ang_001_148_perm(counter_perm, 1) = median(diff_ang_001_148(randi(num_pCells, num_pCells, 1)));
+%     diff_ang_004_148_perm(counter_perm, 1) = median(diff_ang_004_148(randi(num_pCells, num_pCells, 1)));
+% end
+% 
+% fprintf(['diff_ang_001_004, median   : ' num2str(mean(diff_ang_001_004_perm)) '\n'])
+% fprintf(['diff_ang_001_004, SE-median: ' num2str(std( diff_ang_001_004_perm)) '\n'])
+% 
+% fprintf(['diff_ang_001_148, median   : ' num2str(mean(diff_ang_001_148_perm)) '\n'])
+% fprintf(['diff_ang_001_148, SE-median: '   num2str(std( diff_ang_001_148_perm)) '\n'])
+% 
+% fprintf(['diff_ang_004_148, median   : ' num2str(mean(diff_ang_004_148_perm)) '\n'])
+% fprintf(['diff_ang_004_148, SE-median: '   num2str(std( diff_ang_004_148_perm)) '\n'])
+
+%
+% step_size_ = pi/8;
+% ang_edges = -pi-(step_size_/2):step_size_:pi-(step_size_/2);
+% 
+% hFig = figure(7);
+% clf(hFig)
+% 
+% subplot(1,3,1)
+% polarhistogram(deg2rad(diff_ang_001_004), ang_edges, 'DisplayStyle', 'bar','FaceColor','red', 'EdgeColor', 'none')
+% hold on
+% polarhistogram(deg2rad(diff_ang_001_004), ang_edges, 'DisplayStyle', 'stairs','FaceColor','none', 'EdgeColor', 'r', 'linewidth', 1)
+% set(gca, 'ThetaTick', 0:45:315, 'RTick', 0:10:60)
+% rlim([0 70])
+% title('tag1 - tag4')
+% 
+% subplot(1,3,2)
+% polarhistogram(deg2rad(diff_ang_001_148), ang_edges, 'DisplayStyle', 'bar','FaceColor','red', 'EdgeColor', 'none')
+% hold on
+% polarhistogram(deg2rad(diff_ang_001_148), ang_edges, 'DisplayStyle', 'stairs','FaceColor','none', 'EdgeColor', 'r', 'linewidth', 1)
+% set(gca, 'ThetaTick', 0:45:315, 'RTick', 0:10:60)
+% rlim([0 70])
+% title('tag1 - tag148')
+% 
+% subplot(1,3,3)
+% polarhistogram(deg2rad(diff_ang_004_148), ang_edges, 'DisplayStyle', 'bar','FaceColor','red', 'EdgeColor', 'none')
+% hold on
+% polarhistogram(deg2rad(diff_ang_004_148), ang_edges, 'DisplayStyle', 'stairs','FaceColor','none', 'EdgeColor', 'r', 'linewidth', 1)
+% set(gca, 'ThetaTick', 0:45:315, 'RTick', 0:10:60)
+% rlim([0 70])
+% title('tag4 - tag148')
+% 
+% ESN_Beautify_Plot(hFig, [5 3], 8)
+
+end
+
+%% function scratch_rename_meta_data()
+function scratch_rename_meta_data()
+%%
+flag_pair_list = false; % This should be false. DO NOT change it to true
+pCell_list = ESN_build_pCell_list(flag_pair_list);
+path_data_monkey_sorted = uigetdir;
+
+if ~strcmp(path_data_monkey_sorted(end), filesep);path_data_monkey_sorted = [path_data_monkey_sorted filesep];end
+pCell_list_isstr = arrayfun(@iscellstr,pCell_list);
+num_pCells = size(pCell_list, 1);
+
+% Loop over pCells
+for counter_pCell = 1 : 1 : num_pCells
+    fprintf(['### ' 'Analyzing pCell no. ', num2str(counter_pCell), ' / ' num2str(num_pCells) ' ###' '\n']);
+    num_recording = nansum(pCell_list_isstr(counter_pCell, :));
+    for counter_recording = 1 : 1 : num_recording
+        %% build plot_data address
+        file_name_cell = pCell_list{counter_pCell, counter_recording}; % '190423_142023_01_sorted_ESN_plot_data';
+        file_name_cell = file_name_cell(1:13);
+
+        year_ = file_name_cell(1:2);
+        month_ = file_name_cell(3:4);
+        day_ = file_name_cell(5:6);
+        hour_ = file_name_cell(8:9);
+        minute_ = file_name_cell(10:11);
+        second_ = file_name_cell(12:13);
+        subFolder_month = ['20' year_ '-' month_ filesep];
+        subFolder_day = ['20' year_ '-' month_ '-' day_ filesep];
+        subFolder_recording = ['20' year_ '-' month_ '-' day_ '_' hour_ '-' minute_ '-' second_ filesep];
+        subFolder_data = ['analyzed_data' filesep];
+        %% load BEHAVE data
+        file_path = [path_data_monkey_sorted subFolder_month subFolder_day subFolder_recording subFolder_data];
+        cd(file_path)
+        meta_data_file = dir('*_meta_data.json');
+        if ~strcmp([meta_data_file.name], [file_name_cell '_meta_data.json'])
+            movefile([meta_data_file.name], [file_name_cell '_meta_data.json']);
+        end
+    end
+end
 end

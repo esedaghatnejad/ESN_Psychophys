@@ -11,7 +11,8 @@ tic
 % (3) combine_pair_files(); % This is for pair of simultaneous pCells 
 % (4) CS_on_analysis(); % load cell_data files (_combine_) and add the CS_on_analysis  to them.
 % (5) build_population_data(); % load cell_data files (_combine_) and form population data.
-% (5) build_synchrony_data(); % form joint probability of cell_1 and cell_2.
+% (5) 
+build_synchrony_data(); % form joint probability of cell_1 and cell_2.
 % (6) build_neural_properties(); % load cell_data files (_combine_) and form properties data.
 % (7) sac_modulation_index(); % load cell_data files (_combine_) and add the sac_modulation  to them.
 toc
@@ -26,7 +27,10 @@ tic
 % (4) plot_synch_ratio();
 % (5) plot_modulation_z_score(4);
 % (6) plot_single_session_modulation();
+% plot_SS_peak_vs_vmax();
+plot_sync_vs_CS_diff()
 toc
+
 end
 
 %% UTIL FUNCTIONS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -76,18 +80,34 @@ end
 
 end
 
+%% function idx_mirza_ramon()
+function [idx_pairs] = idx_pairs_in_population()
+flag_pair_list = false;
+pCell_ids = build_pCell_ids(flag_pair_list);
+flag_pair_list = true;
+pairs_ids = build_pCell_ids(flag_pair_list);
+
+num_pCells = size(pCell_ids, 1);
+idx_pairs = false(num_pCells, 1);
+for counter_pCell = 1 : num_pCells
+    pCell_id_ = pCell_ids{counter_pCell, 1};
+    pCell_id_ = pCell_id_(1:end-1);
+    idx_pairs(counter_pCell, 1) = sum(contains(pairs_ids, pCell_id_))>0;
+end
+
+end
+
 %% function expand_index_event_data(event_data)
-function event_data_expand = expand_index_event_data(event_data, dim)
+function event_data_expand = expand_index_event_data(event_data, dim, expand_index)
 if nargin < 2
     dim = 1;
 end
 
-ESN_global_variables();
-global expand_index
-if isempty(expand_index)
-    fprintf('><ERROR><: Global variables are empty.\n');
-    return;
+if nargin < 3
+    ESN_global_variables();
+    global expand_index
 end
+
 event_data = logical(event_data);
 event_data_expand = logical(event_data);
 for counter = (-expand_index) : 1 : (expand_index)
@@ -802,6 +822,7 @@ function combine_pair_files()
 clc; close all;
 flag_pair_list = true; % This should be true. DO NOT change it to false
 pCell_list = ESN_build_pCell_list(flag_pair_list);
+% pCell_list = JSP_build_pair_list();
 path_data_monkey_sorted = uigetdir;
 if ~strcmp(path_data_monkey_sorted(end), filesep);path_data_monkey_sorted = [path_data_monkey_sorted filesep];end
 pCell_list_isstr = arrayfun(@iscellstr,pCell_list);
@@ -968,9 +989,9 @@ end
 %% function CS_on_analysis()
 function CS_on_analysis()
 clc; close all;
-flag_pair_list = false;
+flag_pair_list = false; % true; % 
 ESN_global_variables(flag_pair_list);
-global ang_edges ang_values range_cell_with_4dir_behave
+global ang_edges ang_values tag_name_list range_cell_with_4dir_behave 
 if isempty(ang_edges)
     fprintf('><ERROR><: Global variables are empty.\n');
     return;
@@ -978,7 +999,10 @@ end
 path_cell_data = uigetdir;
 if ~strcmp(path_cell_data(end), filesep);path_cell_data = [path_cell_data filesep];end
 pCell_ids = build_pCell_ids(flag_pair_list);
+% [~, pCell_ids] = JSP_build_pair_list();
 num_pCells = size(pCell_ids, 1);
+tag_bin = 1 : length(tag_name_list);
+% tag_bin = 1 : 15;
 clearvars CS_on_population
 %% Loop over pCells
 for counter_pCell = 1 : num_pCells
@@ -995,6 +1019,7 @@ for counter_pCell = 1 : num_pCells
     delta_x = visual_px_offset - eye_r_px_onset;
     delta_y = visual_py_offset - eye_r_py_onset;
     visual_ang = wrapTo360(atan2d(delta_y, delta_x));
+%     visual_ang = wrapTo360(SACS_ALL_DATA.eye_r_ang);
     neuro_CS_count = SACS_ALL_DATA.neuro_CS_count_visual;
     
     if (counter_pCell >= range_cell_with_4dir_behave(1)) && (counter_pCell <= range_cell_with_4dir_behave(2))
@@ -1007,7 +1032,6 @@ for counter_pCell = 1 : num_pCells
     visual_ang_bin(visual_ang_bin == last_bin_id) = 1; % wrap the circle around
     % 1: 0deg % 2: 45deg % 3: 90deg % 4: 135deg % 5: 180deg % 6: 225deg % 7: 270deg % 8: 315deg
     num_ang_bin = length(ang_edges) - 2;
-    tag_bin = unique(SACS_ALL_DATA.tag);
     num_tag_bin = length(tag_bin);
     CS_count  = zeros(num_tag_bin, num_ang_bin);
     sac_count = zeros(num_tag_bin, num_ang_bin);
@@ -1016,8 +1040,8 @@ for counter_pCell = 1 : num_pCells
         for counter_ang = 1 : num_ang_bin
             idx_tag = (SACS_ALL_DATA.tag == tag_bin(counter_tag));
             idx_ang = (visual_ang_bin == counter_ang);
-            flag_last_cue = SACS_ALL_DATA.flag_last_cue;
-            idx_ = idx_tag&idx_ang&flag_last_cue;
+%             flag_last_cue = SACS_ALL_DATA.flag_last_cue;
+            idx_ = idx_tag&idx_ang;%&flag_last_cue;
             CS_count(counter_tag, counter_ang) = nansum(neuro_CS_count(1, idx_));
             sac_count(counter_tag, counter_ang) = nansum(idx_);
             CS_prob(counter_tag, counter_ang) = CS_count(counter_tag, counter_ang) ./ sac_count(counter_tag, counter_ang);
@@ -1029,9 +1053,15 @@ for counter_pCell = 1 : num_pCells
     CS_prob_sum = nansum(CS_prob,2); % sum of weights
     CS_rho = abs(r) ./ CS_prob_sum; % Computes mean resultant vector length for circular data.
     
-    CS_count_avg  = CS_count( 1, :) + CS_count( 4, :) + CS_count( 8, :); % CS_count( 8, :); % 
-    sac_count_avg = sac_count(1, :) + sac_count(4, :) + sac_count(8, :); % sac_count(8, :); % 
-    % 'prim_success' tag 1 % 'corr_success' tag 4 % 'back_center_irrelev' tag 8
+    CS_count_avg = zeros(size(CS_count( 1, :)));
+    sac_count_avg = zeros(size(sac_count( 1, :)));
+    
+    tags_CS_ang_avg = [1 4 6 7]; % 'prim_success' tag 1 % 'corr_success' tag 4 % 'back_center_irrelev' tag 8
+    
+    for tag_ = tags_CS_ang_avg
+        CS_count_avg  = CS_count_avg  + CS_count( tag_, :);
+        sac_count_avg = sac_count_avg + sac_count(tag_, :);
+    end
     CS_prob_avg = CS_count_avg ./ sac_count_avg;
     
     r_avg = nansum(CS_prob_avg.* exp(1i*deg2rad(ang_values)) , 2); % compute weighted sum of cos and sin of angles
@@ -1060,12 +1090,39 @@ for counter_pCell = 1 : num_pCells
     else
         vonMises_kappa = 1/(CS_rho_avg^3 - 4*CS_rho_avg^2 + 3*CS_rho_avg);
     end
-    
     % evaluate pdf
     vonMises_C = 1/(2*pi*besseli(0,vonMises_kappa));
     vonMises_pdf = vonMises_C * exp(vonMises_kappa*cosd(ang_values-CS_ang_avg));
     vonMises_var = 1 - (besseli(1,vonMises_kappa) / besseli(0,vonMises_kappa));
     vonMises_std = wrapTo360(rad2deg(sqrt(vonMises_var)));
+    
+    %% Permutation for CS-on
+    idx_tag_perm = false(size(SACS_ALL_DATA.tag));
+    for tag_ = tags_CS_ang_avg
+        idx_tag_perm = idx_tag_perm | (SACS_ALL_DATA.tag == tag_);
+    end
+    neuro_CS_count_perm = neuro_CS_count(idx_tag_perm);
+    visual_ang_perm = visual_ang_bin(idx_tag_perm);
+    idx_tag_perm = find(idx_tag_perm);
+    
+    num_perm = 1000;
+    CS_ang_perm = nan(num_perm, 1);
+    for counter_perm = 1 : num_perm
+        idx_perm_ = randi(length(idx_tag_perm), 1, length(idx_tag_perm));
+        CS_count_perm_ = neuro_CS_count_perm(idx_perm_);
+        visual_ang_perm_ = visual_ang_perm(idx_perm_);
+        CS_prob_perm__   = zeros(1, num_ang_bin);
+        for counter_ang = 1 : num_ang_bin
+            idx_ang_ = (visual_ang_perm_ == counter_ang);
+            CS_count_perm__ = nansum(CS_count_perm_(idx_ang_));
+            sac_count_perm__ = nansum(idx_ang_);
+            CS_prob_perm__(1, counter_ang) = CS_count_perm__ ./ sac_count_perm__;
+        end
+        r_perm_ = nansum(CS_prob_perm__.* exp(1i*deg2rad(ang_values)) , 2);
+        CS_ang_perm(counter_perm, 1) =  wrapTo360(rad2deg(angle(r_perm_)));
+    end
+    CS_ang_avg_perm = mean(CS_ang_perm);
+    CS_ang_std_perm = std(CS_ang_perm);
     
     %% Build CS_on_data
     CS_on_data.sac_count = sac_count;
@@ -1078,12 +1135,14 @@ for counter_pCell = 1 : num_pCells
     CS_on_data.CS_ang_avg  = CS_ang_avg;
     CS_on_data.CS_rho_avg  = CS_rho_avg;
     CS_on_data.vonMises_kappa  = vonMises_kappa;
-    CS_on_data.vonMises_var  = vonMises_var;
-    CS_on_data.vonMises_std  = vonMises_std;
-    CS_on_data.vonMises_pdf  = vonMises_pdf;
-    CS_on_data.idx_CS_on_dir  = idx_CS_on_dir;
-    CS_on_data.idx_CS_tuned   = idx_CS_tuned;
-    CS_on_data.visual_ang_bin       = visual_ang_bin;
+    CS_on_data.vonMises_var    = vonMises_var;
+    CS_on_data.vonMises_std    = vonMises_std;
+    CS_on_data.vonMises_pdf    = vonMises_pdf;
+    CS_on_data.idx_CS_on_dir   = idx_CS_on_dir;
+    CS_on_data.idx_CS_tuned    = idx_CS_tuned;
+    CS_on_data.visual_ang_bin  = visual_ang_bin;
+    CS_on_data.CS_ang_avg_perm = CS_ang_avg_perm;
+    CS_on_data.CS_ang_std_perm = CS_ang_std_perm;
     
     %% Append CS_on_data to cell_data
     save([path_cell_data cell_file_name], 'CS_on_data', '-append');
@@ -1102,16 +1161,18 @@ function sac_modulation_index()
 % When assessing statistical significance of the synchrony using the average spike count within ±1ms, we further adjusted this standard deviation used for the Z-score by a factor of sqrt(dT/2). 
 % Pairs with an average spike count within ±1 ms from origin above 3 in a Z-scored spike count (corresponding to an alpha-value of 0.00135) were considered to exhibit a significant degree of synchrony.
 
-%%
+%% Set params
 clc; close all;
-flag_pair_list = false;
+flag_pair_list = true; % false; %
 ESN_global_variables(flag_pair_list);
 global length_trace
 path_cell_data = uigetdir;
 if ~strcmp(path_cell_data(end), filesep);path_cell_data = [path_cell_data filesep];end
 pCell_ids = build_pCell_ids(flag_pair_list);
+% [~, pCell_ids] = JSP_build_pair_list();
 num_pCells = size(pCell_ids, 1);
 counter_not_modulated = 1;
+
 %% Loop over pCells
 pCell_z_score = nan(num_pCells, 1);
 for counter_pCell = 1 : num_pCells
@@ -1196,10 +1257,11 @@ end
 %% function build_neural_properties()
 function build_neural_properties()
 clc; close all;
-flag_pair_list = false;
+flag_pair_list = false; % true; % 
 path_cell_data = uigetdir;
 if ~strcmp(path_cell_data(end), filesep);path_cell_data = [path_cell_data filesep];end
 pCell_ids = build_pCell_ids(flag_pair_list);
+% [~, pCell_ids] = JSP_build_pair_list();
 num_pCells = size(pCell_ids, 1);
 
 %% Init variables
@@ -1276,10 +1338,11 @@ end
 
 %% function build_population_data()
 function build_population_data()
+%% Set params
 clc; close all;
-flag_pair_list = false;    % This should be false. DO NOT change it to true
+flag_pair_list = false; % true; %   % This should be false. DO NOT change it to true
 ESN_global_variables(flag_pair_list);
-global event_type_list amp_edges vel_edges length_trace
+global event_type_list amp_edges vel_edges ang_edges length_trace tag_name_list
 if isempty(event_type_list)
     fprintf('><ERROR><: Global variables are empty.\n');
     return;
@@ -1287,12 +1350,11 @@ end
 path_cell_data = uigetdir;
 if ~strcmp(path_cell_data(end), filesep);path_cell_data = [path_cell_data filesep];end
 pCell_ids = build_pCell_ids(flag_pair_list);
+% [~, pCell_ids] = JSP_build_pair_list();
 num_pCells = size(pCell_ids, 1);
-cell_file_name = pCell_ids{1, 1};
-load([path_cell_data cell_file_name], 'SACS_ALL_DATA', 'CS_on_data');
-tag_bin = unique(SACS_ALL_DATA.tag);
+tag_bin = 1 : length(tag_name_list);
 num_tag_bin = length(tag_bin);
-num_ang_bin = length(CS_on_data.idx_CS_tuned);
+num_ang_bin = length(ang_edges) - 2;
 num_amp_bin = length(amp_edges) - 1;
 num_vel_bin = length(vel_edges) - 1;
 flag_build_absol = false;
@@ -1486,10 +1548,11 @@ end
 
 %% function build_synchrony_data()
 function build_synchrony_data()
+%% Set params
 clc; close all;
 flag_pair_list = true;   % This should be true. DO NOT change it to false
 ESN_global_variables(flag_pair_list);
-global event_type_list amp_edges vel_edges length_trace ang_values range_cell_with_4dir_behave ang_edges expand_index
+global event_type_list amp_edges vel_edges length_trace ang_values range_cell_with_4dir_behave ang_edges expand_index tag_name_list
 if isempty(event_type_list)
     fprintf('><ERROR><: Global variables are empty.\n');
     return;
@@ -1497,12 +1560,11 @@ end
 path_cell_data = uigetdir;
 if ~strcmp(path_cell_data(end), filesep);path_cell_data = [path_cell_data filesep];end
 pCell_ids = build_pCell_ids(flag_pair_list);
+% [~, pCell_ids] = JSP_build_pair_list();
 num_pCells = size(pCell_ids, 1);
-cell_file_name = pCell_ids{1, 1};
-load([path_cell_data cell_file_name], 'SACS_ALL_DATA', 'CS_on_data');
-tag_bin = unique(SACS_ALL_DATA.tag);
+tag_bin = 1 : length(tag_name_list);
 num_tag_bin = length(tag_bin);
-num_ang_bin = length(CS_on_data.idx_CS_tuned);
+num_ang_bin = length(ang_edges) - 2;
 num_amp_bin = length(amp_edges) - 1;
 num_vel_bin = length(vel_edges) - 1;
 flag_build_absol = false;
@@ -1592,10 +1654,10 @@ for counter_pCell = 1 : 2 : (num_pCells-1)
     cell_2 = load([path_cell_data cell_file_name_2], 'SACS_ALL_DATA', 'CS_on_data');
     
     %% Re-calculate CS-on
-    CS_count_avg_1  = cell_1.CS_on_data.CS_count( 1, :) + cell_1.CS_on_data.CS_count( 4, :) + cell_1.CS_on_data.CS_count( 8, :);
-    CS_count_avg_2  = cell_2.CS_on_data.CS_count( 1, :) + cell_2.CS_on_data.CS_count( 4, :) + cell_2.CS_on_data.CS_count( 8, :);
-    sac_count_avg_1 = cell_1.CS_on_data.sac_count(1, :) + cell_1.CS_on_data.sac_count(4, :) + cell_1.CS_on_data.sac_count(8, :);
-    sac_count_avg_2 = cell_2.CS_on_data.sac_count(1, :) + cell_2.CS_on_data.sac_count(4, :) + cell_2.CS_on_data.sac_count(8, :);
+    CS_count_avg_1  = cell_1.CS_on_data.CS_count( 1, :) + cell_1.CS_on_data.CS_count( 4, :) + cell_1.CS_on_data.CS_count( 6, :) + cell_1.CS_on_data.CS_count( 7, :);
+    CS_count_avg_2  = cell_2.CS_on_data.CS_count( 1, :) + cell_2.CS_on_data.CS_count( 4, :) + cell_2.CS_on_data.CS_count( 6, :) + cell_2.CS_on_data.CS_count( 7, :);
+    sac_count_avg_1 = cell_1.CS_on_data.sac_count(1, :) + cell_1.CS_on_data.sac_count(4, :) + cell_1.CS_on_data.sac_count(6, :) + cell_1.CS_on_data.sac_count(7, :);
+    sac_count_avg_2 = cell_2.CS_on_data.sac_count(1, :) + cell_2.CS_on_data.sac_count(4, :) + cell_2.CS_on_data.sac_count(6, :) + cell_2.CS_on_data.sac_count(7, :);
     CS_count_pair    = CS_count_avg_1  + CS_count_avg_2;
     sac_count_pair   = sac_count_avg_1 + sac_count_avg_2;
     % 'prim_success' tag 1 % 'corr_success' tag 4
@@ -1635,9 +1697,9 @@ for counter_pCell = 1 : 2 : (num_pCells-1)
     cell_2.CS_on_data.idx_CS_pair_tuned   = idx_CS_pair_tuned;
     
     %% Save CS_on_pair results
-%     CS_on_data = cell_1.CS_on_data;
+    CS_on_data = cell_1.CS_on_data;
 %     save([path_cell_data cell_file_name_1], 'CS_on_data', '-append');
-%     CS_on_data = cell_2.CS_on_data;
+    CS_on_data = cell_2.CS_on_data;
 %     save([path_cell_data cell_file_name_2], 'CS_on_data', '-append');
     
     %% Compute data
@@ -2472,11 +2534,11 @@ for counter_event_type = 1 : length(event_type_list)
 %                 ratio_     = event_p1p2;
 %                 ratio_(isnan(ratio_)) = 1; ratio_(isinf(ratio_)) = 1;
                 % Def.-2
-%                 ratio_     = ( event_p1p2 ./ event_p1 ./ event_p2 );
-%                 ratio_(isnan(ratio_)) = 1; ratio_(isinf(ratio_)) = 1;
+                ratio_     = ( event_p1p2 ./ event_p1 ./ event_p2 );
+                ratio_(isnan(ratio_)) = 1; ratio_(isinf(ratio_)) = 1;
                 % Def.-3
-                ratio_     = log2(event_p1p2)-log2(event_p1)-log2(event_p2);
-                ratio_(isnan(ratio_)) = 0; ratio_(isinf(ratio_)) = 0;
+%                 ratio_     = log2(event_p1p2)-log2(event_p1)-log2(event_p2);
+%                 ratio_(isnan(ratio_)) = 0; ratio_(isinf(ratio_)) = 0;
                 % Def.-4
 %                 ratio_     = log2(event_p1p2)-log2(event_p1)-log2(event_p2);
 %                 ratio_(isnan(ratio_)) = 0; ratio_(isinf(ratio_)) = 0;
@@ -2862,6 +2924,11 @@ end
 
 %% function plot_CS_on_properties
 function plot_CS_on_properties(fig_num)
+%% handle nargin
+if nargin < 1
+    fig_num = 2;
+end
+    
 %% Load population_neural_properties
 path_cell_data = uigetdir;
 if ~strcmp(path_cell_data(end), filesep);path_cell_data = [path_cell_data filesep];end
@@ -3048,8 +3115,8 @@ diff_CS_ang_avg_pairs = diff_ang .* sign(cross_ang(3,:)');
 step_size_ = 22.5;
 ang_edges = -135-(step_size_/2):step_size_:135+(step_size_/2);
 
-pair_distance = estimate_pair_distance();
-pair_distance = pair_distance(1:2:end);
+% pair_distance = estimate_pair_distance();
+% pair_distance = pair_distance(1:2:end);
 
 hFig = figure(fig_num+2);
 clf(hFig)
@@ -3063,37 +3130,46 @@ ylabel('count')
 xlabel('diff in CS-on dir (deg)')
 title('CS-on Pairs')
 
-subplot(1,2,2)
-hold on
-x_axis_data = pair_distance;
-y_axis_data = diff_ang;
-plot(x_axis_data, y_axis_data, 'o','MarkerSize',3, 'MarkerFaceColor', 'k', 'MarkerEdgeColor', 'None')
+fprintf(['diff_pair, mean: ' num2str(mean(diff_CS_ang_avg_pairs)) '\n'])
+fprintf(['diff_pair, sem : ' num2str(std( diff_CS_ang_avg_pairs)./sqrt(num_pairs)) '\n'])
 
-P_ = polyfit(x_axis_data, y_axis_data, 1);
-y_axis_hat = polyval(P_,x_axis_data);
-plot(x_axis_data, y_axis_hat, '-', 'LineWidth', 1)
-
-[b,~,~,~,stats] = regress(y_axis_data,[ones(size(x_axis_data)) x_axis_data]);
+% subplot(1,2,2)
+% hold on
+% x_axis_data = pair_distance;
+% y_axis_data = diff_ang;
+% plot(x_axis_data, y_axis_data, 'o','MarkerSize',3, 'MarkerFaceColor', 'k', 'MarkerEdgeColor', 'None')
+% 
+% P_ = polyfit(x_axis_data, y_axis_data, 1);
+% y_axis_hat = polyval(P_,x_axis_data);
+% plot(x_axis_data, y_axis_hat, '-', 'LineWidth', 1)
+% 
+% [b,~,~,~,stats] = regress(y_axis_data,[ones(size(x_axis_data)) x_axis_data]);
 % p_value = stats(3)
-
-xlabel('Contact distance (um)')
-ylabel('Absolute CS-on diff. (deg)')
+% xlabel('Contact distance (um)')
+% ylabel('Absolute CS-on diff. (deg)')
 
 ESN_Beautify_Plot(hFig, [3 1.5], 8)
 file_name_fig_ = 'CS_on_properties_3';
 saveas(hFig,[path_fig_ filesep file_name_fig_], 'pdf');
+
 end
 
 %% function plot_modulation_z_score()
 function plot_modulation_z_score(fig_num)
+%% handle nargin
+if nargin < 1
+    fig_num = 4;
+end
+
 %% Load sac_modulation
 clc; close all;
-flag_pair_list = false;
+flag_pair_list = false; % true; % 
 ESN_global_variables(flag_pair_list);
 global length_trace
 path_cell_data = uigetdir;
 if ~strcmp(path_cell_data(end), filesep);path_cell_data = [path_cell_data filesep];end
 pCell_ids = build_pCell_ids(flag_pair_list);
+% [~, pCell_ids] = JSP_build_pair_list();
 num_pCells = size(pCell_ids, 1);
 
 modulation_trace_mean    = nan(length_trace, num_pCells);
@@ -3134,6 +3210,7 @@ fprintf(' --> Completed. \n')
 
 % Cluster Using UMAP
 data_gmm_ = [reduction(:, 1), reduction(:, 2)];
+% data_gmm_ = [pca_mat(:, 1), pca_mat(:, 2)];
 n_component_gmm_ = 2;
 gmm_model_ = fitgmdist(data_gmm_,n_component_gmm_);
 idx = cluster(gmm_model_,data_gmm_);
@@ -3147,13 +3224,14 @@ if max(trace_idx_1) > max(trace_idx_2)
     idx(idx==2) = 1;
     idx(idx==4) = 2;
 end
-[sum(idx==1) sum(idx==2) sum(idx==3)]
-
-%% Save umap_data
 idx_pauser = (idx==1);
 idx_burster = (idx==2);
 idx_modulated = ~(idx==3);
 idx_not_modulated = (idx==3);
+
+fprintf(['pauser: ' num2str(sum(idx_pauser)) ' , ' 'burster: ' num2str(sum(idx_burster))  ' , ' 'not_modulated: ' num2str(sum(idx_not_modulated)) '\n'])
+
+%% Save umap_data
 save([path_cell_data '..' filesep 'umap_data.mat'], ...
     'idx', 'idx_pauser','idx_burster','idx_modulated','idx_not_modulated', ...
     'pca_mat', 'reduction', 'umap', 'clusterIdentifiers', ...
@@ -3295,11 +3373,11 @@ if ~exist([path_cell_data 'population_figs'], 'dir')
 end
 load('umap_data.mat', 'idx_pauser', 'idx_burster','idx_modulated','idx_not_modulated');
 flag_pair_list = false; [idx_mirza, idx_ramon] = idx_mirza_ramon(flag_pair_list);
-
+idx_pairs = idx_pairs_in_population();
 %% Loop over conditions
 params.variable        = 'amp';
 % idx_pCells: is a boolean array. 1 for including a pCell, and 0 for exluding a pCell
-% idx_mirza; % idx_ramon; % idx_pauser; % idx_burster; % idx_modulated; % idx_not_modulated;
+% idx_mirza; % idx_ramon; % idx_pauser; % idx_burster; % idx_modulated; % idx_not_modulated; % idx_pairs;
 % params.idx_pCells = idx_mirza | idx_ramon;
 params.idx_pCells = idx_ramon;
 
@@ -3427,6 +3505,7 @@ for counter_ang = 1 : num_ang_bin+1
         data_mean_x_axis = reshape(inds_span, 1, []);
         ind_diff_ = round(length_trace - length_data_plot) / 2;
         idx_plot = (ind_diff_+1) : 1 : (length_trace-ind_diff_);
+%         idx_plot = 250:450;
         data_mean_ = data_mean_(1, idx_plot);
         data_sem_  = data_sem_(1, idx_plot);
         data_mean_x_axis = data_mean_x_axis(1, idx_plot);
@@ -3516,18 +3595,21 @@ clc; clear;
 %% close all
 close all;
 %% set params
+fprintf('params ...')
 params.data_type       = 'SS';
 params.CSYS_type       = 'tuned'; % tuned % absol
-params.event_type_name = 'onset';
+params.event_type_name = 'onset'; % visual % onset % vmax
 params.variable        = 'vel';
-params.tag_id          = 1;
+params.tag_id          = 10;
 params.flag_smooth_plot = true; % false; % 
 params.fig_num = 3;
 params.plot_mode = 1; % mode=1 collapse the amp/vel, mode=2 plots the amp/vel
-fprintf('params --> Completed. \n')
+fprintf(' --> Completed. \n')
 %% Load data
+fprintf('Load data ...')
 load('umap_data.mat', 'idx_pauser', 'idx_burster','idx_modulated','idx_not_modulated');
 flag_pair_list = false; [idx_mirza, idx_ramon] = idx_mirza_ramon(flag_pair_list);
+% idx_pairs = idx_pairs_in_population();
 if ~exist([params.data_type '_population_' params.CSYS_type], 'var')
     load([params.data_type '_population_' params.CSYS_type '.mat'], [params.data_type '_population_' params.CSYS_type])
 end
@@ -3543,22 +3625,23 @@ if strcmp(params.data_type, 'SS') || strcmp(params.data_type, 'CS')
     eval(['firing_rate = population_neural_properties.' params.data_type '_firing_rate'  ';']);
     population_data = population_data_subtract_baseline(population_data, firing_rate, params.variable);
 end
-fprintf('Load data --> Completed. \n')
+fprintf(' --> Completed. \n')
 %% MODE 1 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 if params.plot_mode == 1
-[population_dir, num_sac_dir] = population_data_avg_over_levels(population_data, num_sac_data, params.variable, 1, [3 4 5 6 7]); % based on vel, 250-750
+% [population_dir, num_sac_dir] = population_data_avg_over_levels(population_data, num_sac_data, params.variable, 1, [3 4 5 6 7]); % based on vel, 250-750
+[population_dir, num_sac_dir] = population_data_avg_over_levels(population_data, num_sac_data, params.variable, 1); % based on vel, 250-750
 
 [population_dir, num_sac_dir] = population_data_combine_levels(population_dir, num_sac_dir, params.variable, 2, [3 7]);
 [population_dir, num_sac_dir] = population_data_combine_levels(population_dir, num_sac_dir, params.variable, 2, [2 8]);
 [population_dir, num_sac_dir] = population_data_combine_levels(population_dir, num_sac_dir, params.variable, 2, [4 6]);
-[population_dir, num_sac_dir] = population_data_combine_tags(  population_dir, num_sac_dir, params.variable, [1 4 6 7 8]);
-% [population_dir, num_sac_dir] = population_data_combine_tags(  population_dir, num_sac_dir, params.variable, [1 4 8]);
+[population_dir, num_sac_dir] = population_data_combine_tags(  population_dir, num_sac_dir, params.variable, [1 4 6 7]); % [1 4 6 7 8]
+% [population_dir, num_sac_dir] = population_data_combine_tags(  population_dir, num_sac_dir, params.variable, [6 7]);
 
 % idx_pCells: is a boolean array. 1 for including a pCell, and 0 for exluding a pCell
-% idx_mirza; % idx_ramon; % idx_pauser; % idx_burster; % idx_modulated; % idx_not_modulated;
-idx_pCells = idx_mirza | idx_ramon;
+% idx_mirza; % idx_ramon; % idx_pauser; % idx_burster; % idx_modulated; % idx_not_modulated; % idx_pairs;
+% idx_pCells = idx_mirza | idx_ramon;
 % idx_pCells = idx_pauser;
-[population_dir, num_sac_dir] = population_data_idx_pCells(population_dir, num_sac_dir, params.variable, idx_pCells);
+% [population_dir, num_sac_dir] = population_data_idx_pCells(population_dir, num_sac_dir, params.variable, idx_pCells);
 
 %
 if strcmp(params.data_type, 'SS') || strcmp(params.data_type, 'CS')
@@ -3581,7 +3664,7 @@ if params.plot_mode == 2
 [population_data, num_sac_data] = population_data_combine_levels(population_data, num_sac_data, params.variable, 2, [3 7]);
 [population_data, num_sac_data] = population_data_combine_levels(population_data, num_sac_data, params.variable, 2, [2 8]);
 [population_data, num_sac_data] = population_data_combine_levels(population_data, num_sac_data, params.variable, 2, [4 6]);
-[population_data, num_sac_data] = population_data_combine_tags(  population_data, num_sac_data, params.variable, [8]);
+[population_data, num_sac_data] = population_data_combine_tags(  population_data, num_sac_data, params.variable, [1 2 3 4]);
 
 % idx_pCells: is a boolean array. 1 for including a pCell, and 0 for exluding a pCell
 % idx_mirza; % idx_ramon; % idx_pauser; % idx_burster; % idx_modulated; % idx_not_modulated;
@@ -3606,6 +3689,7 @@ end
 end
 
 %% function plot_synchronous_data_single_condition
+%{
 function plot_synchronous_data_single_condition()
 %% clear
 clc; clear;
@@ -3615,18 +3699,21 @@ close all;
 params.data_type       = 'SS';
 params.CSYS_type       = 'tuned';
 params.event_type_name = 'onset';
-params.variable        = 'amp';
+params.variable        = 'vel';
 params.tag_id          = 1;
 params.flag_smooth_plot = true;
 params.fig_num = 3;
 params.plot_mode = 1; % mode=1 collapse the amp/vel, mode=2 plots the amp/vel
+params.ylim = [1 2.5];
+params.scale = 1;
+params.win_len = '1ms';
 
 %% Load data
 if ~exist([params.data_type '_synch_joint_' params.CSYS_type], 'var')
-    load([params.data_type '_synch_joint_' params.CSYS_type '.mat'], [params.data_type '_synch_joint_' params.CSYS_type])
+    load([params.data_type '_synch_joint_' params.win_len '_' params.CSYS_type '.mat'], [params.data_type '_synch_joint_' params.CSYS_type])
 end
 if ~exist(['num_synch_' params.CSYS_type], 'var')
-    load(['num_synch_' params.CSYS_type '.mat'], ['num_synch_' params.CSYS_type])
+    load(['num_synch_' params.win_len '_' params.CSYS_type '.mat'], ['num_synch_' params.CSYS_type])
 end 
 % if ~exist('population_neural_properties', 'var')
 %     load(['population_neural_properties' '.mat'], 'population_neural_properties')
@@ -3690,6 +3777,7 @@ plot_population_data(params.fig_num, data_avg_dir, data_avg_allDir, params, data
 end
 
 end
+%}
 
 %% function plot_synch_ratio()
 function plot_synch_ratio()
@@ -3698,19 +3786,21 @@ clc; clear;
 %% close all
 close all;
 %% set params
+fprintf('params ...')
 params.data_type       = 'SS';
 params.CSYS_type       = 'tuned'; % should be fixed to 'tuned', do not change to 'absol'
 params.event_type_name = 'onset';
-params.variable        = 'amp';
+params.variable        = 'vel';
 params.tag_id          = 1;
 params.flag_smooth_plot = true;
 params.fig_num = 3;
 params.plot_mode = 1; % mode=1 collapse the amp/vel, mode=2 plots the amp/vel
-params.ylim = [];
+params.ylim = [1 2.5];
 params.scale = 1;
 params.win_len = '1ms';
-
+fprintf(' --> Completed. \n')
 %% Load data
+fprintf('Load data ...')
 if ~exist([params.data_type '_synch_joint_' params.CSYS_type], 'var')
     load([params.data_type '_synch_joint_' params.win_len '_' params.CSYS_type '.mat'], [params.data_type '_synch_joint_' params.CSYS_type])
 end
@@ -3724,19 +3814,19 @@ end
 eval(['synch_joint = ' params.data_type '_synch_joint_' params.CSYS_type ';']);
 eval(['synch_margn = ' params.data_type '_synch_margn_' params.CSYS_type ';']);
 eval(['num_synch = ' 'num_synch_' params.CSYS_type ';']);
-
+fprintf(' --> Completed. \n')
 %% calc synch_ratio
-[synch_joint_dir, num_joint_dir] = population_data_avg_over_levels(synch_joint, num_synch, params.variable, 1);
+[synch_joint_dir, num_joint_dir] = population_data_avg_over_levels(synch_joint, num_synch, params.variable, 1); % based on vel, 250-750
 [synch_joint_dir, num_joint_dir] = population_data_combine_levels(synch_joint_dir, num_joint_dir, params.variable, 2, [3 7]);
 [synch_joint_dir, num_joint_dir] = population_data_combine_levels(synch_joint_dir, num_joint_dir, params.variable, 2, [2 8]);
 [synch_joint_dir, num_joint_dir] = population_data_combine_levels(synch_joint_dir, num_joint_dir, params.variable, 2, [4 6]);
-[synch_joint_dir, num_joint_dir] = population_data_combine_tags(  synch_joint_dir, num_joint_dir, params.variable, [1 4 6 7 8]);
+[synch_joint_dir, num_joint_dir] = population_data_combine_tags(  synch_joint_dir, num_joint_dir, params.variable, [1 4 6 7]); % [1 4 6 7 8]
 
-[synch_margn_dir, num_margn_dir] = population_data_avg_over_levels(synch_margn, num_synch, params.variable, 1);
+[synch_margn_dir, num_margn_dir] = population_data_avg_over_levels(synch_margn, num_synch, params.variable, 1); % based on vel, 250-750
 [synch_margn_dir, num_margn_dir] = population_data_combine_levels(synch_margn_dir, num_margn_dir, params.variable, 2, [3 7]);
 [synch_margn_dir, num_margn_dir] = population_data_combine_levels(synch_margn_dir, num_margn_dir, params.variable, 2, [2 8]);
 [synch_margn_dir, num_margn_dir] = population_data_combine_levels(synch_margn_dir, num_margn_dir, params.variable, 2, [4 6]);
-[synch_margn_dir, num_margn_dir] = population_data_combine_tags(  synch_margn_dir, num_margn_dir, params.variable, [1 4 6 7 8]);
+[synch_margn_dir, num_margn_dir] = population_data_combine_tags(  synch_margn_dir, num_margn_dir, params.variable, [1 4 6 7]); % [1 4 6 7 8]
 
 [synch_joint_allDir, num_joint_allDir] = population_data_avg_over_levels(synch_joint_dir, num_joint_dir, params.variable, 2);
 [synch_margn_allDir, num_margn_allDir] = population_data_avg_over_levels(synch_margn_dir, num_margn_dir, params.variable, 2);
@@ -3744,7 +3834,7 @@ eval(['num_synch = ' 'num_synch_' params.CSYS_type ';']);
 synch_ratio_dir = synchrony_data_ratio(synch_joint_dir, synch_margn_dir, params.variable);
 synch_ratio_allDir = synchrony_data_ratio(synch_joint_allDir, synch_margn_allDir, params.variable);
 
-%% remove douplicates
+% remove douplicates
 % idx_pCells: is a boolean array. 1 for including a pCell, and 0 for exluding a pCell
 num_pCells = size(synch_joint.amp(1).visual{1,1},1);
 idx_pCells = true(num_pCells, 1);
@@ -3752,17 +3842,17 @@ idx_pCells(2:2:num_pCells, 1) = false;
 [synch_ratio_dir, num_joint_dir] = population_data_idx_pCells(synch_ratio_dir, num_joint_dir, params.variable, idx_pCells);
 [synch_ratio_allDir, num_joint_allDir] = population_data_idx_pCells(synch_ratio_allDir, num_joint_allDir, params.variable, idx_pCells);
 
-%% smooth data
+% smooth data
 if strcmp(params.data_type, 'SS') || strcmp(params.data_type, 'CS')
     synch_ratio_dir = population_data_smooth_pCells(synch_ratio_dir, num_joint_dir, params.variable);
     synch_ratio_allDir = population_data_smooth_pCells(synch_ratio_allDir, num_joint_allDir, params.variable);
 end
 
-%% avg over pCells
+% avg over pCells
 [synch_ratio_avg_dir, synch_ratio_sem_dir] = population_data_avg_over_pCells(synch_ratio_dir, num_joint_dir, params.variable);
 [synch_ratio_avg_allDir, synch_ratio_sem_allDir] = population_data_avg_over_pCells(synch_ratio_allDir, num_joint_allDir, params.variable);
 
-%% plot results
+% plot results
 data_avg_dir     = synch_ratio_avg_dir.(params.variable)(params.tag_id).(params.event_type_name);
 data_sem_dir     = synch_ratio_sem_dir.(params.variable)(params.tag_id).(params.event_type_name);
 data_avg_allDir = synch_ratio_avg_allDir.(params.variable)(params.tag_id).(params.event_type_name);
@@ -3773,6 +3863,7 @@ plot_population_data(params.fig_num, data_avg_dir, data_avg_allDir, params, data
 end
 
 %% function plot_synch_MI()
+%{
 function plot_synch_MI()
 %% clear
 clc; clear;
@@ -3863,20 +3954,23 @@ data_sem_allDir = synch_MI_sem_allDir.(params.variable)(params.tag_id).(params.e
 plot_population_data(params.fig_num, data_avg_dir, data_avg_allDir, params, data_sem_dir, data_sem_allDir);
 
 end
+%}
 
 %% function plot_single_session_modulation
-function plot_single_session_modulation()
+function plot_sample_pCell_fig1()
 %% clear
 clc; clear;
 %% close all
 close all;
 
 %% set params
-flag_pair_list = false;
+flag_pair_list = true; % false;
 ESN_global_variables(flag_pair_list);
 global ang_edges ang_values length_trace range_cell_with_4dir_behave
-params.pCell_id = '190903_160127_01_combine_2';
-params.tag_ids  = [1 4 8];
+% params.pCell_id = '190903_160127_04_combine_2'; % '190903_160127_01_combine_2'; % 
+% params.pCell_id = '191101_130349_04_combine_3'; % '191101_130349_03_combine_3'; % 
+params.pCell_id = '191101_133125_05_combine_2'; % '191101_133125_05_combine_2'; % 
+params.tag_ids  = [1 4 6 7];
 params.fig_num = 5;
 fprintf('params --> Completed. \n')
 
@@ -4142,6 +4236,7 @@ for counter_dir = 1 : 8
     set(gca, 'YColor', color_CS)
     
 end
+
 % Plot CS-Tuning
 ax_ang_id_ = 5;
 row_ = ceil(ax_ang_id_ / 3);
@@ -4156,6 +4251,7 @@ cols_ = repmat(cols_,3,1);
 ax_ids = ( (rows_-1)*9 ) + cols_;
 h_ax(ax_ang_id_, 1) = subplot(num_row_fig, num_col_fig, ax_ids(:));
 prob_amplitude = CS_on_data.CS_prob_avg;
+prob_amplitude_overall_avg = mean(prob_amplitude);
 
 vonMises_std = CS_on_data.vonMises_std;
 CS_ang_avg = CS_on_data.CS_ang_avg;
@@ -4165,11 +4261,12 @@ std_curv_amp = repmat(CS_rho_avg, length(std_curv_ang), 1);
 
 plot_data_amp_mean = [prob_amplitude, prob_amplitude(1), nan]';
 plot_data_deg_mean = [ang_values, ang_values(1), nan]';
-polarplot(deg2rad(plot_data_deg_mean),plot_data_amp_mean, '-', 'LineWidth', 1, 'Color', color_CS)
+polarplot(deg2rad(0:5:360)',repmat(prob_amplitude_overall_avg, length(0:5:360), 1), '-', 'LineWidth', 1, 'Color', color_CS)
 hold on
+polarplot(deg2rad(plot_data_deg_mean),plot_data_amp_mean, '-', 'LineWidth', 1, 'Color', color_CS)
 polarplot(deg2rad(std_curv_ang), std_curv_amp, '-', 'LineWidth', 1.5, 'Color', color_CS)
 polarplot([0 deg2rad(CS_ang_avg)],[0 CS_rho_avg], '-', 'LineWidth', 1.5, 'Color', color_CS)
-rlim([0 0.25])
+rlim([0 0.3])
 set(gca, 'ThetaTick', 0:45:315, 'RTick', 0:0.05:0.25, ...
     'RTickLabel', {'', '', '0.1', '', '0.2', ''}, 'ThetaTickLabel', {'0','','90','', '180','','270', ''})
 title('CS Tuning', 'Interpreter', 'none', 'Color',color_CS);
@@ -4178,6 +4275,1582 @@ title('CS Tuning', 'Interpreter', 'none', 'Color',color_CS);
 ESN_Beautify_Plot(hFig, [8 8], 8)
 % ESN_Beautify_Plot(hFig, [8 8], 12)
 saveas(hFig,'single_session_modulation', 'pdf');
+
+end
+
+%% function plot_sample_pair_sync_index
+function plot_sample_pair_sync_index()
+%%
+if 1
+%% clear
+clc; clear;
+%% close all
+close all;
+
+%% set params
+flag_pair_list = true;
+ESN_global_variables(flag_pair_list);
+pCell_ids = build_pCell_ids(flag_pair_list);
+global ang_edges ang_values length_trace range_cell_with_4dir_behave
+%{
+params.pCell_id_1 = '190903_160127_04_combine_2';
+params.pCell_id_2 = '190903_160127_01_combine_2';
+% params.pCell_id_1 = '200102_170006_03_combine_2';
+% params.pCell_id_2 = '200102_170006_04_combine_2';
+counter_pCell_1 = find(strcmp(pCell_ids, params.pCell_id_1));
+counter_pCell_2 = find(strcmp(pCell_ids, params.pCell_id_2));
+%}
+%
+counter_pCell_1 = 61; % 57; % '191101_130349_03_combine_3'
+counter_pCell_2 = 62; % 58; % '191101_130349_05_combine_3'
+% 57,58 % 61,62 % 65,66 % 73,74
+params.pCell_id_1 = pCell_ids{counter_pCell_1};
+params.pCell_id_2 = pCell_ids{counter_pCell_2};
+%}
+
+params.tag_ids  = [1 4 6 7];
+params.fig_num = 5;
+fprintf('params --> Completed. \n')
+
+%% Load data
+path_cell_data = uigetdir;
+if ~strcmp(path_cell_data(end), filesep);path_cell_data = [path_cell_data filesep];end
+pCell_1 = load([path_cell_data params.pCell_id_1 '.mat'], 'SACS_ALL_DATA', 'CS_on_data', 'Neural_Properties');
+pCell_2 = load([path_cell_data params.pCell_id_2 '.mat'], 'SACS_ALL_DATA', 'CS_on_data', 'Neural_Properties');
+fprintf('Load data --> Completed. \n')
+
+%% Build pCell_1.sac_data
+SACS_ALL_DATA = pCell_1.SACS_ALL_DATA;
+idx_sacs    = false(size(SACS_ALL_DATA.validity));
+for counter_tag = 1 : length(params.tag_ids)
+    idx_sacs    = idx_sacs | (SACS_ALL_DATA.tag == params.tag_ids(counter_tag));
+end
+idx_sacs    = idx_sacs & SACS_ALL_DATA.validity;
+
+sac_data.time_onset  = SACS_ALL_DATA.time_onset(     :,idx_sacs);
+sac_data.time_visual = SACS_ALL_DATA.time_visual(    :,idx_sacs);
+sac_data.time_offset = SACS_ALL_DATA.time_offset(    :,idx_sacs);
+sac_data.SS_onset    = SACS_ALL_DATA.neuro_SS_onset( :,idx_sacs);
+sac_data.CS_onset    = SACS_ALL_DATA.neuro_CS_onset( :,idx_sacs);
+sac_data.SS_visual   = SACS_ALL_DATA.neuro_SS_visual(:,idx_sacs);
+sac_data.CS_visual   = SACS_ALL_DATA.neuro_CS_visual(:,idx_sacs);
+sac_data.eye_vx_onset  = SACS_ALL_DATA.eye_vx_onset( :,idx_sacs);
+sac_data.eye_vy_onset  = SACS_ALL_DATA.eye_vy_onset( :,idx_sacs);
+sac_data.eye_vx_visual = SACS_ALL_DATA.eye_vx_visual(:,idx_sacs);
+sac_data.eye_vy_visual = SACS_ALL_DATA.eye_vy_visual(:,idx_sacs);
+sac_data.visual_px_offset = SACS_ALL_DATA.visual_px_offset(:,idx_sacs);
+sac_data.visual_py_offset = SACS_ALL_DATA.visual_py_offset(:,idx_sacs);
+sac_data.eye_r_px_onset   = SACS_ALL_DATA.eye_r_px_onset(  :,idx_sacs);
+sac_data.eye_r_py_onset   = SACS_ALL_DATA.eye_r_py_onset(  :,idx_sacs);
+
+sac_data.eye_vm_onset  = sqrt(sac_data.eye_vx_onset.^2  + sac_data.eye_vy_onset.^2 );
+sac_data.eye_vm_visual = sqrt(sac_data.eye_vx_visual.^2 + sac_data.eye_vy_visual.^2);
+sac_data.time_diff_visual_onset = sac_data.time_onset - sac_data.time_visual;
+sac_data.time_diff_onset_offset = sac_data.time_offset - sac_data.time_onset;
+pCell_1.sac_data = sac_data;
+
+%% Build pCell_2.sac_data
+SACS_ALL_DATA = pCell_2.SACS_ALL_DATA;
+idx_sacs    = false(size(SACS_ALL_DATA.validity));
+for counter_tag = 1 : length(params.tag_ids)
+    idx_sacs    = idx_sacs | (SACS_ALL_DATA.tag == params.tag_ids(counter_tag));
+end
+idx_sacs    = idx_sacs & SACS_ALL_DATA.validity;
+
+sac_data.time_onset  = SACS_ALL_DATA.time_onset(     :,idx_sacs);
+sac_data.time_visual = SACS_ALL_DATA.time_visual(    :,idx_sacs);
+sac_data.time_offset = SACS_ALL_DATA.time_offset(    :,idx_sacs);
+sac_data.SS_onset    = SACS_ALL_DATA.neuro_SS_onset( :,idx_sacs);
+sac_data.CS_onset    = SACS_ALL_DATA.neuro_CS_onset( :,idx_sacs);
+sac_data.SS_visual   = SACS_ALL_DATA.neuro_SS_visual(:,idx_sacs);
+sac_data.CS_visual   = SACS_ALL_DATA.neuro_CS_visual(:,idx_sacs);
+sac_data.eye_vx_onset  = SACS_ALL_DATA.eye_vx_onset( :,idx_sacs);
+sac_data.eye_vy_onset  = SACS_ALL_DATA.eye_vy_onset( :,idx_sacs);
+sac_data.eye_vx_visual = SACS_ALL_DATA.eye_vx_visual(:,idx_sacs);
+sac_data.eye_vy_visual = SACS_ALL_DATA.eye_vy_visual(:,idx_sacs);
+sac_data.visual_px_offset = SACS_ALL_DATA.visual_px_offset(:,idx_sacs);
+sac_data.visual_py_offset = SACS_ALL_DATA.visual_py_offset(:,idx_sacs);
+sac_data.eye_r_px_onset   = SACS_ALL_DATA.eye_r_px_onset(  :,idx_sacs);
+sac_data.eye_r_py_onset   = SACS_ALL_DATA.eye_r_py_onset(  :,idx_sacs);
+
+sac_data.eye_vm_onset  = sqrt(sac_data.eye_vx_onset.^2  + sac_data.eye_vy_onset.^2 );
+sac_data.eye_vm_visual = sqrt(sac_data.eye_vx_visual.^2 + sac_data.eye_vy_visual.^2);
+sac_data.time_diff_visual_onset = sac_data.time_onset - sac_data.time_visual;
+sac_data.time_diff_onset_offset = sac_data.time_offset - sac_data.time_onset;
+pCell_2.sac_data = sac_data;
+
+%% Build pCell_1.sac_data_dir
+sac_data = pCell_1.sac_data;
+counter_pCell = counter_pCell_1;
+sac_data.delta_x = sac_data.visual_px_offset - sac_data.eye_r_px_onset;
+sac_data.delta_y = sac_data.visual_py_offset - sac_data.eye_r_py_onset;
+sac_data.visual_ang = wrapTo360(atan2d(sac_data.delta_y, sac_data.delta_x));
+if (counter_pCell >= range_cell_with_4dir_behave(1)) && (counter_pCell <= range_cell_with_4dir_behave(2))
+    sac_data.visual_ang_bin = discretize(ESN_Round(sac_data.visual_ang, 90.0, 'round'), ang_edges);
+else
+    sac_data.visual_ang_bin = discretize(sac_data.visual_ang, ang_edges);
+end
+last_bin_id = length(ang_edges) - 1;
+sac_data.visual_ang_bin(sac_data.visual_ang_bin == last_bin_id) = 1; % wrap the circle around
+% 1: 0deg % 2: 45deg % 3: 90deg % 4: 135deg % 5: 180deg % 6: 225deg % 7: 270deg % 8: 315deg
+
+if length(ang_values) ~= 8
+    error('plot_single_session_modulation: length ang_values is not 8. Please modify the code.')
+end
+if length_trace ~= 500
+    error('sac_modulation_index: length_trace is not 500. Please modify the code.')
+end
+
+field_names_sac_data = fieldnames(sac_data);
+sac_data_dir = struct;
+for counter_ang = 1 : 8
+for counter_field = 1 : length(field_names_sac_data)
+    field_name = field_names_sac_data{counter_field};
+    idx_ang = (sac_data.visual_ang_bin == counter_ang);
+    sac_data_dir(counter_ang).(field_name) = sac_data.(field_name)(:,idx_ang);
+end
+end
+pCell_1.sac_data_dir = sac_data_dir;
+
+%% Build pCell_2.sac_data_dir
+sac_data = pCell_2.sac_data;
+counter_pCell = counter_pCell_2;
+sac_data.delta_x = sac_data.visual_px_offset - sac_data.eye_r_px_onset;
+sac_data.delta_y = sac_data.visual_py_offset - sac_data.eye_r_py_onset;
+sac_data.visual_ang = wrapTo360(atan2d(sac_data.delta_y, sac_data.delta_x));
+if (counter_pCell >= range_cell_with_4dir_behave(1)) && (counter_pCell <= range_cell_with_4dir_behave(2))
+    sac_data.visual_ang_bin = discretize(ESN_Round(sac_data.visual_ang, 90.0, 'round'), ang_edges);
+else
+    sac_data.visual_ang_bin = discretize(sac_data.visual_ang, ang_edges);
+end
+last_bin_id = length(ang_edges) - 1;
+sac_data.visual_ang_bin(sac_data.visual_ang_bin == last_bin_id) = 1; % wrap the circle around
+% 1: 0deg % 2: 45deg % 3: 90deg % 4: 135deg % 5: 180deg % 6: 225deg % 7: 270deg % 8: 315deg
+
+if length(ang_values) ~= 8
+    error('plot_single_session_modulation: length ang_values is not 8. Please modify the code.')
+end
+if length_trace ~= 500
+    error('sac_modulation_index: length_trace is not 500. Please modify the code.')
+end
+
+field_names_sac_data = fieldnames(sac_data);
+sac_data_dir = struct;
+for counter_ang = 1 : 8
+for counter_field = 1 : length(field_names_sac_data)
+    field_name = field_names_sac_data{counter_field};
+    idx_ang = (sac_data.visual_ang_bin == counter_ang);
+    sac_data_dir(counter_ang).(field_name) = sac_data.(field_name)(:,idx_ang);
+end
+end
+pCell_2.sac_data_dir = sac_data_dir;
+
+%% SS sync index
+% edit ESN_global_variables and set expand_index to desired value
+ss_sync_index = nan(8,length_trace);
+ss_sync_p1 = nan(8,length_trace);
+ss_sync_p2 = nan(8,length_trace);
+ss_sync_joint = nan(8,length_trace);
+ss_sync_indep = nan(8,length_trace);
+raster_S1 = cell(8,1);
+raster_S2 = cell(8,1);
+raster_joint = cell(8,1);
+for counter_ang = 1 : 8
+    event_SS_1 = logical(pCell_1.sac_data_dir(counter_ang).SS_onset);
+    event_SS_2 = logical(pCell_2.sac_data_dir(counter_ang).SS_onset);
+    event_SS_1 = expand_index_event_data(event_SS_1, 1, 0);  % dim=1, expand along column. event_ is a 500xn matrix
+    event_SS_2 = expand_index_event_data(event_SS_2, 1, 0);
+    event_SS_joint = ( logical(event_SS_1)) & ( logical(event_SS_2));
+    event_p1   = reshape(nanmean( event_SS_1,     2), 1, length_trace);
+    event_p2   = reshape(nanmean( event_SS_2,     2), 1, length_trace);
+    event_p1p2 = reshape(nanmean( event_SS_joint, 2), 1, length_trace);
+    
+    ratio_     = ( event_p1p2 ./ event_p1 ./ event_p2 );
+    ratio_(isnan(ratio_)) = 1; ratio_(isinf(ratio_)) = 1;
+    ss_sync_index(counter_ang,:) = ratio_;
+    ss_sync_p1(counter_ang,:) = event_p1;
+    ss_sync_p2(counter_ang,:) = event_p2;
+    ss_sync_joint(counter_ang,:) = event_p1p2;
+    ss_sync_indep(counter_ang,:) = event_p1.*event_p2;
+    
+    raster_S1{counter_ang, 1} = event_SS_1;
+    raster_S2{counter_ang, 1} = event_SS_2;
+    raster_joint{counter_ang, 1} = event_SS_joint;
+end
+
+%% CS-on pair
+CS_count_avg_1  = pCell_1.CS_on_data.CS_count( 1, :) + pCell_1.CS_on_data.CS_count( 4, :);% + pCell_1.CS_on_data.CS_count( 6, :) + pCell_1.CS_on_data.CS_count( 7, :);
+CS_count_avg_2  = pCell_2.CS_on_data.CS_count( 1, :) + pCell_2.CS_on_data.CS_count( 4, :);% + pCell_2.CS_on_data.CS_count( 6, :) + pCell_2.CS_on_data.CS_count( 7, :);
+sac_count_avg_1 = pCell_1.CS_on_data.sac_count(1, :) + pCell_1.CS_on_data.sac_count(4, :);% + pCell_1.CS_on_data.sac_count(6, :) + pCell_1.CS_on_data.sac_count(7, :);
+sac_count_avg_2 = pCell_2.CS_on_data.sac_count(1, :) + pCell_2.CS_on_data.sac_count(4, :);% + pCell_2.CS_on_data.sac_count(6, :) + pCell_2.CS_on_data.sac_count(7, :);
+CS_count_pair    = CS_count_avg_1  + CS_count_avg_2;
+sac_count_pair   = sac_count_avg_1 + sac_count_avg_2;
+% 'prim_success' tag 1 % 'corr_success' tag 4
+CS_prob_pair = CS_count_pair ./ sac_count_pair;
+
+r_pair = nansum(CS_prob_pair.* exp(1i*deg2rad(ang_values)) , 2); % compute weighted sum of cos and sin of angles
+CS_ang_pair =  wrapTo360(rad2deg(angle(r_pair)));
+CS_rho_pair = abs(r_pair) ./ nansum(CS_prob_pair,2);
+
+%% plot sync_index
+fig_num = 9;
+hFig = figure(fig_num);
+clf(hFig)
+num_row_fig = 3;
+num_col_fig = 3;
+ax_ang_id = [6, 3, 2, 1, 4, 7, 8, 9, 5];
+data_range_ = 200:350;
+data_x_axis = -50:1:100;
+
+for counter_ang = 1 : 8
+    subplot(num_row_fig, num_col_fig, ax_ang_id(counter_ang));
+    hold on;
+    data_y_axis_smooth = ESN_smooth(ss_sync_index(counter_ang,:));
+%     data_y_axis_smooth = (ss_sync_index(counter_ang,:));
+    data_y_axis = data_y_axis_smooth(data_range_);
+    plot(data_x_axis, data_y_axis);
+    ylim([0 4])
+end
+
+ESN_Beautify_Plot(hFig, [8 8], 8)
+
+%% plot p1, p2
+fig_num = fig_num+1;
+hFig = figure(fig_num);
+clf(hFig)
+num_row_fig = 3;
+num_col_fig = 3;
+ax_ang_id = [6, 3, 2, 1, 4, 7, 8, 9, 5];
+data_range_ = 200:350;
+data_x_axis = -50:1:100;
+
+for counter_ang = 1 : 8
+    subplot(num_row_fig, num_col_fig, ax_ang_id(counter_ang));
+    hold on;
+    data_y_axis_smooth = ESN_smooth(ss_sync_p1(counter_ang,:));
+    data_y_axis = data_y_axis_smooth(data_range_);
+    plot(data_x_axis, data_y_axis, 'color', 'r');
+    data_y_axis_smooth = ESN_smooth(ss_sync_p2(counter_ang,:));
+    data_y_axis = data_y_axis_smooth(data_range_);
+    plot(data_x_axis, data_y_axis, 'color', 'b');
+%     data_y_axis_smooth = ESN_smooth(ss_sync_joint(counter_ang,:));
+%     data_y_axis = data_y_axis_smooth(data_range_);
+%     plot(data_x_axis, data_y_axis, 'm');
+%     data_y_axis_smooth = ESN_smooth(ss_sync_indep(counter_ang,:));
+%     data_y_axis = data_y_axis_smooth(data_range_);
+%     plot(data_x_axis, data_y_axis, 'k');
+    ylim([0 0.2])
+end
+
+ESN_Beautify_Plot(hFig, [8 4], 8)
+
+%% plot joint, indep
+fig_num = fig_num+1;
+hFig = figure(fig_num);
+clf(hFig)
+num_row_fig = 3;
+num_col_fig = 3;
+ax_ang_id = [6, 3, 2, 1, 4, 7, 8, 9, 5];
+data_range_ = 200:350;
+data_x_axis = -50:1:100;
+
+for counter_ang = 1 : 8
+    subplot(num_row_fig, num_col_fig, ax_ang_id(counter_ang));
+    hold on;
+%     data_y_axis_smooth = ESN_smooth(ss_sync_p1(counter_ang,:));
+%     data_y_axis = data_y_axis_smooth(data_range_);
+%     plot(data_x_axis, data_y_axis, 'b');
+%     data_y_axis_smooth = ESN_smooth(ss_sync_p2(counter_ang,:));
+%     data_y_axis = data_y_axis_smooth(data_range_);
+%     plot(data_x_axis, data_y_axis), 'r';
+    data_y_axis_smooth = ESN_smooth(ss_sync_joint(counter_ang,:));
+    data_y_axis = data_y_axis_smooth(data_range_);
+    plot(data_x_axis, data_y_axis, 'm');
+    data_y_axis_smooth = ESN_smooth(ss_sync_indep(counter_ang,:));
+    data_y_axis = data_y_axis_smooth(data_range_);
+    plot(data_x_axis, data_y_axis, 'k');
+    ylim([0 0.008])
+end
+
+ESN_Beautify_Plot(hFig, [8 4], 8)
+
+%% plot S1, S2
+time_ss_1 = pCell_1.Neural_Properties.SS_time;
+diff_time_ss_1 = diff(time_ss_1);
+diff_time_ss_1(abs(diff_time_ss_1)>5)=0;
+baseline_ss_1 = length(time_ss_1) / sum(diff_time_ss_1);
+
+time_ss_2 = pCell_2.Neural_Properties.SS_time;
+diff_time_ss_2 = diff(time_ss_2);
+diff_time_ss_2(abs(diff_time_ss_2)>5)=0;
+baseline_ss_2 = length(time_ss_2) / sum(diff_time_ss_2);
+
+
+fig_num = fig_num+1;
+hFig = figure(fig_num);
+clf(hFig)
+num_row_fig = 3;
+num_col_fig = 3;
+ax_ang_id = [6, 3, 2, 1, 4, 7, 8, 9, 5];
+data_range_ = 200:350;
+data_x_axis = -50:1:100;
+
+for counter_ang = 1 : 8
+    subplot(num_row_fig, num_col_fig, ax_ang_id(counter_ang));
+    hold on;
+    data_ss_1 = ESN_smooth(mean(pCell_1.sac_data_dir(counter_ang).SS_onset,2))*1000 - baseline_ss_1;
+    data_y_axis_smooth = data_ss_1;
+    data_y_axis = data_y_axis_smooth(data_range_);
+    plot(data_x_axis, data_y_axis, 'r');
+    
+    data_ss_2 = ESN_smooth(mean(pCell_2.sac_data_dir(counter_ang).SS_onset,2))*1000 - baseline_ss_2;
+    data_y_axis_smooth = data_ss_2;
+    data_y_axis = data_y_axis_smooth(data_range_);
+    plot(data_x_axis, data_y_axis, 'b');
+    
+    data_y_axis_smooth = data_ss_1 + data_ss_2;
+    data_y_axis = data_y_axis_smooth(data_range_);
+    plot(data_x_axis, data_y_axis, 'k');
+    ylim([-50 100])
+end
+
+subplot(num_row_fig, num_col_fig, ax_ang_id(counter_ang+1));
+Line_Color = lines(7);
+color_CS     = Line_Color(7,:);
+prob_amplitude = CS_prob_pair;
+prob_amplitude_overall_avg = sum(CS_count_pair) ./ sum(sac_count_pair);
+CS_ang_avg = CS_ang_pair;
+CS_rho_avg = CS_rho_pair;
+plot_data_amp_mean = [prob_amplitude, prob_amplitude(1), nan]';
+plot_data_deg_mean = [ang_values, ang_values(1), nan]';
+polarplot(deg2rad(0:5:360)',repmat(prob_amplitude_overall_avg, length(0:5:360), 1), '-', 'LineWidth', 1, 'Color', color_CS)
+hold on
+polarplot(deg2rad(plot_data_deg_mean),plot_data_amp_mean, '-', 'LineWidth', 1, 'Color', color_CS)
+polarplot([0 deg2rad(CS_ang_avg)],[0 CS_rho_avg], '-', 'LineWidth', 1.5, 'Color', color_CS)
+rlim([0 0.25])
+set(gca, 'ThetaTick', 0:45:315, 'RTick', 0:0.05:0.25, ...
+    'RTickLabel', {'', '', '0.1', '', '0.2', ''}, 'ThetaTickLabel', {'0','','90','', '180','','270', ''})
+title('CS Tuning', 'Interpreter', 'none', 'Color',color_CS);
+
+%
+ESN_Beautify_Plot(hFig, [8 8], 8)
+
+
+%% Plot joint raster
+fig_num = fig_num+1;
+hFig = figure(fig_num);
+clf(hFig)
+num_row_fig = 3;
+num_col_fig = 3;
+ax_ang_id = [6, 3, 2, 1, 4, 7, 8, 9, 5];
+
+Line_Color = lines(4);
+color_SS     = Line_Color(4,:);
+color_SS_firing = Line_Color(4,:); %[0    0.3    0.5];
+
+
+num_trial_ang = zeros(1,8);
+for counter_dir = 1 : 8
+    num_trial_ang(counter_dir) = size(raster_joint{counter_dir,1},2);
+end
+num_trial_ang_max = round(median(num_trial_ang));
+
+for counter_dir = 1 : 8
+    ax_ang_id_ = ax_ang_id(counter_dir);
+    subplot(num_row_fig, num_col_fig, ax_ang_id_);
+    hold on;
+    
+    if isempty(raster_joint{counter_dir,1})
+        continue;
+    end
+    
+    num_trial_dir_max_ = min([num_trial_ang_max size(raster_joint{counter_dir,1},2)]);
+    
+    
+    train_data_logic_joint_ = raster_joint{counter_dir,1}(250:400,1:num_trial_dir_max_)';
+    firing_joint_ = mean(raster_joint{counter_dir,1}(:,1:num_trial_dir_max_)');
+    firing_joint_ = ESN_smooth(firing_joint_); % smooth(firing_SS_(:), 21, 'sgolay', 2)'; % 
+    firing_joint_(firing_joint_<0)=0;
+    firing_joint_ = firing_joint_(1, 250:400);
+    
+    
+    firing_S1_ = mean(raster_S1{counter_dir,1}(:,1:num_trial_dir_max_)');
+    firing_S1_ = ESN_smooth(firing_S1_); % smooth(firing_SS_(:), 21, 'sgolay', 2)'; % 
+    firing_S1_(firing_S1_<0)=0;
+    firing_S1_ = firing_S1_(1, 250:400);
+    
+    firing_S2_ = mean(raster_S2{counter_dir,1}(:,1:num_trial_dir_max_)');
+    firing_S2_ = ESN_smooth(firing_S2_); % smooth(firing_SS_(:), 21, 'sgolay', 2)'; % 
+    firing_S2_(firing_S2_<0)=0;
+    firing_S2_ = firing_S2_(1, 250:400);
+    
+    firing_indep_ = firing_S1_ .* firing_S2_;
+
+    inds_span = 0 : 150;
+    [x_axis_SS_, y_axis_SS_] = ESN_raster_plot_axes(train_data_logic_joint_, inds_span, 0.5);
+    plot(x_axis_SS_(:), y_axis_SS_(:), 'LineWidth', 1, 'Color', color_SS)
+    xlim([0 150])
+    ylim([1 size(train_data_logic_joint_,1)])
+    set(gca, 'XTick', [0 50 100 150])
+    set(gca, 'XTickLabel', {'','0','', '100'})
+    
+    yyaxis right;
+    plot(inds_span, firing_joint_, 'LineWidth', 1, 'Color', color_SS_firing)
+    hold on
+    plot(inds_span, firing_indep_, 'LineWidth', 1, 'Color', 'k')
+    ylim([0 0.01])
+    xlim([0 150])
+    set(gca, 'YColor', color_SS_firing)
+end
+
+ESN_Beautify_Plot(hFig, [8 8], 8)
+% ESN_Beautify_Plot(hFig, [8 8], 12)
+
+
+end
+end
+
+%% function plot_SS_peak_vs_vmax()
+function plot_SS_peak_vs_vmax()
+%% clear
+clc; clear;
+%% close all
+close all;
+%% set params
+fprintf('params ...')
+params.data_type       = 'SS';
+params.CSYS_type       = 'tuned'; % tuned % absol
+params.event_type_name = 'vmax';
+params.variable        = 'vel';
+params.tag_id          = 8;
+params.flag_smooth_plot = true; % false; % 
+params.fig_num = 4;
+params.plot_mode = 2; % mode=1 collapse the amp/vel, mode=2 plots the amp/vel
+fprintf(' --> Completed. \n')
+
+%% Load data
+fprintf('Load data ...')
+load('umap_data.mat', 'idx_pauser', 'idx_burster','idx_modulated','idx_not_modulated');
+flag_pair_list = false; [idx_mirza, idx_ramon] = idx_mirza_ramon(flag_pair_list);
+if ~exist([params.data_type '_population_' params.CSYS_type], 'var')
+    load([params.data_type '_population_' params.CSYS_type '.mat'], [params.data_type '_population_' params.CSYS_type])
+end
+if ~exist(['num_sac_' params.CSYS_type], 'var')
+    load(['num_sac_' params.CSYS_type '.mat'], ['num_sac_' params.CSYS_type])
+end 
+if ~exist('population_neural_properties', 'var')
+    load(['population_neural_properties' '.mat'], 'population_neural_properties')
+end
+eval(['population_data = ' params.data_type '_population_' params.CSYS_type ';']);
+eval(['num_sac_data = ' 'num_sac_' params.CSYS_type ';']);
+if strcmp(params.data_type, 'SS') || strcmp(params.data_type, 'CS')
+    eval(['firing_rate = population_neural_properties.' params.data_type '_firing_rate'  ';']);
+    population_data = population_data_subtract_baseline(population_data, firing_rate, params.variable);
+end
+fprintf(' --> Completed. \n')
+
+%% MODE 2 %%%%%%%%%%%%%%%%%%%%%%%%%%%
+if params.plot_mode == 2
+[population_data, num_sac_data] = population_data_combine_levels(population_data, num_sac_data, params.variable, 2, [3 7]);
+[population_data, num_sac_data] = population_data_combine_levels(population_data, num_sac_data, params.variable, 2, [2 8]);
+[population_data, num_sac_data] = population_data_combine_levels(population_data, num_sac_data, params.variable, 2, [4 6]);
+% [population_data, num_sac_data] = population_data_combine_tags(  population_data, num_sac_data, params.variable, [6 7 8]);
+
+% idx_pCells: is a boolean array. 1 for including a pCell, and 0 for exluding a pCell
+% idx_mirza; % idx_ramon; % idx_pauser; % idx_burster; % idx_modulated; % idx_not_modulated;
+idx_pCells = idx_mirza | idx_ramon;
+[population_data, num_sac_data] = population_data_idx_pCells(population_data, num_sac_data, params.variable, idx_pCells);
+
+if strcmp(params.data_type, 'SS') || strcmp(params.data_type, 'CS')
+    population_data = population_data_smooth_pCells(population_data, num_sac_data, params.variable);
+end
+[population_avg_dir, population_sem_dir] = population_data_avg_over_pCells(population_data, num_sac_data, params.variable);
+[population_allDir, num_sac_allDir] = population_data_avg_over_levels(population_data, num_sac_data, params.variable, 2);
+[population_avg_allDir, population_sem_allDir] = population_data_avg_over_pCells(population_allDir, num_sac_allDir, params.variable);
+
+data_avg_dir     = population_avg_dir.(params.variable)(params.tag_id).(params.event_type_name);
+data_sem_dir     = population_sem_dir.(params.variable)(params.tag_id).(params.event_type_name);
+data_avg_allDir = population_avg_allDir.(params.variable)(params.tag_id).(params.event_type_name);
+data_sem_allDir = population_sem_allDir.(params.variable)(params.tag_id).(params.event_type_name);
+
+plot_population_data(params.fig_num, data_avg_dir, data_avg_allDir, params, data_sem_dir, data_sem_allDir);
+fprintf('ALL DONE.\n')
+end
+
+%% compute SS peak
+ss_max_avg = nan(8,8);
+ss_max_sem = nan(8,8);
+ss_min_avg = nan(8,8);
+ss_min_sem = nan(8,8);
+
+for counter_ang = 1 : 8
+    for counter_var = 1 : 8
+        [max_, idx_] = max(data_avg_dir{counter_var, counter_ang});
+        ss_max_avg(counter_var, counter_ang) = max_;
+        ss_max_sem(counter_var, counter_ang) = data_sem_dir{counter_var, counter_ang}(1,idx_);
+        
+        [min_, idx_] = min(data_avg_dir{counter_var, counter_ang});
+        ss_min_avg(counter_var, counter_ang) = min_;
+        ss_min_sem(counter_var, counter_ang) = data_sem_dir{counter_var, counter_ang}(1,idx_);
+    end
+end
+
+%% set params
+fprintf('params ...')
+params.data_type       = 'VM';
+params.fig_num = params.fig_num + 1;
+fprintf(' --> Completed. \n')
+
+%% Load data
+fprintf('Load data ...')
+load('umap_data.mat', 'idx_pauser', 'idx_burster','idx_modulated','idx_not_modulated');
+flag_pair_list = false; [idx_mirza, idx_ramon] = idx_mirza_ramon(flag_pair_list);
+if ~exist([params.data_type '_population_' params.CSYS_type], 'var')
+    load([params.data_type '_population_' params.CSYS_type '.mat'], [params.data_type '_population_' params.CSYS_type])
+end
+if ~exist(['num_sac_' params.CSYS_type], 'var')
+    load(['num_sac_' params.CSYS_type '.mat'], ['num_sac_' params.CSYS_type])
+end 
+if ~exist('population_neural_properties', 'var')
+    load(['population_neural_properties' '.mat'], 'population_neural_properties')
+end
+eval(['population_data = ' params.data_type '_population_' params.CSYS_type ';']);
+eval(['num_sac_data = ' 'num_sac_' params.CSYS_type ';']);
+if strcmp(params.data_type, 'SS') || strcmp(params.data_type, 'CS')
+    eval(['firing_rate = population_neural_properties.' params.data_type '_firing_rate'  ';']);
+    population_data = population_data_subtract_baseline(population_data, firing_rate, params.variable);
+end
+fprintf(' --> Completed. \n')
+
+%% MODE 2 %%%%%%%%%%%%%%%%%%%%%%%%%%%
+if params.plot_mode == 2
+[population_data, num_sac_data] = population_data_combine_levels(population_data, num_sac_data, params.variable, 2, [3 7]);
+[population_data, num_sac_data] = population_data_combine_levels(population_data, num_sac_data, params.variable, 2, [2 8]);
+[population_data, num_sac_data] = population_data_combine_levels(population_data, num_sac_data, params.variable, 2, [4 6]);
+% [population_data, num_sac_data] = population_data_combine_tags(  population_data, num_sac_data, params.variable, [6 7 8]);
+
+% idx_pCells: is a boolean array. 1 for including a pCell, and 0 for exluding a pCell
+% idx_mirza; % idx_ramon; % idx_pauser; % idx_burster; % idx_modulated; % idx_not_modulated;
+idx_pCells = idx_mirza | idx_ramon;
+[population_data, num_sac_data] = population_data_idx_pCells(population_data, num_sac_data, params.variable, idx_pCells);
+
+if strcmp(params.data_type, 'SS') || strcmp(params.data_type, 'CS')
+    population_data = population_data_smooth_pCells(population_data, num_sac_data, params.variable);
+end
+[population_avg_dir, population_sem_dir] = population_data_avg_over_pCells(population_data, num_sac_data, params.variable);
+[population_allDir, num_sac_allDir] = population_data_avg_over_levels(population_data, num_sac_data, params.variable, 2);
+[population_avg_allDir, population_sem_allDir] = population_data_avg_over_pCells(population_allDir, num_sac_allDir, params.variable);
+
+data_avg_dir     = population_avg_dir.(params.variable)(params.tag_id).(params.event_type_name);
+data_sem_dir     = population_sem_dir.(params.variable)(params.tag_id).(params.event_type_name);
+data_avg_allDir = population_avg_allDir.(params.variable)(params.tag_id).(params.event_type_name);
+data_sem_allDir = population_sem_allDir.(params.variable)(params.tag_id).(params.event_type_name);
+
+plot_population_data(params.fig_num, data_avg_dir, data_avg_allDir, params, data_sem_dir, data_sem_allDir);
+fprintf('ALL DONE.\n')
+end
+
+%% compute v_max
+vm_max_avg = nan(8,8);
+vm_max_sem = nan(8,8);
+vm_min_avg = nan(8,8);
+vm_min_sem = nan(8,8);
+
+for counter_ang = 1 : 8
+    for counter_var = 1 : 8
+        [max_, idx_] = max(data_avg_dir{counter_var, counter_ang});
+        vm_max_avg(counter_var, counter_ang) = max_;
+        vm_max_sem(counter_var, counter_ang) = data_sem_dir{counter_var, counter_ang}(1,idx_);
+        
+        [min_, idx_] = min(data_avg_dir{counter_var, counter_ang});
+        vm_min_avg(counter_var, counter_ang) = min_;
+        vm_min_sem(counter_var, counter_ang) = data_sem_dir{counter_var, counter_ang}(1,idx_);
+    end
+end
+
+%% for ploting vmax vs. ss_crossing: plot v_max vs ss_crossing
+params.fig_num = params.fig_num + 1;
+hFig = figure(params.fig_num);
+range_levels = 1:7;
+clf(hFig)
+hold on
+x_axis_data = vm_max_avg(range_levels,1);
+y_axis_data = ss_max_avg(range_levels,1)*1000;
+err_x_axis = vm_max_sem(range_levels,1);
+err_y_axis = ss_max_sem(range_levels,1)*1000;
+P_ = polyfit(x_axis_data, y_axis_data, 1);
+y_axis_hat = polyval(P_,x_axis_data);
+errorbar(x_axis_data,y_axis_data,err_y_axis,'vertical')
+plot(x_axis_data, y_axis_data)
+plot(x_axis_data, y_axis_hat, '-', 'LineWidth', 1)
+[b,~,~,~,stats] = regress(y_axis_data,[ones(size(x_axis_data)) x_axis_data]);
+fprintf(['R-square= ' num2str(stats(1)) ' , ' 'F= ' num2str(stats(2)) ' , ' 'p= ' num2str(stats(3)) ' , ' 'error= ' num2str(stats(4)) '\n'])
+
+x_axis_data = vm_max_avg(range_levels,3);
+y_axis_data = ss_max_avg(range_levels,3)*1000;
+err_x_axis = vm_max_sem(range_levels,3);
+err_y_axis = ss_max_sem(range_levels,3)*1000;
+P_ = polyfit(x_axis_data, y_axis_data, 1);
+y_axis_hat = polyval(P_,x_axis_data);
+errorbar(x_axis_data,y_axis_data,err_y_axis,'vertical')
+plot(x_axis_data, y_axis_data)
+plot(x_axis_data, y_axis_hat, '-', 'LineWidth', 1)
+[b,~,~,~,stats] = regress(y_axis_data,[ones(size(x_axis_data)) x_axis_data]);
+fprintf(['R-square= ' num2str(stats(1)) ' , ' 'F= ' num2str(stats(2)) ' , ' 'p= ' num2str(stats(3)) ' , ' 'error= ' num2str(stats(4)) '\n'])
+
+x_axis_data = vm_max_avg(range_levels,5);
+y_axis_data = ss_max_avg(range_levels,5)*1000;
+err_x_axis = vm_max_sem(range_levels,5);
+err_y_axis = ss_max_sem(range_levels,5)*1000;
+P_ = polyfit(x_axis_data, y_axis_data, 1);
+y_axis_hat = polyval(P_,x_axis_data);
+errorbar(x_axis_data,y_axis_data,err_y_axis,'vertical')
+plot(x_axis_data, y_axis_data)
+plot(x_axis_data, y_axis_hat, '-', 'LineWidth', 1)
+[b,~,~,~,stats] = regress(y_axis_data,[ones(size(x_axis_data)) x_axis_data]);
+fprintf(['R-square= ' num2str(stats(1)) ' , ' 'F= ' num2str(stats(2)) ' , ' 'p= ' num2str(stats(3)) ' , ' 'error= ' num2str(stats(4)) '\n'])
+
+xlabel('Max eye velocity (deg/s)')
+ylabel('Max SS modulation (spk/s)')
+
+ESN_Beautify_Plot(hFig, [2 2], 8)
+
+mdl = fitlm(x_axis_data,y_axis_data);
+anova(mdl)
+
+end
+
+%% function plot_SS_peak_vs_vmax()
+function plot_SS_time_kinematics()
+%% clear
+clc; clear;
+%% close all
+close all;
+%% set params
+fprintf('params ...')
+params.data_type       = 'SS';
+params.CSYS_type       = 'tuned'; % tuned % absol
+params.event_type_name = 'vmax';
+params.variable        = 'vel';
+params.tag_id          = 8;
+params.flag_smooth_plot = true; % false; % 
+params.fig_num = 4;
+params.plot_mode = 2; % mode=1 collapse the amp/vel, mode=2 plots the amp/vel
+fprintf(' --> Completed. \n')
+
+%% Load data
+fprintf('Load data ...')
+load('umap_data.mat', 'idx_pauser', 'idx_burster','idx_modulated','idx_not_modulated');
+flag_pair_list = false; [idx_mirza, idx_ramon] = idx_mirza_ramon(flag_pair_list);
+if ~exist([params.data_type '_population_' params.CSYS_type], 'var')
+    load([params.data_type '_population_' params.CSYS_type '.mat'], [params.data_type '_population_' params.CSYS_type])
+end
+if ~exist(['num_sac_' params.CSYS_type], 'var')
+    load(['num_sac_' params.CSYS_type '.mat'], ['num_sac_' params.CSYS_type])
+end 
+if ~exist('population_neural_properties', 'var')
+    load(['population_neural_properties' '.mat'], 'population_neural_properties')
+end
+eval(['population_data = ' params.data_type '_population_' params.CSYS_type ';']);
+eval(['num_sac_data = ' 'num_sac_' params.CSYS_type ';']);
+if strcmp(params.data_type, 'SS') || strcmp(params.data_type, 'CS')
+    eval(['firing_rate = population_neural_properties.' params.data_type '_firing_rate'  ';']);
+    population_data = population_data_subtract_baseline(population_data, firing_rate, params.variable);
+end
+fprintf(' --> Completed. \n')
+
+%% MODE 2 %%%%%%%%%%%%%%%%%%%%%%%%%%%
+if params.plot_mode == 2
+[population_data, num_sac_data] = population_data_combine_levels(population_data, num_sac_data, params.variable, 2, [3 7]);
+[population_data, num_sac_data] = population_data_combine_levels(population_data, num_sac_data, params.variable, 2, [2 8]);
+[population_data, num_sac_data] = population_data_combine_levels(population_data, num_sac_data, params.variable, 2, [4 6]);
+% [population_data, num_sac_data] = population_data_combine_tags(  population_data, num_sac_data, params.variable, [6 7 8]);
+
+% idx_pCells: is a boolean array. 1 for including a pCell, and 0 for exluding a pCell
+% idx_mirza; % idx_ramon; % idx_pauser; % idx_burster; % idx_modulated; % idx_not_modulated;
+idx_pCells = idx_mirza | idx_ramon;
+[population_data, num_sac_data] = population_data_idx_pCells(population_data, num_sac_data, params.variable, idx_pCells);
+
+if strcmp(params.data_type, 'SS') || strcmp(params.data_type, 'CS')
+    population_data = population_data_smooth_pCells(population_data, num_sac_data, params.variable);
+end
+[population_avg_dir, population_sem_dir] = population_data_avg_over_pCells(population_data, num_sac_data, params.variable);
+% [population_allDir, num_sac_allDir] = population_data_avg_over_levels(population_data, num_sac_data, params.variable, 2);
+% [population_avg_allDir, population_sem_allDir] = population_data_avg_over_pCells(population_allDir, num_sac_allDir, params.variable);
+
+data_avg_dir     = population_avg_dir.(params.variable)(params.tag_id).(params.event_type_name);
+data_sem_dir     = population_sem_dir.(params.variable)(params.tag_id).(params.event_type_name);
+% data_avg_allDir = population_avg_allDir.(params.variable)(params.tag_id).(params.event_type_name);
+% data_sem_allDir = population_sem_allDir.(params.variable)(params.tag_id).(params.event_type_name);
+
+% plot_population_data(params.fig_num, data_avg_dir, data_avg_allDir, params, data_sem_dir, data_sem_allDir);
+fprintf('ALL DONE.\n')
+end
+
+%% compute SS peak
+ss_time_max   = nan(8,1);
+ss_time_min   = nan(8,1);
+ss_time_cross = nan(8,1);
+ss_time_max_sem   = nan(8,1);
+ss_time_min_sem   = nan(8,1);
+ss_time_cross_sem = nan(8,1);
+
+num_perm = 5000;
+num_pCells = size(population_data.(params.variable)(params.tag_id).(params.event_type_name){1, 5},1);
+counter_ang = 5;
+for counter_var = 1 : 8
+    data_var = population_data.(params.variable)(params.tag_id).(params.event_type_name){counter_var, counter_ang};
+    ss_time_max_perm   = nan(num_perm,1);
+    ss_time_min_perm   = nan(num_perm,1);
+    ss_time_cross_perm = nan(num_perm,1);
+    for counter_perm = 1 : num_perm
+        idx_perm = randi(num_pCells, num_pCells, 1);
+        data_var_perm = data_var(idx_perm, :);
+        trace_ = nanmean(data_var_perm(:,201:275));
+        [~, idx_max_] = max(trace_(1:50));
+        [~, idx_min_] = min(trace_(idx_max_+1:end));
+        idx_cross_ = find(trace_(idx_max_:idx_max_+idx_min_-1) >= 0 & trace_(idx_max_+1:idx_max_+idx_min_) < 0, 1, 'first');
+        if isempty(idx_cross_)
+            idx_cross_ = nan;
+        end
+        ss_time_max_perm(counter_perm, 1)   = idx_max_ - 50;
+        ss_time_min_perm(counter_perm, 1)   = idx_max_ + idx_min_ - 50;
+        ss_time_cross_perm(counter_perm, 1) = idx_max_ + idx_cross_ - 50;
+    end
+    ss_time_max(counter_var, 1)   = nanmean(ss_time_max_perm);
+    ss_time_min(counter_var, 1)   = nanmean(ss_time_min_perm);
+    ss_time_cross(counter_var, 1) = nanmean(ss_time_cross_perm);
+    ss_time_max_sem(counter_var, 1)   = nanstd(ss_time_max_perm);
+    ss_time_min_sem(counter_var, 1)   = nanstd(ss_time_min_perm);
+    ss_time_cross_sem(counter_var, 1) = nanstd(ss_time_cross_perm);
+end
+
+
+%% set params
+fprintf('params ...')
+params.data_type       = 'VM';
+params.fig_num = params.fig_num + 1;
+fprintf(' --> Completed. \n')
+
+%% Load data
+fprintf('Load data ...')
+load('umap_data.mat', 'idx_pauser', 'idx_burster','idx_modulated','idx_not_modulated');
+flag_pair_list = false; [idx_mirza, idx_ramon] = idx_mirza_ramon(flag_pair_list);
+if ~exist([params.data_type '_population_' params.CSYS_type], 'var')
+    load([params.data_type '_population_' params.CSYS_type '.mat'], [params.data_type '_population_' params.CSYS_type])
+end
+if ~exist(['num_sac_' params.CSYS_type], 'var')
+    load(['num_sac_' params.CSYS_type '.mat'], ['num_sac_' params.CSYS_type])
+end 
+if ~exist('population_neural_properties', 'var')
+    load(['population_neural_properties' '.mat'], 'population_neural_properties')
+end
+eval(['population_data = ' params.data_type '_population_' params.CSYS_type ';']);
+eval(['num_sac_data = ' 'num_sac_' params.CSYS_type ';']);
+if strcmp(params.data_type, 'SS') || strcmp(params.data_type, 'CS')
+    eval(['firing_rate = population_neural_properties.' params.data_type '_firing_rate'  ';']);
+    population_data = population_data_subtract_baseline(population_data, firing_rate, params.variable);
+end
+fprintf(' --> Completed. \n')
+
+%% MODE 2 %%%%%%%%%%%%%%%%%%%%%%%%%%%
+if params.plot_mode == 2
+[population_data, num_sac_data] = population_data_combine_levels(population_data, num_sac_data, params.variable, 2, [3 7]);
+[population_data, num_sac_data] = population_data_combine_levels(population_data, num_sac_data, params.variable, 2, [2 8]);
+[population_data, num_sac_data] = population_data_combine_levels(population_data, num_sac_data, params.variable, 2, [4 6]);
+% [population_data, num_sac_data] = population_data_combine_tags(  population_data, num_sac_data, params.variable, [6 7 8]);
+
+% idx_pCells: is a boolean array. 1 for including a pCell, and 0 for exluding a pCell
+% idx_mirza; % idx_ramon; % idx_pauser; % idx_burster; % idx_modulated; % idx_not_modulated;
+idx_pCells = idx_mirza | idx_ramon;
+[population_data, num_sac_data] = population_data_idx_pCells(population_data, num_sac_data, params.variable, idx_pCells);
+
+if strcmp(params.data_type, 'SS') || strcmp(params.data_type, 'CS')
+    population_data = population_data_smooth_pCells(population_data, num_sac_data, params.variable);
+end
+[population_avg_dir, population_sem_dir] = population_data_avg_over_pCells(population_data, num_sac_data, params.variable);
+% [population_allDir, num_sac_allDir] = population_data_avg_over_levels(population_data, num_sac_data, params.variable, 2);
+% [population_avg_allDir, population_sem_allDir] = population_data_avg_over_pCells(population_allDir, num_sac_allDir, params.variable);
+
+data_avg_dir     = population_avg_dir.(params.variable)(params.tag_id).(params.event_type_name);
+data_sem_dir     = population_sem_dir.(params.variable)(params.tag_id).(params.event_type_name);
+% data_avg_allDir = population_avg_allDir.(params.variable)(params.tag_id).(params.event_type_name);
+% data_sem_allDir = population_sem_allDir.(params.variable)(params.tag_id).(params.event_type_name);
+
+% plot_population_data(params.fig_num, data_avg_dir, data_avg_allDir, params, data_sem_dir, data_sem_allDir);
+fprintf('ALL DONE.\n')
+end
+
+%% compute v_max
+vm_max_avg = nan(8,1);
+vm_max_sem = nan(8,1);
+vm_min_avg = nan(8,1);
+vm_min_sem = nan(8,1);
+
+counter_ang = 5;
+for counter_var = 1 : 8
+    [max_, idx_] = max(data_avg_dir{counter_var, counter_ang});
+    vm_max_avg(counter_var, 1) = max_;
+    vm_max_sem(counter_var, 1) = data_sem_dir{counter_var, counter_ang}(1,idx_);
+
+    [min_, idx_] = min(data_avg_dir{counter_var, counter_ang});
+    vm_min_avg(counter_var, 1) = min_;
+    vm_min_sem(counter_var, 1) = data_sem_dir{counter_var, counter_ang}(1,idx_);
+end
+
+%% for ploting vmax vs. ss_crossing: plot v_max vs ss_crossing
+params.fig_num = params.fig_num + 1;
+hFig = figure(params.fig_num);
+range_levels = 1:7;
+clf(hFig)
+hold on
+
+x_axis_data = vm_max_avg(range_levels,1);
+y_axis_data = ss_time_min(range_levels,1);
+err_y_axis = ss_time_min_sem(range_levels,1);
+P_ = polyfit(x_axis_data, y_axis_data, 1);
+y_axis_hat = polyval(P_,x_axis_data);
+errorbar(x_axis_data,y_axis_data,err_y_axis,'vertical', 'LineWidth', 0.75)
+plot(x_axis_data, y_axis_hat, '-', 'LineWidth', 0.75)
+[b,~,~,~,stats] = regress(y_axis_data,[ones(size(x_axis_data)) x_axis_data]);
+fprintf(['R-square= ' num2str(stats(1)) ' , ' 'F= ' num2str(stats(2)) ' , ' 'p= ' num2str(stats(3)) ' , ' 'error= ' num2str(stats(4)) '\n'])
+
+x_axis_data = vm_max_avg(range_levels,1);
+y_axis_data = ss_time_cross(range_levels,1);
+err_y_axis = ss_time_cross_sem(range_levels,1);
+P_ = polyfit(x_axis_data, y_axis_data, 1);
+y_axis_hat = polyval(P_,x_axis_data);
+errorbar(x_axis_data,y_axis_data,err_y_axis,'vertical', 'LineWidth', 0.75)
+plot(x_axis_data, y_axis_hat, '-', 'LineWidth', 0.75)
+[b,~,~,~,stats] = regress(y_axis_data,[ones(size(x_axis_data)) x_axis_data]);
+fprintf(['R-square= ' num2str(stats(1)) ' , ' 'F= ' num2str(stats(2)) ' , ' 'p= ' num2str(stats(3)) ' , ' 'error= ' num2str(stats(4)) '\n'])
+
+x_axis_data = vm_max_avg(range_levels,1);
+y_axis_data = ss_time_max(range_levels,1);
+err_y_axis = ss_time_max_sem(range_levels,1);
+P_ = polyfit(x_axis_data, y_axis_data, 1);
+y_axis_hat = polyval(P_,x_axis_data);
+errorbar(x_axis_data,y_axis_data,err_y_axis,'vertical', 'LineWidth', 0.75)
+plot(x_axis_data, y_axis_hat, '-', 'LineWidth', 0.75)
+[b,~,~,~,stats] = regress(y_axis_data,[ones(size(x_axis_data)) x_axis_data]);
+fprintf(['R-square= ' num2str(stats(1)) ' , ' 'F= ' num2str(stats(2)) ' , ' 'p= ' num2str(stats(3)) ' , ' 'error= ' num2str(stats(4)) '\n'])
+
+xlabel('Max eye velocity (deg/s)')
+ylabel('Time interval (ms)')
+
+ESN_Beautify_Plot(hFig, [2 2], 8)
+
+mdl = fitlm(x_axis_data,y_axis_data);
+anova(mdl)
+
+end
+
+%% function plot_sync_vs_CS_diff()
+function plot_sync_vs_CS_diff()
+%% clear
+clc; clear;
+%% close all
+close all;
+%% set params
+fprintf('params ...')
+params.data_type       = 'SS';
+params.CSYS_type       = 'tuned'; % should be fixed to 'tuned', do not change to 'absol'
+params.event_type_name = 'onset';
+params.variable        = 'vel';
+params.tag_id          = 1;
+params.flag_smooth_plot = true;
+params.fig_num = 3;
+params.plot_mode = 1; % mode=1 collapse the amp/vel, mode=2 plots the amp/vel
+params.ylim = [1 2.5];
+params.scale = 1;
+params.win_len = '1ms';
+fprintf(' --> Completed. \n')
+%% Load data
+fprintf('Load data ...')
+if ~exist([params.data_type '_synch_joint_' params.CSYS_type], 'var')
+    load([params.data_type '_synch_joint_' params.win_len '_' params.CSYS_type '.mat'], [params.data_type '_synch_joint_' params.CSYS_type])
+end
+if ~exist([params.data_type '_synch_margn_' params.CSYS_type], 'var')
+    load([params.data_type '_synch_margn_' params.win_len '_' params.CSYS_type '.mat'], [params.data_type '_synch_margn_' params.CSYS_type])
+end
+if ~exist(['num_synch_' params.CSYS_type], 'var')
+    load(['num_synch_' params.win_len '_' params.CSYS_type '.mat'], ['num_synch_' params.CSYS_type])
+end
+
+eval(['synch_joint = ' params.data_type '_synch_joint_' params.CSYS_type ';']);
+eval(['synch_margn = ' params.data_type '_synch_margn_' params.CSYS_type ';']);
+eval(['num_synch = ' 'num_synch_' params.CSYS_type ';']);
+fprintf(' --> Completed. \n')
+%% calc synch_ratio
+% [synch_joint_dir, num_joint_dir] = population_data_avg_over_levels(synch_joint, num_synch, params.variable, 1, [1 2 3 4 5 6 7 8]); % based on vel, 250-750
+[synch_joint_dir, num_joint_dir] = population_data_avg_over_levels(synch_joint, num_synch, params.variable, 1); % based on vel, 250-750
+[synch_joint_dir, num_joint_dir] = population_data_combine_levels(synch_joint_dir, num_joint_dir, params.variable, 2, [3 7]);
+[synch_joint_dir, num_joint_dir] = population_data_combine_levels(synch_joint_dir, num_joint_dir, params.variable, 2, [2 8]);
+[synch_joint_dir, num_joint_dir] = population_data_combine_levels(synch_joint_dir, num_joint_dir, params.variable, 2, [4 6]);
+[synch_joint_dir, num_joint_dir] = population_data_combine_tags(  synch_joint_dir, num_joint_dir, params.variable, [1 4 6 7]); % [1 4 6 7 8]
+
+% [synch_margn_dir, num_margn_dir] = population_data_avg_over_levels(synch_margn, num_synch, params.variable, 1, [1 2 3 4 5 6 7 8]); % based on vel, 250-750
+[synch_margn_dir, num_margn_dir] = population_data_avg_over_levels(synch_margn, num_synch, params.variable, 1); % based on vel, 250-750
+[synch_margn_dir, num_margn_dir] = population_data_combine_levels(synch_margn_dir, num_margn_dir, params.variable, 2, [3 7]);
+[synch_margn_dir, num_margn_dir] = population_data_combine_levels(synch_margn_dir, num_margn_dir, params.variable, 2, [2 8]);
+[synch_margn_dir, num_margn_dir] = population_data_combine_levels(synch_margn_dir, num_margn_dir, params.variable, 2, [4 6]);
+[synch_margn_dir, num_margn_dir] = population_data_combine_tags(  synch_margn_dir, num_margn_dir, params.variable, [1 4 6 7]); % [1 4 6 7 8]
+
+[synch_joint_allDir, num_joint_allDir] = population_data_avg_over_levels(synch_joint_dir, num_joint_dir, params.variable, 2);
+[synch_margn_allDir, num_margn_allDir] = population_data_avg_over_levels(synch_margn_dir, num_margn_dir, params.variable, 2);
+
+synch_ratio_dir = synchrony_data_ratio(synch_joint_dir, synch_margn_dir, params.variable);
+synch_ratio_allDir = synchrony_data_ratio(synch_joint_allDir, synch_margn_allDir, params.variable);
+
+% remove douplicates
+% idx_pCells: is a boolean array. 1 for including a pCell, and 0 for exluding a pCell
+num_pCells = size(synch_joint.amp(1).visual{1,1},1);
+idx_pCells = true(num_pCells, 1);
+idx_pCells(2:2:num_pCells, 1) = false;
+[synch_ratio_dir, num_joint_dir] = population_data_idx_pCells(synch_ratio_dir, num_joint_dir, params.variable, idx_pCells);
+[synch_ratio_allDir, num_joint_allDir] = population_data_idx_pCells(synch_ratio_allDir, num_joint_allDir, params.variable, idx_pCells);
+
+% smooth data
+if strcmp(params.data_type, 'SS') || strcmp(params.data_type, 'CS')
+    synch_ratio_dir = population_data_smooth_pCells(synch_ratio_dir, num_joint_dir, params.variable);
+    synch_ratio_allDir = population_data_smooth_pCells(synch_ratio_allDir, num_joint_allDir, params.variable);
+end
+
+% avg over pCells
+[synch_ratio_avg_dir, synch_ratio_sem_dir] = population_data_avg_over_pCells(synch_ratio_dir, num_joint_dir, params.variable);
+[synch_ratio_avg_allDir, synch_ratio_sem_allDir] = population_data_avg_over_pCells(synch_ratio_allDir, num_joint_allDir, params.variable);
+
+% plot results
+data_avg_dir     = synch_ratio_avg_dir.(params.variable)(params.tag_id).(params.event_type_name);
+data_sem_dir     = synch_ratio_sem_dir.(params.variable)(params.tag_id).(params.event_type_name);
+data_avg_allDir = synch_ratio_avg_allDir.(params.variable)(params.tag_id).(params.event_type_name);
+data_sem_allDir = synch_ratio_sem_allDir.(params.variable)(params.tag_id).(params.event_type_name);
+
+plot_population_data(params.fig_num, data_avg_dir, data_avg_allDir, params, data_sem_dir, data_sem_allDir);
+
+%% PAIR CS-on difference
+% Load CS_on_population_pairs
+load('CS_on_population_pairs.mat','CS_on_population');
+num_pairs = length(CS_on_population)/2;
+CS_ang_avg_pairs = nan(num_pairs,2);
+for counter_pair = 1 : num_pairs
+    CS_ang_avg_pairs(counter_pair, 1) = CS_on_population(2*counter_pair-1).CS_ang_avg;
+    CS_ang_avg_pairs(counter_pair, 2) = CS_on_population(2*counter_pair  ).CS_ang_avg;
+end
+x_values_ = cosd(CS_ang_avg_pairs); 
+y_values_ = sind(CS_ang_avg_pairs);
+diff_ang = acosd( (x_values_(:,1) .* x_values_(:,2)) + (y_values_(:,1) .* y_values_(:,2)) );
+vec_1 = [x_values_(:,1)'; y_values_(:,1)'; zeros(1,num_pairs)];
+vec_2 = [x_values_(:,2)'; y_values_(:,2)'; zeros(1,num_pairs)];
+cross_ang = cross(vec_1, vec_2);
+diff_CS_ang_avg_pairs = diff_ang .* sign(cross_ang(3,:)');
+
+step_size_ = 22.5;
+ang_edges = -135-(step_size_/2):step_size_:135+(step_size_/2);
+
+hFig = figure(params.fig_num+1);
+clf(hFig)
+hold on
+histogram(diff_CS_ang_avg_pairs, ang_edges, 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'r')
+histogram(diff_CS_ang_avg_pairs, ang_edges, 'DisplayStyle', 'stairs', 'EdgeColor', 'r', 'FaceColor', 'none', 'linewidth', 1)
+xline(mean(diff_CS_ang_avg_pairs),'Color', 'r', 'linewidth', 1)
+set(gca, 'XTick', -135:45:135)
+ylabel('count')
+xlabel('diff in CS-on dir (deg)')
+title('CS-on Pairs')
+
+ESN_Beautify_Plot(hFig, [3 1.5], 8)
+
+%% plot sync_max vs diff_CS_ang_avg_pairs
+trace_ = synch_ratio_dir.(params.variable)(params.tag_id).(params.event_type_name){1, 5};
+sync_max = max(trace_, [], 2);
+diff_CS = abs(diff_CS_ang_avg_pairs);
+hFig = figure(params.fig_num+2);
+clf(hFig)
+hold on
+x_axis_data = diff_CS;
+y_axis_data = sync_max;
+plot(x_axis_data, y_axis_data, 'o','MarkerSize',3, 'MarkerFaceColor', 'k', 'MarkerEdgeColor', 'None')
+
+P_ = polyfit(x_axis_data, y_axis_data, 1);
+y_axis_hat = polyval(P_,x_axis_data);
+plot(x_axis_data, y_axis_hat, '-', 'LineWidth', 1)
+
+xlim([0 180])
+set(gca, 'XTick', 0:30:180)
+xlabel('Absolute CS-on diff. (deg)')
+ylabel('Sync. index (peak)')
+
+[b,~,~,~,stats] = regress(y_axis_data,[ones(size(x_axis_data)) x_axis_data]);
+title(['p= ' num2str(stats(3))])
+
+ESN_Beautify_Plot(hFig, [2 1.5], 8)
+
+fprintf('### sync_max vs diff_CS_ang_avg_pairs ### \n')
+[b,~,~,~,stats] = regress(y_axis_data,[ones(size(x_axis_data)) x_axis_data]);
+fprintf(['R-square= ' num2str(stats(1)) ' , ' 'F= ' num2str(stats(2)) ' , ' 'p= ' num2str(stats(3)) ' , ' 'error= ' num2str(stats(4)) '\n'])
+mdl = fitlm(x_axis_data,y_axis_data);
+anova(mdl)
+
+%% load corr_data_population
+load(['corr_data_population' '.mat'], 'corr_data_population');
+global expand_index
+expand_index = 0;
+
+%% average_prob
+fprintf(['average_prob' ' ...'])
+ESN_global_variables();
+global corr_data_list expand_index
+num_pairs = size(corr_data_population.SS1xSS1_num_spikes, 1);
+for counter_variable1 = 1 : length(corr_data_list)
+    var_name_1 = corr_data_list{counter_variable1};
+    for counter_variable2 = 1 : length(corr_data_list)
+        var_name_2 = corr_data_list{counter_variable2};
+        prob_cell = corr_data_population.([var_name_2 'x' var_name_1 '_prob']);
+        
+        prob_mat = zeros(num_pairs, 100);
+        for counter_pair = 1 : num_pairs
+            prob_ = prob_cell{counter_pair, 1};
+            prob_ = ESN_expand_index_event_data(prob_, 2, expand_index, 'centered'); % dim=2, expand along row. prob_ is a nx100 matrix
+            if size(prob_, 1) > 1
+                prob_ = nanmean(prob_);
+            end
+            prob_mat(counter_pair, :) = prob_;
+        end
+        corr_data_population.([var_name_2 'x' var_name_1 '_prob']) = prob_mat;
+        
+        prob_base = corr_data_population.([var_name_2 'x' var_name_1 '_prob_base']);
+        prob_base = prob_base .* ((expand_index*2)+1);
+        corr_data_population.([var_name_2 'x' var_name_1 '_prob_base']) = prob_base;
+        
+        prob_norm = prob_mat ./ repmat(prob_base, 1, size(prob_mat, 2));
+        corr_data_population.([var_name_2 'x' var_name_1 '_prob_norm']) = prob_norm;
+    end
+end
+fprintf(' --> Completed. \n')
+
+%% Between Cell SSxSS
+SS1xSS2_prob = corr_data_population.SS1xSS2_prob(:,40:60);
+SS1xSS2_prob_base = corr_data_population.SS1xSS2_prob_base;
+SS1xSS2_norm = SS1xSS2_prob ./ repmat(SS1xSS2_prob_base, 1, size(SS1xSS2_prob, 2));
+SS2xSS1_prob = corr_data_population.SS2xSS1_prob(:,40:60);
+SS2xSS1_prob_base = corr_data_population.SS2xSS1_prob_base;
+SS2xSS1_norm = SS2xSS1_prob ./ repmat(SS2xSS1_prob_base, 1, size(SS2xSS1_prob, 2));
+SSxSS_norm = (SS1xSS2_norm + SS2xSS1_norm) ./ 2;
+
+data_mean_x_axis = nanmean(corr_data_population.CS1xSS2_inds_span(:,40:60));
+data_mean_ = nanmean(SSxSS_norm);
+data_sem_ = nanstd(SSxSS_norm)./sqrt(size(SSxSS_norm,1));
+data_sem_p_ = data_mean_ + data_sem_;
+data_sem_m_ = data_mean_ - data_sem_;
+data_sem_y_axis_ = [(data_sem_p_) flip(data_sem_m_)];
+data_sem_x_axis_ = [(data_mean_x_axis) flip(data_mean_x_axis)];
+
+hFig = figure(params.fig_num+3);
+clf(hFig);
+hold on;
+xline(0)
+% yline(1)
+plot(data_sem_x_axis_ , data_sem_y_axis_,'-k', 'linewidth', 0.25)
+plot(data_mean_x_axis , data_mean_,'-k', 'linewidth', 1)
+xlabel('Time from SS1 (ms)')
+ylabel('Normalized SS2 Firing')
+xlim([-10 10])
+set(gca, 'XTick', -10:5:10)
+ylim([1.00 1.40])
+set(gca, 'YTick', 1.0:0.1:1.4)
+ESN_Beautify_Plot(hFig, [1.5 1], 8)
+% ESN_Beautify_Plot(hFig, [8 4], 12)
+
+%% plot sync_max vs SS_corr_max
+trace_ = synch_ratio_dir.(params.variable)(params.tag_id).(params.event_type_name){1, 5};
+sync_max = max(trace_, [], 2);
+SS_corr_max = max(SSxSS_norm, [], 2);
+% SS_corr_max = SSxSS_norm(:,11);
+% SS_corr_max = nanmean(SSxSS_norm(:,5:15), 2);
+hFig = figure(params.fig_num+4);
+clf(hFig)
+hold on
+x_axis_data = SS_corr_max;
+y_axis_data = sync_max;
+plot(x_axis_data, y_axis_data, 'o','MarkerSize',3, 'MarkerFaceColor', 'k', 'MarkerEdgeColor', 'None')
+
+P_ = polyfit(x_axis_data, y_axis_data, 1);
+y_axis_hat = polyval(P_,x_axis_data);
+plot(x_axis_data, y_axis_hat, '-', 'LineWidth', 1)
+
+xlabel('SS1xSS2 corr. (peak)')
+ylabel('Sync. index (peak)')
+
+[b,~,~,~,stats] = regress(y_axis_data,[ones(size(x_axis_data)) x_axis_data]);
+title(['p= ' num2str(stats(3))])
+
+ESN_Beautify_Plot(hFig, [2 1.5], 8)
+
+fprintf('### sync_max vs SS_corr_max ### \n')
+fprintf(['R-square= ' num2str(stats(1)) ' , ' 'F= ' num2str(stats(2)) ' , ' 'p= ' num2str(stats(3)) ' , ' 'error= ' num2str(stats(4)) '\n'])
+mdl = fitlm(x_axis_data,y_axis_data);
+anova(mdl)
+
+%% Between Cell CSxCS
+CS1xCS2_prob = corr_data_population.CS1xCS2_prob;
+CS1xCS2_prob_base = corr_data_population.CS1xCS2_prob_base;
+CS1xCS2_norm = CS1xCS2_prob ./ repmat(CS1xCS2_prob_base, 1, size(CS1xCS2_prob, 2));
+CS2xCS1_prob = corr_data_population.CS2xCS1_prob;
+CS2xCS1_prob_base = corr_data_population.CS2xCS1_prob_base;
+CS2xCS1_norm = CS2xCS1_prob ./ repmat(CS2xCS1_prob_base, 1, size(CS2xCS1_prob, 2));
+CSxCS_norm = (CS1xCS2_norm + CS2xCS1_norm) ./ 2;
+CSxCS_norm(:,50) = nan;
+
+data_mean_x_axis = nanmean(corr_data_population.CS1xSS2_inds_span);
+data_mean_ = nanmean(CSxCS_norm);
+data_sem_ = nanstd(CSxCS_norm)./sqrt(size(CSxCS_norm,1));
+data_sem_p_ = data_mean_ + data_sem_;
+data_sem_m_ = data_mean_ - data_sem_;
+data_sem_y_axis_ = [(data_sem_p_) flip(data_sem_m_)];
+data_sem_x_axis_ = [(data_mean_x_axis) flip(data_mean_x_axis)];
+
+hFig = figure(params.fig_num+5);
+clf(hFig);
+hold on;
+xline(0)
+% yline(1)
+plot(data_sem_x_axis_ , data_sem_y_axis_,'-k', 'linewidth', 0.25)
+plot(data_mean_x_axis , data_mean_,'-k', 'linewidth', 1)
+% plot(data_mean_x_axis , CSxCS_norm, 'linewidth', 0.5)
+xlabel('Time from CS1 (ms)')
+ylabel('Normalized CS2 Firing')
+xlim([-40 40])
+set(gca, 'XTick', -40:10:40)
+ylim([1 3])
+set(gca, 'YTick', 0.5:0.5:3)
+ESN_Beautify_Plot(hFig, [1.5 1], 8)
+% ESN_Beautify_Plot(hFig, [8 4], 12)
+
+%% plot sync_max vs CS_corr_max
+trace_ = synch_ratio_dir.(params.variable)(params.tag_id).(params.event_type_name){1, 5};
+sync_max = max(trace_, [], 2);
+CS_corr_max = nanmean(CSxCS_norm(:,45:55), 2);
+hFig = figure(params.fig_num+6);
+clf(hFig)
+hold on
+x_axis_data = CS_corr_max;
+y_axis_data = sync_max;
+plot(x_axis_data, y_axis_data, 'o','MarkerSize',3, 'MarkerFaceColor', 'k', 'MarkerEdgeColor', 'None')
+
+P_ = polyfit(x_axis_data, y_axis_data, 1);
+y_axis_hat = polyval(P_,x_axis_data);
+plot(x_axis_data, y_axis_hat, '-', 'LineWidth', 1)
+
+xlabel('CS1xCS2 corr. (peak)')
+ylabel('Sync. index (peak)')
+
+[b,~,~,~,stats] = regress(y_axis_data,[ones(size(x_axis_data)) x_axis_data]);
+title(['p= ' num2str(stats(3))])
+
+ESN_Beautify_Plot(hFig, [2 1.5], 8)
+
+fprintf('### sync_max vs CS_corr_max ### \n')
+fprintf(['R-square= ' num2str(stats(1)) ' , ' 'F= ' num2str(stats(2)) ' , ' 'p= ' num2str(stats(3)) ' , ' 'error= ' num2str(stats(4)) '\n'])
+mdl = fitlm(x_axis_data,y_axis_data);
+anova(mdl)
+
+%% Between Cell CSxSS
+% CS1xSS2_prob = corr_data_population.CS1xSS2_prob(:,35:65);
+% CS1xSS2_prob_base = corr_data_population.CS1xSS2_prob_base;
+% CS1xSS2_norm = CS1xSS2_prob ./ repmat(CS1xSS2_prob_base, 1, size(CS1xSS2_prob, 2));
+CS1xSS2_norm = corr_data_population.CS1xSS2_prob_norm(:,40:60);
+% CS2xSS1_prob = corr_data_population.CS2xSS1_prob(:,35:65);
+% CS2xSS1_prob_base = corr_data_population.CS2xSS1_prob_base;
+% CS2xSS1_norm = CS2xSS1_prob ./ repmat(CS2xSS1_prob_base, 1, size(CS2xSS1_prob, 2));
+CS2xSS1_norm = corr_data_population.CS2xSS1_prob_norm(:,40:60);
+CSxSS_norm = (CS1xSS2_norm + CS2xSS1_norm) ./ 2;
+% CSxSS_norm = (CS1xSS2_prob + CS2xSS1_prob) ./ 2;
+
+data_mean_x_axis = nanmean(corr_data_population.CS1xSS2_inds_span(:,40:60));
+data_mean_ = nanmean(CSxSS_norm);
+data_sem_ = nanstd(CSxSS_norm)./sqrt(size(CSxSS_norm,1));
+data_sem_p_ = data_mean_ + data_sem_;
+data_sem_m_ = data_mean_ - data_sem_;
+data_sem_y_axis_ = [(data_sem_p_) flip(data_sem_m_)];
+data_sem_x_axis_ = [(data_mean_x_axis) flip(data_mean_x_axis)];
+
+hFig = figure(params.fig_num+7);
+clf(hFig);
+hold on;
+xline(0)
+yline(1)
+plot(data_sem_x_axis_ , data_sem_y_axis_,'-k', 'linewidth', 0.25)
+plot(data_mean_x_axis , data_mean_,'-k', 'linewidth', 1)
+xlabel('Time from CS1 (ms)')
+ylabel('Normalized SS2 Firing')
+xlim([-10 10])
+set(gca, 'XTick', -10:5:10)
+ylim([0.70 1.10])
+set(gca, 'YTick', 0.7:0.1:1.1)
+ESN_Beautify_Plot(hFig, [1.5 1], 8)
+% ESN_Beautify_Plot(hFig, [8 4], 12)
+
+%% plot sync_max vs CSxSS_supp_min
+trace_ = synch_ratio_dir.(params.variable)(params.tag_id).(params.event_type_name){1, 5};
+sync_max = max(trace_, [], 2);
+CSxSS_supp_min = min(CSxSS_norm, [], 2);
+% CSxSS_supp_min = CSxSS_norm(:,12);
+% CSxSS_supp_min = nanmean(CSxSS_norm(:,10:12), 2);
+hFig = figure(params.fig_num+8);
+clf(hFig)
+hold on
+x_axis_data = CSxSS_supp_min;
+y_axis_data = sync_max;
+plot(x_axis_data, y_axis_data, 'o','MarkerSize',3, 'MarkerFaceColor', 'k', 'MarkerEdgeColor', 'None')
+
+P_ = polyfit(x_axis_data, y_axis_data, 1);
+y_axis_hat = polyval(P_,x_axis_data);
+plot(x_axis_data, y_axis_hat, '-', 'LineWidth', 1)
+
+xlabel('CS1xSS2 supp. (trough)')
+ylabel('Sync. index (peak)')
+
+[b,~,~,~,stats] = regress(y_axis_data,[ones(size(x_axis_data)) x_axis_data]);
+title(['p= ' num2str(stats(3))])
+
+ESN_Beautify_Plot(hFig, [2 1.5], 8)
+
+fprintf('### sync_max vs CS_corr_max ### \n')
+fprintf(['R-square= ' num2str(stats(1)) ' , ' 'F= ' num2str(stats(2)) ' , ' 'p= ' num2str(stats(3)) ' , ' 'error= ' num2str(stats(4)) '\n'])
+mdl = fitlm(x_axis_data,y_axis_data);
+anova(mdl)
+
+%% plot SS_corr_max vs CS_corr_max
+hFig = figure(params.fig_num+9);
+clf(hFig)
+hold on
+x_axis_data = CS_corr_max;
+y_axis_data = SS_corr_max;
+plot(x_axis_data, y_axis_data, 'o','MarkerSize',3, 'MarkerFaceColor', 'k', 'MarkerEdgeColor', 'None')
+
+P_ = polyfit(x_axis_data, y_axis_data, 1);
+y_axis_hat = polyval(P_,x_axis_data);
+plot(x_axis_data, y_axis_hat, '-', 'LineWidth', 1)
+
+xlabel('CS1xCS2 corr. (peak)')
+ylabel('SS1xSS2 corr. (peak)')
+
+[b,~,~,~,stats] = regress(y_axis_data,[ones(size(x_axis_data)) x_axis_data]);
+title(['p= ' num2str(stats(3))])
+
+ESN_Beautify_Plot(hFig, [2 1.5], 8)
+
+fprintf('### SS_corr_max vs CS_corr_max ### \n')
+fprintf(['R-square= ' num2str(stats(1)) ' , ' 'F= ' num2str(stats(2)) ' , ' 'p= ' num2str(stats(3)) ' , ' 'error= ' num2str(stats(4)) '\n'])
+mdl = fitlm(x_axis_data,y_axis_data);
+anova(mdl)
+
+%% plot CS_corr_max vs diff_CS_ang_avg_pairs
+hFig = figure(params.fig_num+10);
+clf(hFig)
+hold on
+x_axis_data = diff_CS;
+y_axis_data = CS_corr_max;
+plot(x_axis_data, y_axis_data, 'o','MarkerSize',3, 'MarkerFaceColor', 'k', 'MarkerEdgeColor', 'None')
+
+P_ = polyfit(x_axis_data, y_axis_data, 1);
+y_axis_hat = polyval(P_,x_axis_data);
+plot(x_axis_data, y_axis_hat, '-', 'LineWidth', 1)
+
+xlim([0 180])
+set(gca, 'XTick', 0:30:180)
+xlabel('Absolute CS-on diff. (deg)')
+ylabel('CS1xCS2 corr. (peak)')
+
+[b,~,~,~,stats] = regress(y_axis_data,[ones(size(x_axis_data)) x_axis_data]);
+title(['p= ' num2str(stats(3))])
+
+ESN_Beautify_Plot(hFig, [2 1.5], 8)
+
+fprintf('### CS_corr_max vs diff_CS_ang_avg_pairs ### \n')
+fprintf(['R-square= ' num2str(stats(1)) ' , ' 'F= ' num2str(stats(2)) ' , ' 'p= ' num2str(stats(3)) ' , ' 'error= ' num2str(stats(4)) '\n'])
+mdl = fitlm(x_axis_data,y_axis_data);
+anova(mdl)
+
+%% plot sync_max vs dir
+hFig = figure(params.fig_num+11);
+Line_Color = lines(7);
+clf(hFig)
+hold on
+
+data_avg_dir     = synch_ratio_avg_dir.(params.variable)(1).(params.event_type_name);
+data_sem_dir     = synch_ratio_sem_dir.(params.variable)(1).(params.event_type_name);
+sync_max_avg = nan(8,8);
+sync_max_sem = nan(8,8);
+sync_min_avg = nan(8,8);
+sync_min_sem = nan(8,8);
+
+for counter_ang = 1 : 8
+    for counter_var = 1
+        [max_, idx_] = max(data_avg_dir{counter_var, counter_ang}(:,151:350));
+        sync_max_avg(counter_var, counter_ang) = max_;
+        sync_max_sem(counter_var, counter_ang) = data_sem_dir{counter_var, counter_ang}(1,idx_+150);
+        
+        [min_, idx_] = min(data_avg_dir{counter_var, counter_ang}(:,151:350));
+        sync_min_avg(counter_var, counter_ang) = min_;
+        sync_min_sem(counter_var, counter_ang) = data_sem_dir{counter_var, counter_ang}(1,idx_+150);
+    end
+end
+
+x_axis_data = [1.0 2.0 3.0]';
+y_axis_data = [sync_max_avg(1,5) sync_max_avg(1,3) sync_max_avg(1,1)]';
+err_y_axis = [sync_max_sem(1,5) sync_max_sem(1,3) sync_max_sem(1,1)]';
+bar(x_axis_data, y_axis_data, 0.4,'FaceColor',Line_Color(1, :),'EdgeColor',Line_Color(1, :),'LineWidth',0.5)
+errorbar(x_axis_data,y_axis_data,err_y_axis,'vertical', 'color', Line_Color(1, :))
+
+data_avg_dir     = synch_ratio_avg_dir.(params.variable)(10).(params.event_type_name);
+data_sem_dir     = synch_ratio_sem_dir.(params.variable)(10).(params.event_type_name);
+sync_max_avg = nan(8,8);
+sync_max_sem = nan(8,8);
+sync_min_avg = nan(8,8);
+sync_min_sem = nan(8,8);
+
+for counter_ang = 1 : 8
+    for counter_var = 1
+        [max_, idx_] = max(data_avg_dir{counter_var, counter_ang}(:,151:350));
+        sync_max_avg(counter_var, counter_ang) = max_;
+        sync_max_sem(counter_var, counter_ang) = data_sem_dir{counter_var, counter_ang}(1,idx_+150);
+        
+        [min_, idx_] = min(data_avg_dir{counter_var, counter_ang}(:,151:350));
+        sync_min_avg(counter_var, counter_ang) = min_;
+        sync_min_sem(counter_var, counter_ang) = data_sem_dir{counter_var, counter_ang}(1,idx_+150);
+    end
+end
+
+x_axis_data = [1.5 2.5 3.5]';
+y_axis_data = [sync_max_avg(1,5) sync_max_avg(1,3) sync_max_avg(1,1)]';
+err_y_axis = [sync_max_sem(1,5) sync_max_sem(1,3) sync_max_sem(1,1)]';
+bar(x_axis_data, y_axis_data, 0.4,'FaceColor',Line_Color(2, :),'EdgeColor',Line_Color(2, :),'LineWidth',0.5)
+errorbar(x_axis_data,y_axis_data,err_y_axis,'vertical', 'color', Line_Color(2, :))
+
+set(gca, 'XTickLabel', {'180', '90', '0'})
+xlabel('Direction')
+ylabel('Sync. index (peak)')
+xlim([0.5 4])
+ESN_Beautify_Plot(hFig, [2 2], 8)
+ylim([1 2.5])
+
+end
+
+%% function plot_sync_vs_vmax()
+function plot_sync_vs_vmax()
+%% clear
+clc; clear;
+%% close all
+close all;
+%% set params
+fprintf('params ...')
+params.data_type       = 'SS';
+params.CSYS_type       = 'tuned'; % should be fixed to 'tuned', do not change to 'absol'
+params.event_type_name = 'onset';
+params.variable        = 'vel';
+params.tag_id          = 1;
+params.flag_smooth_plot = true;
+params.fig_num = 3;
+params.plot_mode = 1; % mode=1 collapse the amp/vel, mode=2 plots the amp/vel
+params.ylim = [];
+params.scale = 1;
+params.win_len = '1ms';
+fprintf(' --> Completed. \n')
+
+%% Load data
+fprintf('Load data ...')
+if ~exist([params.data_type '_synch_joint_' params.CSYS_type], 'var')
+    load([params.data_type '_synch_joint_' params.win_len '_' params.CSYS_type '.mat'], [params.data_type '_synch_joint_' params.CSYS_type])
+end
+if ~exist([params.data_type '_synch_margn_' params.CSYS_type], 'var')
+    load([params.data_type '_synch_margn_' params.win_len '_' params.CSYS_type '.mat'], [params.data_type '_synch_margn_' params.CSYS_type])
+end
+if ~exist(['num_synch_' params.CSYS_type], 'var')
+    load(['num_synch_' params.win_len '_' params.CSYS_type '.mat'], ['num_synch_' params.CSYS_type])
+end
+
+eval(['synch_joint = ' params.data_type '_synch_joint_' params.CSYS_type ';']);
+eval(['synch_margn = ' params.data_type '_synch_margn_' params.CSYS_type ';']);
+eval(['num_synch = ' 'num_synch_' params.CSYS_type ';']);
+fprintf(' --> Completed. \n')
+
+%% calc synch_ratio
+synch_joint_ = synch_joint;
+num_joint_   = num_synch;
+synch_margn_ = synch_margn;
+num_margn_   = num_synch;
+
+[synch_joint_, num_joint_] = population_data_combine_levels(synch_joint_, num_joint_, params.variable, 2, [3 7]);
+[synch_margn_, num_margn_] = population_data_combine_levels(synch_margn_, num_margn_, params.variable, 2, [3 7]);
+[synch_joint_, num_joint_] = population_data_combine_levels(synch_joint_, num_joint_, params.variable, 2, [2 8]);
+[synch_margn_, num_margn_] = population_data_combine_levels(synch_margn_, num_margn_, params.variable, 2, [2 8]);
+[synch_joint_, num_joint_] = population_data_combine_levels(synch_joint_, num_joint_, params.variable, 2, [4 6]);
+[synch_margn_, num_margn_] = population_data_combine_levels(synch_margn_, num_margn_, params.variable, 2, [4 6]);
+
+[synch_joint_, num_joint_] = population_data_combine_tags(  synch_joint_, num_joint_, params.variable, [1 4 6 7]); % [1 4 6 7 8]
+[synch_margn_, num_margn_] = population_data_combine_tags(  synch_margn_, num_margn_, params.variable, [1 4 6 7]); % [1 4 6 7 8]
+
+synch_ratio_ = synchrony_data_ratio(synch_joint_, synch_margn_, params.variable);
+
+% remove douplicates
+% idx_pCells: is a boolean array. 1 for including a pCell, and 0 for exluding a pCell
+num_pCells = size(synch_joint.amp(1).visual{1,1},1);
+idx_pCells = true(num_pCells, 1);
+idx_pCells(2:2:num_pCells, 1) = false;
+[synch_ratio_, num_joint_] = population_data_idx_pCells(synch_ratio_, num_joint_, params.variable, idx_pCells);
+
+% smooth data
+if strcmp(params.data_type, 'SS') || strcmp(params.data_type, 'CS')
+    synch_ratio_ = population_data_smooth_pCells(synch_ratio_, num_joint_, params.variable);
+end
+
+% avg over pCells
+[synch_ratio_avg_, synch_ratio_sem_] = population_data_avg_over_pCells(synch_ratio_, num_joint_, params.variable);
+
+% plot results
+data_avg_     = synch_ratio_avg_.(params.variable)(params.tag_id).(params.event_type_name);
+data_sem_     = synch_ratio_sem_.(params.variable)(params.tag_id).(params.event_type_name);
+
+fprintf('ALL DONE.\n')
+
+%% compute SS peak
+num_var = size(data_avg_, 1);
+sync_max_avg = nan(num_var,8);
+sync_max_sem = nan(num_var,8);
+sync_min_avg = nan(num_var,8);
+sync_min_sem = nan(num_var,8);
+
+for counter_ang = 1 : 8
+    for counter_var = 1 : num_var
+        [max_, idx_] = max(data_avg_{counter_var, counter_ang});
+        sync_max_avg(counter_var, counter_ang) = max_;
+        sync_max_sem(counter_var, counter_ang) = data_sem_{counter_var, counter_ang}(1,idx_);
+        
+        [min_, idx_] = min(data_avg_{counter_var, counter_ang});
+        sync_min_avg(counter_var, counter_ang) = min_;
+        sync_min_sem(counter_var, counter_ang) = data_sem_{counter_var, counter_ang}(1,idx_);
+    end
+end
+
+%% set params
+fprintf('params ...')
+params.data_type       = 'VM';
+params.event_type_name = 'vmax';
+params.plot_mode = 2;
+fprintf(' --> Completed. \n')
+
+%% Load data
+fprintf('Load data ...')
+load(['.' filesep '..' filesep 'umap_data.mat'], 'idx_pauser', 'idx_burster','idx_modulated','idx_not_modulated');
+flag_pair_list = false; [idx_mirza, idx_ramon] = idx_mirza_ramon(flag_pair_list);
+if ~exist([params.data_type '_population_' params.CSYS_type], 'var')
+    load(['.' filesep '..' filesep params.data_type '_population_' params.CSYS_type '.mat'], [params.data_type '_population_' params.CSYS_type])
+end
+if ~exist(['num_sac_' params.CSYS_type], 'var')
+    load(['.' filesep '..' filesep 'num_sac_' params.CSYS_type '.mat'], ['num_sac_' params.CSYS_type])
+end 
+if ~exist('population_neural_properties', 'var')
+    load(['.' filesep '..' filesep 'population_neural_properties' '.mat'], 'population_neural_properties')
+end
+eval(['population_data = ' params.data_type '_population_' params.CSYS_type ';']);
+eval(['num_sac_data = ' 'num_sac_' params.CSYS_type ';']);
+if strcmp(params.data_type, 'SS') || strcmp(params.data_type, 'CS')
+    eval(['firing_rate = population_neural_properties.' params.data_type '_firing_rate'  ';']);
+    population_data = population_data_subtract_baseline(population_data, firing_rate, params.variable);
+end
+fprintf(' --> Completed. \n')
+
+%% MODE 2 %%%%%%%%%%%%%%%%%%%%%%%%%%%
+if params.plot_mode == 2
+[population_data, num_sac_data] = population_data_combine_levels(population_data, num_sac_data, params.variable, 2, [3 7]);
+[population_data, num_sac_data] = population_data_combine_levels(population_data, num_sac_data, params.variable, 2, [2 8]);
+[population_data, num_sac_data] = population_data_combine_levels(population_data, num_sac_data, params.variable, 2, [4 6]);
+[population_data, num_sac_data] = population_data_combine_tags(  population_data, num_sac_data, params.variable, [1 4 6 7 8]);
+
+% idx_pCells: is a boolean array. 1 for including a pCell, and 0 for exluding a pCell
+% idx_mirza; % idx_ramon; % idx_pauser; % idx_burster; % idx_modulated; % idx_not_modulated;
+idx_pCells = idx_mirza | idx_ramon;
+[population_data, num_sac_data] = population_data_idx_pCells(population_data, num_sac_data, params.variable, idx_pCells);
+
+if strcmp(params.data_type, 'SS') || strcmp(params.data_type, 'CS')
+    population_data = population_data_smooth_pCells(population_data, num_sac_data, params.variable);
+end
+[population_avg_dir, population_sem_dir] = population_data_avg_over_pCells(population_data, num_sac_data, params.variable);
+
+data_avg_dir     = population_avg_dir.(params.variable)(params.tag_id).(params.event_type_name);
+data_sem_dir     = population_sem_dir.(params.variable)(params.tag_id).(params.event_type_name);
+
+fprintf('ALL DONE.\n')
+end
+
+%% compute v_max
+num_var = size(data_avg_, 1);
+vm_max_avg = nan(num_var,8);
+vm_max_sem = nan(num_var,8);
+vm_min_avg = nan(num_var,8);
+vm_min_sem = nan(num_var,8);
+
+for counter_ang = 1 : 8
+    for counter_var = 1 : num_var
+        [max_, idx_] = max(data_avg_dir{counter_var, counter_ang});
+        vm_max_avg(counter_var, counter_ang) = max_;
+        vm_max_sem(counter_var, counter_ang) = data_sem_dir{counter_var, counter_ang}(1,idx_);
+        
+        [min_, idx_] = min(data_avg_dir{counter_var, counter_ang});
+        vm_min_avg(counter_var, counter_ang) = min_;
+        vm_min_sem(counter_var, counter_ang) = data_sem_dir{counter_var, counter_ang}(1,idx_);
+    end
+end
+
+%% plot sync vs vmax levels
+hFig = figure(params.fig_num);
+range_levels = 2:6;
+Line_Color = lines(7);
+clf(hFig)
+hold on
+% x_axis_data = vm_max_avg(range_levels,1);
+% y_axis_data = sync_max_avg(range_levels,1);
+% err_x_axis = vm_max_sem(range_levels,1);
+% err_y_axis = sync_max_sem(range_levels,1);
+% P_ = polyfit(x_axis_data, y_axis_data, 1);
+% y_axis_hat = polyval(P_,x_axis_data);
+% errorbar(x_axis_data,y_axis_data,err_y_axis,'vertical', 'color', Line_Color(1, :))
+% plot(x_axis_data, y_axis_hat, '-', 'LineWidth', 1, 'color', Line_Color(1, :))
+% [b,~,~,~,stats] = regress(y_axis_data,[ones(size(x_axis_data)) x_axis_data]);
+% fprintf(['R-square= ' num2str(stats(1)) ' , ' 'F= ' num2str(stats(2)) ' , ' 'p= ' num2str(stats(3)) ' , ' 'error= ' num2str(stats(4)) '\n'])
+
+x_axis_data = vm_max_avg(range_levels,3);
+y_axis_data = sync_max_avg(range_levels,3);
+err_x_axis = vm_max_sem(range_levels,3);
+err_y_axis = sync_max_sem(range_levels,3);
+P_ = polyfit(x_axis_data, y_axis_data, 1);
+y_axis_hat = polyval(P_,x_axis_data);
+errorbar(x_axis_data,y_axis_data,err_y_axis,'vertical', 'color', Line_Color(2, :))
+plot(x_axis_data, y_axis_hat, '-', 'LineWidth', 1, 'color', Line_Color(2, :))
+[b,~,~,~,stats] = regress(y_axis_data,[ones(size(x_axis_data)) x_axis_data]);
+fprintf(['R-square= ' num2str(stats(1)) ' , ' 'F= ' num2str(stats(2)) ' , ' 'p= ' num2str(stats(3)) ' , ' 'error= ' num2str(stats(4)) '\n'])
+
+x_axis_data = vm_max_avg(range_levels,5);
+y_axis_data = sync_max_avg(range_levels,5);
+err_x_axis = vm_max_sem(range_levels,5);
+err_y_axis = sync_max_sem(range_levels,5);
+P_ = polyfit(x_axis_data, y_axis_data, 1);
+y_axis_hat = polyval(P_,x_axis_data);
+errorbar(x_axis_data,y_axis_data,err_y_axis,'vertical', 'color', Line_Color(4, :))
+plot(x_axis_data, y_axis_hat, '-', 'LineWidth', 1, 'color', Line_Color(4, :))
+[b,~,~,~,stats] = regress(y_axis_data,[ones(size(x_axis_data)) x_axis_data]);
+fprintf(['R-square= ' num2str(stats(1)) ' , ' 'F= ' num2str(stats(2)) ' , ' 'p= ' num2str(stats(3)) ' , ' 'error= ' num2str(stats(4)) '\n'])
+
+xlabel('Eye velocity (peak, deg/s)')
+ylabel('Sync. index (peak)')
+
+ESN_Beautify_Plot(hFig, [2 2], 8)
+
+mdl = fitlm(x_axis_data,y_axis_data);
+anova(mdl)
+
 
 end
 
@@ -4427,24 +6100,74 @@ p_value = stats(3)
 end
 
 %% function scratch_compare_cs_on_001_004_008_148()
-function scratch_compare_cs_on_001_004_008_148()
+function scratch_compare_cs_on_001_004_067_1467()
 %% Compare CS_on_population_001, CS_on_population_004, CS_on_population_008
-CS_on_population_001 = load('CS_on_population_001.mat');
-CS_on_population_004 = load('CS_on_population_004.mat');
-CS_on_population_008 = load('CS_on_population_008.mat');
-CS_on_population_148 = load('CS_on_population_148.mat');
-num_pCells = length(CS_on_population_148.CS_on_population);
+clc;
+CS_on_population_001 = load('CS_on_population_tag_1.mat');
+CS_on_population_004 = load('CS_on_population_tag_4.mat');
+% CS_on_population_008 = load('CS_on_population_tag_8.mat');
+% CS_on_population_014 = load('CS_on_population_tag_14.mat');
+% CS_on_population_023 = load('CS_on_population_tag_23.mat');
+CS_on_population_067 = load('CS_on_population_tag_67.mat');
+% CS_on_population_235 = load('CS_on_population_tag_235.mat');
+% CS_on_population_678 = load('CS_on_population_tag_678.mat');
+% CS_on_population_148 = load('CS_on_population_tag_148.mat');
+CS_on_population_146 = load('CS_on_population_tag_1467.mat');
+% CS_on_population_123 = load('CS_on_population_tag_1234678.mat');
+num_pCells = length(CS_on_population_146.CS_on_population);
 for counter_pCell = 1 : num_pCells
     CS_on_population_001.CS_ang_avg(counter_pCell,1) = CS_on_population_001.CS_on_population(counter_pCell).CS_ang_avg;
     CS_on_population_004.CS_ang_avg(counter_pCell,1) = CS_on_population_004.CS_on_population(counter_pCell).CS_ang_avg;
-    CS_on_population_008.CS_ang_avg(counter_pCell,1) = CS_on_population_008.CS_on_population(counter_pCell).CS_ang_avg;
-    CS_on_population_148.CS_ang_avg(counter_pCell,1) = CS_on_population_148.CS_on_population(counter_pCell).CS_ang_avg;
+%     CS_on_population_008.CS_ang_avg(counter_pCell,1) = CS_on_population_008.CS_on_population(counter_pCell).CS_ang_avg;
+%     CS_on_population_014.CS_ang_avg(counter_pCell,1) = CS_on_population_014.CS_on_population(counter_pCell).CS_ang_avg;
+%     CS_on_population_023.CS_ang_avg(counter_pCell,1) = CS_on_population_023.CS_on_population(counter_pCell).CS_ang_avg;
+    CS_on_population_067.CS_ang_avg(counter_pCell,1) = CS_on_population_067.CS_on_population(counter_pCell).CS_ang_avg;
+%     CS_on_population_235.CS_ang_avg(counter_pCell,1) = CS_on_population_235.CS_on_population(counter_pCell).CS_ang_avg;
+%     CS_on_population_678.CS_ang_avg(counter_pCell,1) = CS_on_population_678.CS_on_population(counter_pCell).CS_ang_avg;
+%     CS_on_population_148.CS_ang_avg(counter_pCell,1) = CS_on_population_148.CS_on_population(counter_pCell).CS_ang_avg;
+    CS_on_population_146.CS_ang_avg(counter_pCell,1) = CS_on_population_146.CS_on_population(counter_pCell).CS_ang_avg;
+%     CS_on_population_123.CS_ang_avg(counter_pCell,1) = CS_on_population_123.CS_on_population(counter_pCell).CS_ang_avg;
 end
 CS_ang_avg_001 = CS_on_population_001.CS_ang_avg;
 CS_ang_avg_004 = CS_on_population_004.CS_ang_avg;
 % CS_ang_avg_008 = CS_on_population_008.CS_ang_avg;
-CS_ang_avg_148 = CS_on_population_148.CS_ang_avg;
+% CS_ang_avg_014 = CS_on_population_014.CS_ang_avg;
+% CS_ang_avg_023 = CS_on_population_023.CS_ang_avg;
+CS_ang_avg_067 = CS_on_population_067.CS_ang_avg;
+% CS_ang_avg_235 = CS_on_population_235.CS_ang_avg;
+% CS_ang_avg_678 = CS_on_population_678.CS_ang_avg;
+% CS_ang_avg_148 = CS_on_population_148.CS_ang_avg;
+CS_ang_avg_146 = CS_on_population_146.CS_ang_avg;
+% CS_ang_avg_123 = CS_on_population_123.CS_ang_avg;
 %
+CS_ang_pairs = [CS_ang_avg_001 CS_ang_avg_146];
+x_values_ = cosd(CS_ang_pairs); 
+y_values_ = sind(CS_ang_pairs);
+diff_ang = acosd( (x_values_(:,1) .* x_values_(:,2)) + (y_values_(:,1) .* y_values_(:,2)) );
+vec_1 = [x_values_(:,1)'; y_values_(:,1)'; zeros(1,num_pCells)];
+vec_2 = [x_values_(:,2)'; y_values_(:,2)'; zeros(1,num_pCells)];
+cross_ang = cross(vec_1, vec_2);
+diff_ang_001_146 = diff_ang .* sign(cross_ang(3,:)');
+
+CS_ang_pairs = [CS_ang_avg_004 CS_ang_avg_146];
+x_values_ = cosd(CS_ang_pairs); 
+y_values_ = sind(CS_ang_pairs);
+diff_ang = acosd( (x_values_(:,1) .* x_values_(:,2)) + (y_values_(:,1) .* y_values_(:,2)) );
+vec_1 = [x_values_(:,1)'; y_values_(:,1)'; zeros(1,num_pCells)];
+vec_2 = [x_values_(:,2)'; y_values_(:,2)'; zeros(1,num_pCells)];
+cross_ang = cross(vec_1, vec_2);
+diff_ang_004_146 = diff_ang .* sign(cross_ang(3,:)');
+
+CS_ang_pairs = [CS_ang_avg_067 CS_ang_avg_146];
+x_values_ = cosd(CS_ang_pairs); 
+y_values_ = sind(CS_ang_pairs);
+diff_ang = acosd( (x_values_(:,1) .* x_values_(:,2)) + (y_values_(:,1) .* y_values_(:,2)) );
+vec_1 = [x_values_(:,1)'; y_values_(:,1)'; zeros(1,num_pCells)];
+vec_2 = [x_values_(:,2)'; y_values_(:,2)'; zeros(1,num_pCells)];
+cross_ang = cross(vec_1, vec_2);
+diff_ang_067_146 = diff_ang .* sign(cross_ang(3,:)');
+
+%%%%%
 CS_ang_pairs = [CS_ang_avg_001 CS_ang_avg_004];
 x_values_ = cosd(CS_ang_pairs); 
 y_values_ = sind(CS_ang_pairs);
@@ -4454,24 +6177,25 @@ vec_2 = [x_values_(:,2)'; y_values_(:,2)'; zeros(1,num_pCells)];
 cross_ang = cross(vec_1, vec_2);
 diff_ang_001_004 = diff_ang .* sign(cross_ang(3,:)');
 
-CS_ang_pairs = [CS_ang_avg_001 CS_ang_avg_148];
+CS_ang_pairs = [CS_ang_avg_001 CS_ang_avg_067];
 x_values_ = cosd(CS_ang_pairs); 
 y_values_ = sind(CS_ang_pairs);
 diff_ang = acosd( (x_values_(:,1) .* x_values_(:,2)) + (y_values_(:,1) .* y_values_(:,2)) );
 vec_1 = [x_values_(:,1)'; y_values_(:,1)'; zeros(1,num_pCells)];
 vec_2 = [x_values_(:,2)'; y_values_(:,2)'; zeros(1,num_pCells)];
 cross_ang = cross(vec_1, vec_2);
-diff_ang_001_148 = diff_ang .* sign(cross_ang(3,:)');
+diff_ang_001_067 = diff_ang .* sign(cross_ang(3,:)');
 
-CS_ang_pairs = [CS_ang_avg_004 CS_ang_avg_148];
+CS_ang_pairs = [CS_ang_avg_004 CS_ang_avg_067];
 x_values_ = cosd(CS_ang_pairs); 
 y_values_ = sind(CS_ang_pairs);
 diff_ang = acosd( (x_values_(:,1) .* x_values_(:,2)) + (y_values_(:,1) .* y_values_(:,2)) );
 vec_1 = [x_values_(:,1)'; y_values_(:,1)'; zeros(1,num_pCells)];
 vec_2 = [x_values_(:,2)'; y_values_(:,2)'; zeros(1,num_pCells)];
 cross_ang = cross(vec_1, vec_2);
-diff_ang_004_148 = diff_ang .* sign(cross_ang(3,:)');
+diff_ang_004_067 = diff_ang .* sign(cross_ang(3,:)');
 
+%%%%%
 step_size_ = 22.5;
 ang_edges = -135-(step_size_/2):step_size_:135+(step_size_/2);
 
@@ -4480,94 +6204,86 @@ clf(hFig)
 
 subplot(1,3,1)
 hold on
-histogram(diff_ang_001_004, ang_edges, 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'r')
-histogram(diff_ang_001_004, ang_edges, 'DisplayStyle', 'stairs', 'EdgeColor', 'r', 'FaceColor', 'none', 'linewidth', 1)
-xline(mean(diff_ang_001_004),'Color', 'r', 'linewidth', 1)
+diff_ang_ = diff_ang_001_146;
+histogram(diff_ang_, ang_edges, 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'r')
+histogram(diff_ang_, ang_edges, 'DisplayStyle', 'stairs', 'EdgeColor', 'r', 'FaceColor', 'none', 'linewidth', 1)
+xline(mean(diff_ang_),'Color', 'r', 'linewidth', 1)
+set(gca, 'XTick', -135:45:135)
+ylim([0 70])
+ylabel('Count')
+title('tag1 - tag146')
+fprintf(['diff_ang_001_146, mean: ' num2str(mean(diff_ang_)) '\n'])
+fprintf(['diff_ang_001_146, sem : ' num2str(std( diff_ang_)./sqrt(num_pCells)) '\n'])
+
+subplot(1,3,2)
+hold on
+diff_ang_ = diff_ang_004_146;
+histogram(diff_ang_, ang_edges, 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'r')
+histogram(diff_ang_, ang_edges, 'DisplayStyle', 'stairs', 'EdgeColor', 'r', 'FaceColor', 'none', 'linewidth', 1)
+xline(mean(diff_ang_),'Color', 'r', 'linewidth', 1)
+set(gca, 'XTick', -135:45:135)
+ylim([0 70])
+title('tag4 - tag146')
+fprintf(['diff_ang_004_146, mean: ' num2str(mean(diff_ang_)) '\n'])
+fprintf(['diff_ang_004_146, sem : ' num2str(std( diff_ang_)./sqrt(num_pCells)) '\n'])
+
+subplot(1,3,3)
+hold on
+diff_ang_ = diff_ang_067_146;
+histogram(diff_ang_, ang_edges, 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'r')
+histogram(diff_ang_, ang_edges, 'DisplayStyle', 'stairs', 'EdgeColor', 'r', 'FaceColor', 'none', 'linewidth', 1)
+xline(mean(diff_ang_),'Color', 'r', 'linewidth', 1)
+set(gca, 'XTick', -135:45:135)
+ylim([0 70])
+title('tag67 - tag146')
+fprintf(['diff_ang_067_146, mean: ' num2str(mean(diff_ang_)) '\n'])
+fprintf(['diff_ang_067_146, sem : ' num2str(std( diff_ang_)./sqrt(num_pCells)) '\n'])
+
+ESN_Beautify_Plot(hFig, [4 1.5], 8)
+
+%%%%
+hFig = figure(8);
+clf(hFig)
+
+subplot(1,3,1)
+hold on
+diff_ang_ = diff_ang_001_004;
+histogram(diff_ang_, ang_edges, 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'r')
+histogram(diff_ang_, ang_edges, 'DisplayStyle', 'stairs', 'EdgeColor', 'r', 'FaceColor', 'none', 'linewidth', 1)
+xline(mean(diff_ang_),'Color', 'r', 'linewidth', 1)
 set(gca, 'XTick', -135:45:135)
 ylim([0 70])
 ylabel('Count')
 title('tag1 - tag4')
+fprintf(['diff_ang_001_004, mean: ' num2str(mean(diff_ang_)) '\n'])
+fprintf(['diff_ang_001_004, sem : ' num2str(std( diff_ang_)./sqrt(num_pCells)) '\n'])
 
 subplot(1,3,2)
 hold on
-histogram(diff_ang_001_148, ang_edges, 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'r')
-histogram(diff_ang_001_148, ang_edges, 'DisplayStyle', 'stairs', 'EdgeColor', 'r', 'FaceColor', 'none', 'linewidth', 1)
-xline(mean(diff_ang_001_148),'Color', 'r', 'linewidth', 1)
+diff_ang_ = diff_ang_001_067;
+histogram(diff_ang_, ang_edges, 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'r')
+histogram(diff_ang_, ang_edges, 'DisplayStyle', 'stairs', 'EdgeColor', 'r', 'FaceColor', 'none', 'linewidth', 1)
+xline(mean(diff_ang_),'Color', 'r', 'linewidth', 1)
 set(gca, 'XTick', -135:45:135)
 ylim([0 70])
-title('tag1 - tag148')
+title('tag4 - tag67')
+fprintf(['diff_ang_001_067, mean: ' num2str(mean(diff_ang_)) '\n'])
+fprintf(['diff_ang_001_067, sem : ' num2str(std( diff_ang_)./sqrt(num_pCells)) '\n'])
 
 subplot(1,3,3)
 hold on
-histogram(diff_ang_004_148, ang_edges, 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'r')
-histogram(diff_ang_004_148, ang_edges, 'DisplayStyle', 'stairs', 'EdgeColor', 'r', 'FaceColor', 'none', 'linewidth', 1)
-xline(mean(diff_ang_004_148),'Color', 'r', 'linewidth', 1)
+diff_ang_ = diff_ang_004_067;
+histogram(diff_ang_, ang_edges, 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'r')
+histogram(diff_ang_, ang_edges, 'DisplayStyle', 'stairs', 'EdgeColor', 'r', 'FaceColor', 'none', 'linewidth', 1)
+xline(mean(diff_ang_),'Color', 'r', 'linewidth', 1)
 set(gca, 'XTick', -135:45:135)
 ylim([0 70])
-title('tag4 - tag148')
+title('tag67 - tag146')
+fprintf(['diff_ang_004_067, mean: ' num2str(mean(diff_ang_)) '\n'])
+fprintf(['diff_ang_004_067, sem : ' num2str(std( diff_ang_)./sqrt(num_pCells)) '\n'])
 
 ESN_Beautify_Plot(hFig, [4 1.5], 8)
 
-fprintf(['diff_ang_001_004, mean: ' num2str(mean(diff_ang_001_004)) '\n'])
-fprintf(['diff_ang_001_004, sem : ' num2str(std( diff_ang_001_004)./sqrt(num_pCells)) '\n'])
-
-fprintf(['diff_ang_001_148, mean: ' num2str(mean(diff_ang_001_148)) '\n'])
-fprintf(['diff_ang_001_148, sem : ' num2str(std( diff_ang_001_148)./sqrt(num_pCells)) '\n'])
-
-fprintf(['diff_ang_004_148, mean: ' num2str(mean(diff_ang_004_148)) '\n'])
-fprintf(['diff_ang_004_148, sem : ' num2str(std( diff_ang_004_148)./sqrt(num_pCells)) '\n'])
-
-% num_perm = 5000;
-% diff_ang_001_004_perm = nan(num_perm, 1);
-% diff_ang_001_148_perm = nan(num_perm, 1);
-% diff_ang_004_148_perm = nan(num_perm, 1);
-% for counter_perm = 1 : num_perm
-%     diff_ang_001_004_perm(counter_perm, 1) = median(diff_ang_001_004(randi(num_pCells, num_pCells, 1)));
-%     diff_ang_001_148_perm(counter_perm, 1) = median(diff_ang_001_148(randi(num_pCells, num_pCells, 1)));
-%     diff_ang_004_148_perm(counter_perm, 1) = median(diff_ang_004_148(randi(num_pCells, num_pCells, 1)));
-% end
-% 
-% fprintf(['diff_ang_001_004, median   : ' num2str(mean(diff_ang_001_004_perm)) '\n'])
-% fprintf(['diff_ang_001_004, SE-median: ' num2str(std( diff_ang_001_004_perm)) '\n'])
-% 
-% fprintf(['diff_ang_001_148, median   : ' num2str(mean(diff_ang_001_148_perm)) '\n'])
-% fprintf(['diff_ang_001_148, SE-median: '   num2str(std( diff_ang_001_148_perm)) '\n'])
-% 
-% fprintf(['diff_ang_004_148, median   : ' num2str(mean(diff_ang_004_148_perm)) '\n'])
-% fprintf(['diff_ang_004_148, SE-median: '   num2str(std( diff_ang_004_148_perm)) '\n'])
-
-%
-% step_size_ = pi/8;
-% ang_edges = -pi-(step_size_/2):step_size_:pi-(step_size_/2);
-% 
-% hFig = figure(7);
-% clf(hFig)
-% 
-% subplot(1,3,1)
-% polarhistogram(deg2rad(diff_ang_001_004), ang_edges, 'DisplayStyle', 'bar','FaceColor','red', 'EdgeColor', 'none')
-% hold on
-% polarhistogram(deg2rad(diff_ang_001_004), ang_edges, 'DisplayStyle', 'stairs','FaceColor','none', 'EdgeColor', 'r', 'linewidth', 1)
-% set(gca, 'ThetaTick', 0:45:315, 'RTick', 0:10:60)
-% rlim([0 70])
-% title('tag1 - tag4')
-% 
-% subplot(1,3,2)
-% polarhistogram(deg2rad(diff_ang_001_148), ang_edges, 'DisplayStyle', 'bar','FaceColor','red', 'EdgeColor', 'none')
-% hold on
-% polarhistogram(deg2rad(diff_ang_001_148), ang_edges, 'DisplayStyle', 'stairs','FaceColor','none', 'EdgeColor', 'r', 'linewidth', 1)
-% set(gca, 'ThetaTick', 0:45:315, 'RTick', 0:10:60)
-% rlim([0 70])
-% title('tag1 - tag148')
-% 
-% subplot(1,3,3)
-% polarhistogram(deg2rad(diff_ang_004_148), ang_edges, 'DisplayStyle', 'bar','FaceColor','red', 'EdgeColor', 'none')
-% hold on
-% polarhistogram(deg2rad(diff_ang_004_148), ang_edges, 'DisplayStyle', 'stairs','FaceColor','none', 'EdgeColor', 'r', 'linewidth', 1)
-% set(gca, 'ThetaTick', 0:45:315, 'RTick', 0:10:60)
-% rlim([0 70])
-% title('tag4 - tag148')
-% 
-% ESN_Beautify_Plot(hFig, [5 3], 8)
 
 end
 
@@ -4611,3 +6327,381 @@ for counter_pCell = 1 : 1 : num_pCells
     end
 end
 end
+
+%% function scratch_plot_umap_clustering()
+function scratch_plot_umap_clustering()
+%% clear
+clc; clear;
+%% close all
+close all;
+%% set params
+fprintf('params ...')
+params.data_type       = 'SS';
+params.CSYS_type       = 'tuned'; % tuned % absol
+params.event_type_name = 'onset'; % visual % onset % vmax
+params.variable        = 'vel';
+params.tag_id          = 1;
+params.flag_smooth_plot = true; % false; % 
+params.fig_num = 3;
+params.plot_mode = 1; % mode=1 collapse the amp/vel, mode=2 plots the amp/vel
+fprintf(' --> Completed. \n')
+%% Load data
+fprintf('Load data ...')
+load('umap_data.mat', 'idx_pauser', 'idx_burster','idx_modulated','idx_not_modulated');
+flag_pair_list = false; [idx_mirza, idx_ramon] = idx_mirza_ramon(flag_pair_list);
+% idx_pairs = idx_pairs_in_population();
+if ~exist([params.data_type '_population_' params.CSYS_type], 'var')
+    load([params.data_type '_population_' params.CSYS_type '.mat'], [params.data_type '_population_' params.CSYS_type])
+end
+if ~exist(['num_sac_' params.CSYS_type], 'var')
+    load(['num_sac_' params.CSYS_type '.mat'], ['num_sac_' params.CSYS_type])
+end 
+if ~exist('population_neural_properties', 'var')
+    load(['population_neural_properties' '.mat'], 'population_neural_properties')
+end
+eval(['population_data = ' params.data_type '_population_' params.CSYS_type ';']);
+eval(['num_sac_data = ' 'num_sac_' params.CSYS_type ';']);
+if strcmp(params.data_type, 'SS') || strcmp(params.data_type, 'CS')
+    eval(['firing_rate = population_neural_properties.' params.data_type '_firing_rate'  ';']);
+    population_data = population_data_subtract_baseline(population_data, firing_rate, params.variable);
+end
+fprintf(' --> Completed. \n')
+%% MODE 1 %%%%%%%%%%%%%%%%%%%%%%%%%%%
+% [population_dir, num_sac_dir] = population_data_avg_over_levels(population_data, num_sac_data, params.variable, 1, [3 4 5 6 7]); % based on vel, 250-750
+[population_dir, num_sac_dir] = population_data_avg_over_levels(population_data, num_sac_data, params.variable, 1); % based on vel, 250-750
+
+[population_dir, num_sac_dir] = population_data_combine_levels(population_dir, num_sac_dir, params.variable, 2, [3 7]);
+[population_dir, num_sac_dir] = population_data_combine_levels(population_dir, num_sac_dir, params.variable, 2, [2 8]);
+[population_dir, num_sac_dir] = population_data_combine_levels(population_dir, num_sac_dir, params.variable, 2, [4 6]);
+[population_dir, num_sac_dir] = population_data_combine_tags(  population_dir, num_sac_dir, params.variable, [1 4 6 7]); % [1 4 6 7 8]
+% [population_dir, num_sac_dir] = population_data_combine_tags(  population_dir, num_sac_dir, params.variable, [6 7]);
+
+% idx_pCells: is a boolean array. 1 for including a pCell, and 0 for exluding a pCell
+% idx_mirza; % idx_ramon; % idx_pauser; % idx_burster; % idx_modulated; % idx_not_modulated; % idx_pairs;
+% idx_pCells = idx_mirza | idx_ramon;
+% idx_pCells = idx_pauser;
+% [population_dir, num_sac_dir] = population_data_idx_pCells(population_dir, num_sac_dir, params.variable, idx_pCells);
+
+%
+if strcmp(params.data_type, 'SS') || strcmp(params.data_type, 'CS')
+    population_dir = population_data_smooth_pCells(population_dir, num_sac_dir, params.variable);
+end
+% [population_avg_dir, population_sem_dir] = population_data_avg_over_pCells(population_dir, num_sac_dir, params.variable);
+[population_allDir, num_sac_allDir] = population_data_avg_over_levels(population_dir, num_sac_dir, params.variable, 2);
+% [population_avg_allDir, population_sem_allDir] = population_data_avg_over_pCells(population_allDir, num_sac_allDir, params.variable);
+
+% data_avg_dir     = population_avg_dir.(params.variable)(params.tag_id).(params.event_type_name);
+% data_sem_dir     = population_sem_dir.(params.variable)(params.tag_id).(params.event_type_name);
+% data_avg_allDir = population_avg_allDir.(params.variable)(params.tag_id).(params.event_type_name);
+% data_sem_allDir = population_sem_allDir.(params.variable)(params.tag_id).(params.event_type_name);
+
+%% Cluster Using UMAP
+ESN_global_variables();
+global length_trace
+if length_trace ~= 500
+    error('sac_modulation_index: length_trace is not 500. Please modify the code.')
+end
+data_smooth = population_allDir.(params.variable)(params.tag_id).(params.event_type_name){1,1}(:,201:350)*1000; % all dir
+% data_smooth = population_dir.(params.variable)(params.tag_id).(params.event_type_name){1,5}(:,201:350)*1000; % CS+180
+% data_smooth = population_dir.(params.variable)(params.tag_id).(params.event_type_name){1,1}(:,201:350)*1000; % CS-on
+
+[~, pca_mat, ~] = pca(data_smooth);
+[reduction, umap, clusterIdentifiers, extras]=run_umap(data_smooth);
+
+% Cluster Using UMAP
+data_gmm_ = [reduction(:, 1), reduction(:, 2)];
+% data_gmm_ = [pca_mat(:, 1), pca_mat(:, 2)];
+n_component_gmm_ = 2;
+gmm_model_ = fitgmdist(data_gmm_,n_component_gmm_);
+idx = cluster(gmm_model_,data_gmm_);
+
+% Set pauser as idx_1, burster as idx_2, not_modulated as idx_3
+trace_idx_1 = nanmean(data_smooth(idx==1,:));
+trace_idx_2 = nanmean(data_smooth(idx==2,:));
+if max(trace_idx_1) > max(trace_idx_2)
+    idx(idx==1) = 4;
+    idx(idx==2) = 1;
+    idx(idx==4) = 2;
+end
+idx_pauser = (idx==1);
+idx_burster = (idx==2);
+idx_modulated = ~(idx==3);
+idx_not_modulated = (idx==3);
+
+fprintf(['pauser: ' num2str(sum(idx_pauser)) ' , ' 'burster: ' num2str(sum(idx_burster))  ' , ' 'not_modulated: ' num2str(sum(idx_not_modulated)) '\n'])
+
+%% Save umap_data
+save([path_cell_data '..' filesep 'umap_data.mat'], ...
+    'idx', 'idx_pauser','idx_burster','idx_modulated','idx_not_modulated', ...
+    'pca_mat', 'reduction', 'umap', 'clusterIdentifiers', ...
+    'data_gmm_', 'n_component_gmm_', 'gmm_model_', ...
+    '-v7.3');
+
+%% Plot UMAP
+close all;
+fig_num = 9;
+hFig = figure(fig_num);
+clf(hFig)
+num_row_fig = 2;
+num_col_fig = 2;
+
+% Plot UMAP
+subplot(num_row_fig, num_col_fig, [1]);
+hold on
+plot((-49:100)',data_smooth(idx_burster,:)', 'r')
+plot((-49:100)',nanmean(data_smooth(idx_burster,:))', 'k', 'LineWidth', 2)
+% plot((-49:100)',data_smooth(9,:)', 'm')
+% plot((-49:100)',data_smooth(27,:)', 'c')
+ylim([-50 150])
+ylabel('SS firing rate')
+title(['burster: ' num2str(sum(idx_burster))])
+
+% subplot(num_row_fig, num_col_fig, [9]);
+% hold on
+% plot((-49:100)',data_smooth(idx==3,:)', 'k')
+% plot((-49:100)',nanmean(data_smooth(idx==3,:))', 'k', 'LineWidth', 2)
+% % plot((-49:100)',data_smooth(110,:)', 'm')
+% % plot((-49:100)',data_smooth(23,:)', 'c')
+% ylim([-50 50])
+
+subplot(num_row_fig, num_col_fig, [3]);
+hold on
+plot((-49:100)',data_smooth(idx_pauser,:)', 'b')
+plot((-49:100)',nanmean(data_smooth(idx_pauser,:))', 'k', 'LineWidth', 2)
+% plot((-49:100)',data_smooth(110,:)', 'm')
+% plot((-49:100)',data_smooth(23,:)', 'c')
+ylim([-100 100])
+xlabel('Saccade onset (ms)')
+ylabel('SS firing rate')
+title(['pauser: ' num2str(sum(idx_pauser))])
+
+% ylim([0 inf])
+
+MarkerSize_ = 3;
+subplot(num_row_fig, num_col_fig, [2]);
+hold on
+plot(reduction(idx==1, 1), reduction(idx==1, 2), 'ob',...
+    'MarkerFaceColor', 'b','MarkerEdgeColor', 'None', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
+% plot(reduction(9, 1), reduction(9, 2), 'ob',...
+%     'MarkerFaceColor', 'm', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
+% plot(reduction(27, 1), reduction(27, 2), 'ob',...
+%     'MarkerFaceColor', 'c', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
+plot(reduction(idx==2, 1), reduction(idx==2, 2), 'or', ...
+    'MarkerFaceColor', 'r','MarkerEdgeColor', 'None', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
+% plot(reduction(110, 1), reduction(110, 2), 'or',...
+%     'MarkerFaceColor', 'm', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
+% plot(reduction(23, 1), reduction(23, 2), 'or',...
+%     'MarkerFaceColor', 'c', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
+% plot(reduction(idx==3, 1), reduction(idx==3, 2), 'ok', ...
+%     'MarkerFaceColor', 'k','MarkerEdgeColor', 'None', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
+xlabel('umap 1')
+ylabel('umap 2')
+title('umap')
+
+subplot(num_row_fig, num_col_fig, [4]);
+hold on
+plot(pca_mat(idx==1, 1), pca_mat(idx==1, 2), 'ob',...
+    'MarkerFaceColor', 'b','MarkerEdgeColor', 'None', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
+% plot(pca_mat(9, 1), pca_mat(9, 2), 'ob',...
+%     'MarkerFaceColor', 'm', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
+% plot(pca_mat(27, 1), pca_mat(27, 2), 'ob',...
+%     'MarkerFaceColor', 'c', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
+plot(pca_mat(idx==2, 1), pca_mat(idx==2, 2), 'or', ...
+    'MarkerFaceColor', 'r','MarkerEdgeColor', 'None', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
+% plot(pca_mat(110, 1), pca_mat(110, 2), 'or',...
+%     'MarkerFaceColor', 'm', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
+% plot(pca_mat(23, 1), pca_mat(23, 2), 'or',...
+%     'MarkerFaceColor', 'c', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
+% plot(pca_mat(idx==3, 1), pca_mat(idx==3, 2), 'ok', ...
+%     'MarkerFaceColor', 'k','MarkerEdgeColor', 'None', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
+xlabel('pca 1')
+ylabel('pca 2')
+title('pca')
+
+ESN_Beautify_Plot(hFig, [4,2], 8)
+
+
+
+end
+
+%% function scratch_synchrony_vs_accuracy()
+function scratch_synchrony_vs_accuracy()
+%% clear
+clc; clear;
+%% close all
+close all;
+%% Set params
+clc; close all;
+flag_pair_list = true;   % This should be true. DO NOT change it to false
+ESN_global_variables(flag_pair_list);
+global event_type_list amp_edges vel_edges length_trace ang_values range_cell_with_4dir_behave ang_edges expand_index tag_name_list
+if isempty(event_type_list)
+    fprintf('><ERROR><: Global variables are empty.\n');
+    return;
+end
+path_cell_data = uigetdir;
+if ~strcmp(path_cell_data(end), filesep);path_cell_data = [path_cell_data filesep];end
+pCell_ids = build_pCell_ids(flag_pair_list);
+% [~, pCell_ids] = JSP_build_pair_list();
+num_pCells = size(pCell_ids, 1);
+num_pairs = num_pCells / 2;
+
+%% Init variables
+% STRUCT (SS / CS) -> 10x1 tag struct (amp / vel) -> variable name (onset / vmax / offset / visual) -> 6x8 cell (ampXang / velXang) -> 138x500 double (pCellXtrace)
+fprintf(['Initializing synchrony_data' ' ...'])
+sync_index_lo_pairs = nan(num_pairs, length_trace);
+sync_index_hi_pairs = nan(num_pairs, length_trace);
+joint_prob_lo_pairs = nan(num_pairs, length_trace);
+joint_prob_hi_pairs = nan(num_pairs, length_trace);
+indep_prob_lo_pairs = nan(num_pairs, length_trace);
+indep_prob_hi_pairs = nan(num_pairs, length_trace);
+fprintf(' --> Completed. \n')
+
+%% Loop over pCells
+for counter_pCell = 1 : 2 : (num_pCells-1)
+    fprintf(['### ' 'Analyzing pCell no. ', num2str((counter_pCell+1)/2), ' / ' num2str(num_pCells/2) ' ###' '\n']);
+    %% load SACS_ALL_DATA
+    cell_file_name_1 = pCell_ids{counter_pCell  , 1};
+    cell_file_name_2 = pCell_ids{counter_pCell+1, 1};
+    cell_1 = load([path_cell_data cell_file_name_1], 'SACS_ALL_DATA', 'CS_on_data');
+    cell_2 = load([path_cell_data cell_file_name_2], 'SACS_ALL_DATA', 'CS_on_data');
+    
+    %% Re-calculate CS-on
+    CS_count_avg_1  = cell_1.CS_on_data.CS_count( 1, :) + cell_1.CS_on_data.CS_count( 4, :) + cell_1.CS_on_data.CS_count( 6, :) + cell_1.CS_on_data.CS_count( 7, :);
+    CS_count_avg_2  = cell_2.CS_on_data.CS_count( 1, :) + cell_2.CS_on_data.CS_count( 4, :) + cell_2.CS_on_data.CS_count( 6, :) + cell_2.CS_on_data.CS_count( 7, :);
+    sac_count_avg_1 = cell_1.CS_on_data.sac_count(1, :) + cell_1.CS_on_data.sac_count(4, :) + cell_1.CS_on_data.sac_count(6, :) + cell_1.CS_on_data.sac_count(7, :);
+    sac_count_avg_2 = cell_2.CS_on_data.sac_count(1, :) + cell_2.CS_on_data.sac_count(4, :) + cell_2.CS_on_data.sac_count(6, :) + cell_2.CS_on_data.sac_count(7, :);
+    CS_count_pair    = CS_count_avg_1  + CS_count_avg_2;
+    sac_count_pair   = sac_count_avg_1 + sac_count_avg_2;
+    % 'prim_success' tag 1 % 'corr_success' tag 4
+    CS_prob_pair = CS_count_pair ./ sac_count_pair;
+    
+    r_pair = nansum(CS_prob_pair.* exp(1i*deg2rad(ang_values)) , 2); % compute weighted sum of cos and sin of angles
+    CS_ang_pair =  wrapTo360(rad2deg(angle(r_pair)));
+    
+    CS_rho_pair = abs(r_pair) ./ nansum(CS_prob_pair,2);
+    
+    if (counter_pCell >= range_cell_with_4dir_behave(1)) && (counter_pCell <= range_cell_with_4dir_behave(2))
+        idx_CS_on_pair = discretize( ESN_Round(CS_ang_pair, 90.0, 'round'), ang_edges);
+    else
+        idx_CS_on_pair = discretize(CS_ang_pair, ang_edges);
+    end
+    
+    last_bin_id = length(ang_edges) - 1;
+    if idx_CS_on_pair == last_bin_id; idx_CS_on_pair = 1; end
+    
+    idx_ = idx_CS_on_pair - 1; % make it 0-index format
+    if (idx_ == 8); idx_ = 0; end
+    idx_CS_pair_tuned = mod((idx_ : 1 : idx_+7), 8) + 1;
+    CS_prob_pair_tuned = CS_prob_pair(idx_CS_pair_tuned);
+    
+    cell_1.CS_on_data.CS_prob_pair = CS_prob_pair;
+    cell_1.CS_on_data.CS_prob_pair_tuned = CS_prob_pair_tuned;
+    cell_1.CS_on_data.CS_ang_pair  = CS_ang_pair;
+    cell_1.CS_on_data.CS_rho_pair  = CS_rho_pair;
+    cell_1.CS_on_data.idx_CS_on_pair  = idx_CS_on_pair;
+    cell_1.CS_on_data.idx_CS_pair_tuned   = idx_CS_pair_tuned;
+    
+    cell_2.CS_on_data.CS_prob_pair = CS_prob_pair;
+    cell_2.CS_on_data.CS_prob_pair_tuned = CS_prob_pair_tuned;
+    cell_2.CS_on_data.CS_ang_pair  = CS_ang_pair;
+    cell_2.CS_on_data.CS_rho_pair  = CS_rho_pair;
+    cell_2.CS_on_data.idx_CS_on_pair  = idx_CS_on_pair;
+    cell_2.CS_on_data.idx_CS_pair_tuned   = idx_CS_pair_tuned;
+    
+    %% Compute data
+    event_type_name = 'onset'; % 'vmax'; % 
+    expand_index = 1;
+    idx_targeted = cell_1.SACS_ALL_DATA.validity;
+    idx_targeted = idx_targeted & ( ...
+        (cell_1.SACS_ALL_DATA.tag == 1) | ...
+        (cell_1.SACS_ALL_DATA.tag == 4) | ...
+        (cell_1.SACS_ALL_DATA.tag == 6) | ...
+        (cell_1.SACS_ALL_DATA.tag == 7) | ...
+        (cell_1.SACS_ALL_DATA.tag == 8) );
+
+    idx_ang_tuned = (cell_1.CS_on_data.visual_ang_bin == cell_1.CS_on_data.idx_CS_pair_tuned(4)) |...
+        (cell_1.CS_on_data.visual_ang_bin == cell_1.CS_on_data.idx_CS_pair_tuned(5)) | ...
+        (cell_1.CS_on_data.visual_ang_bin == cell_1.CS_on_data.idx_CS_pair_tuned(6));
+    
+    error_p = sqrt(...
+        (cell_1.SACS_ALL_DATA.tgt_px_offset - cell_1.SACS_ALL_DATA.eye_r_px_offset).^2 + ...
+        (cell_1.SACS_ALL_DATA.tgt_py_offset - cell_1.SACS_ALL_DATA.eye_r_py_offset).^2);
+    idx_lo_err = error_p <  median(error_p(idx_targeted));
+    idx_hi_err = error_p >= median(error_p(idx_targeted));
+    
+    idx_lo = idx_targeted & idx_ang_tuned & idx_lo_err;
+    idx_hi = idx_targeted & idx_ang_tuned & idx_hi_err;
+    
+    event_SS_1 = cell_1.SACS_ALL_DATA.(['neuro_SS' '_' event_type_name])(:,idx_lo);
+    event_SS_2 = cell_2.SACS_ALL_DATA.(['neuro_SS' '_' event_type_name])(:,idx_lo);
+    event_SS_1 = expand_index_event_data(event_SS_1, 1, expand_index);  % dim=1, expand along column. event_ is a 500xn matrix
+    event_SS_2 = expand_index_event_data(event_SS_2, 1, expand_index);
+    joint_prob_lo = reshape(nanmean( ( logical(event_SS_1)) & ( logical(event_SS_2)), 2), 1, length_trace);
+    indep_prob_lo = reshape(nanmean( (event_SS_1), 2), 1, length_trace) .* reshape(nanmean( (event_SS_2), 2), 1, length_trace);
+%     sync_index_lo = joint_prob_lo ./ indep_prob_lo;
+    sync_index_lo = (joint_prob_lo) ./ (indep_prob_lo);
+    
+    event_SS_1 = cell_1.SACS_ALL_DATA.(['neuro_SS' '_' event_type_name])(:,idx_hi);
+    event_SS_2 = cell_2.SACS_ALL_DATA.(['neuro_SS' '_' event_type_name])(:,idx_hi);
+    event_SS_1 = expand_index_event_data(event_SS_1, 1, expand_index);  % dim=1, expand along column. event_ is a 500xn matrix
+    event_SS_2 = expand_index_event_data(event_SS_2, 1, expand_index);
+    joint_prob_hi = reshape(nanmean( ( logical(event_SS_1)) & ( logical(event_SS_2)), 2), 1, length_trace);
+    indep_prob_hi = reshape(nanmean( (event_SS_1), 2), 1, length_trace) .* reshape(nanmean( (event_SS_2), 2), 1, length_trace);
+%     sync_index_hi = joint_prob_hi ./ indep_prob_hi;
+    sync_index_hi = (joint_prob_hi) ./ (indep_prob_hi);
+    
+    %% Save variables
+    sync_index_lo_pairs((counter_pCell+1)/2, :) = sync_index_lo;
+    sync_index_hi_pairs((counter_pCell+1)/2, :) = sync_index_hi;
+    joint_prob_lo_pairs((counter_pCell+1)/2, :) = joint_prob_lo;
+    joint_prob_hi_pairs((counter_pCell+1)/2, :) = joint_prob_hi;
+    indep_prob_lo_pairs((counter_pCell+1)/2, :) = indep_prob_lo;
+    indep_prob_hi_pairs((counter_pCell+1)/2, :) = indep_prob_hi;
+
+end
+fprintf('### ALL DONE. ###\n')
+
+%% Plot
+sync_index_lo_pairs_avg = nanmean(ESN_smooth(sync_index_lo_pairs, 2));
+sync_index_lo_pairs_sem = nanstd(ESN_smooth(sync_index_lo_pairs, 2)) ./ sqrt(num_pairs);
+sync_index_hi_pairs_avg = nanmean(ESN_smooth(sync_index_hi_pairs, 2));
+sync_index_hi_pairs_sem = nanstd(ESN_smooth(sync_index_hi_pairs, 2)) ./ sqrt(num_pairs);
+
+hFig = figure(1);
+clf(hFig);
+hold on;
+
+data_mean_x_axis = -50 : 1 : 50;
+
+data_mean_ = sync_index_lo_pairs_avg(200:300);
+data_sem_  = sync_index_lo_pairs_sem(200:300);
+data_sem_p_ = data_mean_ + data_sem_;
+data_sem_m_ = data_mean_ - data_sem_;
+data_sem_y_axis_ = [(data_sem_p_) flip(data_sem_m_)];
+data_sem_x_axis_ = [(data_mean_x_axis) flip(data_mean_x_axis)];
+plot(data_sem_x_axis_ , data_sem_y_axis_,'-r', 'linewidth', 0.25)
+plot(data_mean_x_axis , data_mean_,'-r', 'linewidth', 1)
+
+data_mean_ = sync_index_hi_pairs_avg(200:300);
+data_sem_  = sync_index_hi_pairs_sem(200:300);
+data_sem_p_ = data_mean_ + data_sem_;
+data_sem_m_ = data_mean_ - data_sem_;
+data_sem_y_axis_ = [(data_sem_p_) flip(data_sem_m_)];
+data_sem_x_axis_ = [(data_mean_x_axis) flip(data_mean_x_axis)];
+plot(data_sem_x_axis_ , data_sem_y_axis_,'-b', 'linewidth', 0.25)
+plot(data_mean_x_axis , data_mean_,'-b', 'linewidth', 1)
+
+
+% plot(data_mean_x_axis , CSxCS_norm, 'linewidth', 0.5)
+xlabel('Time (ms)')
+ylabel('Sync. index')
+% xlim([-40 40])
+% set(gca, 'XTick', -40:10:40)
+% ylim([1 3])
+% set(gca, 'YTick', 0.5:0.5:3)
+% ESN_Beautify_Plot(hFig, [1.5 1], 8)
+
+
+end
+

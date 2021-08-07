@@ -11,8 +11,7 @@ tic
 % (3) combine_pair_files(); % This is for pair of simultaneous pCells 
 % (4) CS_on_analysis(); % load cell_data files (_combine_) and add the CS_on_analysis  to them.
 % (5) build_population_data(); % load cell_data files (_combine_) and form population data.
-% (5) 
-build_synchrony_data(); % form joint probability of cell_1 and cell_2.
+% (5) build_synchrony_data(); % form joint probability of cell_1 and cell_2.
 % (6) build_neural_properties(); % load cell_data files (_combine_) and form properties data.
 % (7) sac_modulation_index(); % load cell_data files (_combine_) and add the sac_modulation  to them.
 toc
@@ -28,7 +27,7 @@ tic
 % (5) plot_modulation_z_score(4);
 % (6) plot_single_session_modulation();
 % plot_SS_peak_vs_vmax();
-plot_sync_vs_CS_diff()
+% plot_sync_vs_CS_diff()
 toc
 
 end
@@ -65,17 +64,17 @@ num_pCells = size(pCell_ids, 1);
 idx_mirza = false(num_pCells, 1);
 idx_ramon = false(num_pCells, 1);
 if flag_pair_list
-    if num_pCells ~= 80
-        error('mirza_ramon_idx: number of P-cells is not 80. Please modify the code.')
+    if num_pCells ~= 84
+        error('mirza_ramon_idx: number of P-cells is not 84. Please modify the code.')
     end
-    idx_mirza(1:54,1)  = true;
-    idx_ramon(55:80,1) = true;
+    idx_mirza(1:58,1)  = true;
+    idx_ramon(59:84,1) = true;
 else
-    if num_pCells ~= 143
-        error('mirza_ramon_idx: number of P-cells is not 143. Please modify the code.')
+    if num_pCells ~= 149
+        error('mirza_ramon_idx: number of P-cells is not 149. Please modify the code.')
     end
-    idx_mirza(1:90,1)   = true;
-    idx_ramon(91:143,1) = true;
+    idx_mirza(1:96,1)   = true;
+    idx_ramon(97:149,1) = true;
 end
 
 end
@@ -1145,7 +1144,7 @@ for counter_pCell = 1 : num_pCells
     CS_on_data.CS_ang_std_perm = CS_ang_std_perm;
     
     %% Append CS_on_data to cell_data
-    save([path_cell_data cell_file_name], 'CS_on_data', '-append');
+%     save([path_cell_data cell_file_name], 'CS_on_data', '-append');
     CS_on_population(counter_pCell) = CS_on_data;
 end
 fprintf('### ALL DONE. ###\n')
@@ -1163,7 +1162,7 @@ function sac_modulation_index()
 
 %% Set params
 clc; close all;
-flag_pair_list = true; % false; %
+flag_pair_list = true; % false; % 
 ESN_global_variables(flag_pair_list);
 global length_trace
 path_cell_data = uigetdir;
@@ -1257,7 +1256,7 @@ end
 %% function build_neural_properties()
 function build_neural_properties()
 clc; close all;
-flag_pair_list = false; % true; % 
+flag_pair_list = true; % false; % 
 path_cell_data = uigetdir;
 if ~strcmp(path_cell_data(end), filesep);path_cell_data = [path_cell_data filesep];end
 pCell_ids = build_pCell_ids(flag_pair_list);
@@ -1697,10 +1696,12 @@ for counter_pCell = 1 : 2 : (num_pCells-1)
     cell_2.CS_on_data.idx_CS_pair_tuned   = idx_CS_pair_tuned;
     
     %% Save CS_on_pair results
+    %{
     CS_on_data = cell_1.CS_on_data;
-%     save([path_cell_data cell_file_name_1], 'CS_on_data', '-append');
+    save([path_cell_data cell_file_name_1], 'CS_on_data', '-append');
     CS_on_data = cell_2.CS_on_data;
-%     save([path_cell_data cell_file_name_2], 'CS_on_data', '-append');
+    save([path_cell_data cell_file_name_2], 'CS_on_data', '-append');
+    %}
     
     %% Compute data
     SACS_amp_bin_1 = discretize(cell_1.SACS_ALL_DATA.eye_r_amp_m,  amp_edges);
@@ -2534,8 +2535,11 @@ for counter_event_type = 1 : length(event_type_list)
 %                 ratio_     = event_p1p2;
 %                 ratio_(isnan(ratio_)) = 1; ratio_(isinf(ratio_)) = 1;
                 % Def.-2
+                event_p1(event_p1<eps) = nan;
+                event_p2(event_p2<eps) = nan;
+                event_p1p2(event_p1p2<eps) = nan;
                 ratio_     = ( event_p1p2 ./ event_p1 ./ event_p2 );
-                ratio_(isnan(ratio_)) = 1; ratio_(isinf(ratio_)) = 1;
+%                 ratio_(isnan(ratio_)) = 1; ratio_(isinf(ratio_)) = 1;
                 % Def.-3
 %                 ratio_     = log2(event_p1p2)-log2(event_p1)-log2(event_p2);
 %                 ratio_(isnan(ratio_)) = 0; ratio_(isinf(ratio_)) = 0;
@@ -2757,6 +2761,10 @@ end
 
 %% function plot_neural_properties
 function plot_neural_properties(fig_num)
+%% handle nargin
+if nargin < 1
+    fig_num = 1;
+end
 %% Load population_neural_properties
 path_cell_data = uigetdir;
 if ~strcmp(path_cell_data(end), filesep);path_cell_data = [path_cell_data filesep];end
@@ -3039,8 +3047,8 @@ file_name_fig_ = 'CS_on_properties';
 saveas(hFig,[path_fig_ filesep file_name_fig_], 'pdf');
 
 %% CS-on distributiona for different vermal areas
-if num_pCells ~= 143
-    error('plot_CS_on_properties: number of P-cells is not 143. Please modify the code.')
+if num_pCells ~= 149
+    error('plot_CS_on_properties: number of P-cells is not 149. Please modify the code.')
 end
 
 hFig = figure(fig_num+1);
@@ -3049,7 +3057,7 @@ num_row_fig = 2;
 num_col_fig = 3;
 
 subplot(num_row_fig, num_col_fig, 2);
-idx_pCells = [1:18, 52:68];
+idx_pCells = [1:18, 52:74];
 polarhistogram(deg2rad(CS_ang_avg(idx_pCells)), deg2rad(ang_edges), 'DisplayStyle', 'bar','FaceColor',[0.6 0.6 0.6], 'EdgeColor', 'none')
 hold on
 polarhistogram(deg2rad(CS_ang_avg(idx_pCells)), deg2rad(ang_edges), 'DisplayStyle', 'stairs','FaceColor','none', 'EdgeColor', 'r', 'linewidth', 1)
@@ -3069,7 +3077,7 @@ set(gca, 'ThetaTick', 0:45:315, 'RTick', 0:5:10,...
 title(['(M) right, n=', num2str(length(idx_pCells))])
 
 subplot(num_row_fig, num_col_fig, 1);
-idx_pCells = 69:90;
+idx_pCells = 75:96;
 polarhistogram(deg2rad(CS_ang_avg(idx_pCells)), deg2rad(ang_edges), 'DisplayStyle', 'bar','FaceColor',[0.6 0.6 0.6], 'EdgeColor', 'none')
 hold on
 polarhistogram(deg2rad(CS_ang_avg(idx_pCells)), deg2rad(ang_edges), 'DisplayStyle', 'stairs','FaceColor','none', 'EdgeColor', 'r', 'linewidth', 1)
@@ -3079,7 +3087,7 @@ set(gca, 'ThetaTick', 0:45:315, 'RTick', 0:5:10,...
 title(['(M) left, n=', num2str(length(idx_pCells))])
 
 subplot(num_row_fig, num_col_fig, 6);
-idx_pCells = 91:143;
+idx_pCells = 97:149;
 polarhistogram(deg2rad(CS_ang_avg(idx_pCells)), deg2rad(ang_edges), 'DisplayStyle', 'bar','FaceColor',[0.6 0.6 0.6], 'EdgeColor', 'none')
 hold on
 polarhistogram(deg2rad(CS_ang_avg(idx_pCells)), deg2rad(ang_edges), 'DisplayStyle', 'stairs','FaceColor','none', 'EdgeColor', 'r', 'linewidth', 1)
@@ -3216,7 +3224,7 @@ gmm_model_ = fitgmdist(data_gmm_,n_component_gmm_);
 idx = cluster(gmm_model_,data_gmm_);
 
 % Set pauser as idx_1, burster as idx_2, not_modulated as idx_3
-idx(~is_modulated) = 3;
+% idx(~is_modulated) = 3;
 trace_idx_1 = nanmean(data_smooth(idx==1,:));
 trace_idx_2 = nanmean(data_smooth(idx==2,:));
 if max(trace_idx_1) > max(trace_idx_2)
@@ -3237,6 +3245,11 @@ save([path_cell_data '..' filesep 'umap_data.mat'], ...
     'pca_mat', 'reduction', 'umap', 'clusterIdentifiers', ...
     'data_gmm_', 'n_component_gmm_', 'gmm_model_', ...
     '-v7.3');
+save([path_cell_data '..' filesep 'umap_extra.mat'], ...
+    'idx', 'idx_pauser','idx_burster','idx_modulated','idx_not_modulated', ...
+    'pca_mat', 'reduction', 'umap', 'clusterIdentifiers', ...
+    'data_gmm_', 'n_component_gmm_', 'gmm_model_', 'extras', ...
+    '-v7.3');
 
 %% Init plot
 close all;
@@ -3251,7 +3264,8 @@ z_score_edges = 0 : 1 : 21;
 histogram(modulation_z_score, z_score_edges,'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', [0.6 0.6 0.6])
 hold on
 histogram(modulation_z_score, z_score_edges,'DisplayStyle', 'stairs', 'EdgeColor', 'k', 'FaceColor', 'none', 'linewidth', 1)
-xline(3,'Color', 'k', 'linewidth', 1)
+% xline(3,'Color', 'k', 'linewidth', 1)
+xline(mean(modulation_z_score),'Color', 'k', 'linewidth', 1)
 ylabel('count')
 xlabel('Z-score')
 title('SS Modulation Z-score')
@@ -3259,8 +3273,8 @@ title('SS Modulation Z-score')
 %% Plot UMAP
 subplot(num_row_fig, num_col_fig, [7]);
 hold on
-plot((-49:100)',data_smooth(idx==2,:)', 'r')
-plot((-49:100)',nanmean(data_smooth(idx==2,:))', 'k', 'LineWidth', 2)
+plot((-49:100)',data_smooth(idx_burster,:)', 'r')
+plot((-49:100)',nanmean(data_smooth(idx_burster,:))', 'k', 'LineWidth', 2)
 % plot((-49:100)',data_smooth(9,:)', 'm')
 % plot((-49:100)',data_smooth(27,:)', 'c')
 ylim([-50 150])
@@ -3268,16 +3282,16 @@ ylabel('SS firing rate')
 
 subplot(num_row_fig, num_col_fig, [9]);
 hold on
-plot((-49:100)',data_smooth(idx==3,:)', 'k')
-plot((-49:100)',nanmean(data_smooth(idx==3,:))', 'k', 'LineWidth', 2)
+%%%%%plot((-49:100)',data_smooth(idx_not_modulated,:)', 'k')
+%%%%%plot((-49:100)',nanmean(data_smooth(idx_not_modulated,:))', 'k', 'LineWidth', 2)
 % plot((-49:100)',data_smooth(110,:)', 'm')
 % plot((-49:100)',data_smooth(23,:)', 'c')
 ylim([-50 50])
 
 subplot(num_row_fig, num_col_fig, [8]);
 hold on
-plot((-49:100)',data_smooth(idx==1,:)', 'b')
-plot((-49:100)',nanmean(data_smooth(idx==1,:))', 'k', 'LineWidth', 2)
+plot((-49:100)',data_smooth(idx_pauser,:)', 'b')
+plot((-49:100)',nanmean(data_smooth(idx_pauser,:))', 'k', 'LineWidth', 2)
 % plot((-49:100)',data_smooth(110,:)', 'm')
 % plot((-49:100)',data_smooth(23,:)', 'c')
 ylim([-100 100])
@@ -3288,20 +3302,20 @@ xlabel('Saccade onset (ms)')
 MarkerSize_ = 3;
 subplot(num_row_fig, num_col_fig, [2 5]);
 hold on
-plot(reduction(idx==1, 1), reduction(idx==1, 2), 'ob',...
+plot(reduction(idx_pauser, 1), reduction(idx_pauser, 2), 'ob',...
     'MarkerFaceColor', 'b','MarkerEdgeColor', 'None', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
 % plot(reduction(9, 1), reduction(9, 2), 'ob',...
 %     'MarkerFaceColor', 'm', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
 % plot(reduction(27, 1), reduction(27, 2), 'ob',...
 %     'MarkerFaceColor', 'c', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
-plot(reduction(idx==2, 1), reduction(idx==2, 2), 'or', ...
+plot(reduction(idx_burster, 1), reduction(idx_burster, 2), 'or', ...
     'MarkerFaceColor', 'r','MarkerEdgeColor', 'None', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
 % plot(reduction(110, 1), reduction(110, 2), 'or',...
 %     'MarkerFaceColor', 'm', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
 % plot(reduction(23, 1), reduction(23, 2), 'or',...
 %     'MarkerFaceColor', 'c', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
-plot(reduction(idx==3, 1), reduction(idx==3, 2), 'ok', ...
-    'MarkerFaceColor', 'k','MarkerEdgeColor', 'None', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
+%%%%%plot(reduction(idx_not_modulated, 1), reduction(idx_not_modulated, 2), 'ok', ...
+%%%%%    'MarkerFaceColor', 'k','MarkerEdgeColor', 'None', 'MarkerSize', MarkerSize_, 'linewidth', 0.5)
 xlabel('umap 1')
 ylabel('umap 2')
 title('umap')
@@ -3480,7 +3494,7 @@ clearvars h_ax
 for counter_ang = 1 : num_ang_bin+1
     h_ax(counter_ang) = subplot(num_row_fig, num_col_fig, ax_ang_id(counter_ang));
     hold on;
-    for counter_var = 1 : num_var_bin
+    for counter_var = num_var_bin : -1 : 1
         if counter_ang == (num_ang_bin+1)
             data_mean_ = data_avg_allDir{counter_var, 1};
             data_sem_ = data_sem_allDir{counter_var, 1};
@@ -3500,12 +3514,12 @@ for counter_ang = 1 : num_ang_bin+1
         if strcmp(params.data_type, 'CS')
             length_data_plot = 400;
         else
-            length_data_plot = 200;
+            length_data_plot = 100;
         end
         data_mean_x_axis = reshape(inds_span, 1, []);
         ind_diff_ = round(length_trace - length_data_plot) / 2;
         idx_plot = (ind_diff_+1) : 1 : (length_trace-ind_diff_);
-%         idx_plot = 250:450;
+        idx_plot = 250:450;
         data_mean_ = data_mean_(1, idx_plot);
         data_sem_  = data_sem_(1, idx_plot);
         data_mean_x_axis = data_mean_x_axis(1, idx_plot);
@@ -3596,11 +3610,11 @@ clc; clear;
 close all;
 %% set params
 fprintf('params ...')
-params.data_type       = 'SS';
+params.data_type       = 'VM';
 params.CSYS_type       = 'tuned'; % tuned % absol
-params.event_type_name = 'onset'; % visual % onset % vmax
+params.event_type_name = 'visual'; % visual % onset % vmax
 params.variable        = 'vel';
-params.tag_id          = 10;
+params.tag_id          = 6;
 params.flag_smooth_plot = true; % false; % 
 params.fig_num = 3;
 params.plot_mode = 1; % mode=1 collapse the amp/vel, mode=2 plots the amp/vel
@@ -3634,8 +3648,8 @@ if params.plot_mode == 1
 [population_dir, num_sac_dir] = population_data_combine_levels(population_dir, num_sac_dir, params.variable, 2, [3 7]);
 [population_dir, num_sac_dir] = population_data_combine_levels(population_dir, num_sac_dir, params.variable, 2, [2 8]);
 [population_dir, num_sac_dir] = population_data_combine_levels(population_dir, num_sac_dir, params.variable, 2, [4 6]);
-[population_dir, num_sac_dir] = population_data_combine_tags(  population_dir, num_sac_dir, params.variable, [1 4 6 7]); % [1 4 6 7 8]
-% [population_dir, num_sac_dir] = population_data_combine_tags(  population_dir, num_sac_dir, params.variable, [6 7]);
+% [population_dir, num_sac_dir] = population_data_combine_tags(  population_dir, num_sac_dir, params.variable, [1 4 6 7]); % [1 4 6 7 8]
+[population_dir, num_sac_dir] = population_data_combine_tags(  population_dir, num_sac_dir, params.variable, [6 7]);
 
 % idx_pCells: is a boolean array. 1 for including a pCell, and 0 for exluding a pCell
 % idx_mirza; % idx_ramon; % idx_pauser; % idx_burster; % idx_modulated; % idx_not_modulated; % idx_pairs;
@@ -3664,12 +3678,12 @@ if params.plot_mode == 2
 [population_data, num_sac_data] = population_data_combine_levels(population_data, num_sac_data, params.variable, 2, [3 7]);
 [population_data, num_sac_data] = population_data_combine_levels(population_data, num_sac_data, params.variable, 2, [2 8]);
 [population_data, num_sac_data] = population_data_combine_levels(population_data, num_sac_data, params.variable, 2, [4 6]);
-[population_data, num_sac_data] = population_data_combine_tags(  population_data, num_sac_data, params.variable, [1 2 3 4]);
+% [population_data, num_sac_data] = population_data_combine_tags(  population_data, num_sac_data, params.variable, [1 4 6 7 8]);
 
 % idx_pCells: is a boolean array. 1 for including a pCell, and 0 for exluding a pCell
 % idx_mirza; % idx_ramon; % idx_pauser; % idx_burster; % idx_modulated; % idx_not_modulated;
-idx_pCells = idx_mirza | idx_ramon;
-[population_data, num_sac_data] = population_data_idx_pCells(population_data, num_sac_data, params.variable, idx_pCells);
+% idx_pCells = idx_mirza | idx_ramon;
+% [population_data, num_sac_data] = population_data_idx_pCells(population_data, num_sac_data, params.variable, idx_pCells);
 
 if strcmp(params.data_type, 'SS') || strcmp(params.data_type, 'CS')
     population_data = population_data_smooth_pCells(population_data, num_sac_data, params.variable);
@@ -3789,9 +3803,9 @@ close all;
 fprintf('params ...')
 params.data_type       = 'SS';
 params.CSYS_type       = 'tuned'; % should be fixed to 'tuned', do not change to 'absol'
-params.event_type_name = 'onset';
+params.event_type_name = 'vmax';
 params.variable        = 'vel';
-params.tag_id          = 1;
+params.tag_id          = 10;
 params.flag_smooth_plot = true;
 params.fig_num = 3;
 params.plot_mode = 1; % mode=1 collapse the amp/vel, mode=2 plots the amp/vel
@@ -3820,13 +3834,13 @@ fprintf(' --> Completed. \n')
 [synch_joint_dir, num_joint_dir] = population_data_combine_levels(synch_joint_dir, num_joint_dir, params.variable, 2, [3 7]);
 [synch_joint_dir, num_joint_dir] = population_data_combine_levels(synch_joint_dir, num_joint_dir, params.variable, 2, [2 8]);
 [synch_joint_dir, num_joint_dir] = population_data_combine_levels(synch_joint_dir, num_joint_dir, params.variable, 2, [4 6]);
-[synch_joint_dir, num_joint_dir] = population_data_combine_tags(  synch_joint_dir, num_joint_dir, params.variable, [1 4 6 7]); % [1 4 6 7 8]
+% [synch_joint_dir, num_joint_dir] = population_data_combine_tags(  synch_joint_dir, num_joint_dir, params.variable, [1 4 6 7]); % [1 4 6 7 8]
 
 [synch_margn_dir, num_margn_dir] = population_data_avg_over_levels(synch_margn, num_synch, params.variable, 1); % based on vel, 250-750
 [synch_margn_dir, num_margn_dir] = population_data_combine_levels(synch_margn_dir, num_margn_dir, params.variable, 2, [3 7]);
 [synch_margn_dir, num_margn_dir] = population_data_combine_levels(synch_margn_dir, num_margn_dir, params.variable, 2, [2 8]);
 [synch_margn_dir, num_margn_dir] = population_data_combine_levels(synch_margn_dir, num_margn_dir, params.variable, 2, [4 6]);
-[synch_margn_dir, num_margn_dir] = population_data_combine_tags(  synch_margn_dir, num_margn_dir, params.variable, [1 4 6 7]); % [1 4 6 7 8]
+% [synch_margn_dir, num_margn_dir] = population_data_combine_tags(  synch_margn_dir, num_margn_dir, params.variable, [1 4 6 7]); % [1 4 6 7 8]
 
 [synch_joint_allDir, num_joint_allDir] = population_data_avg_over_levels(synch_joint_dir, num_joint_dir, params.variable, 2);
 [synch_margn_allDir, num_margn_allDir] = population_data_avg_over_levels(synch_margn_dir, num_margn_dir, params.variable, 2);
@@ -4274,7 +4288,7 @@ title('CS Tuning', 'Interpreter', 'none', 'Color',color_CS);
 %
 ESN_Beautify_Plot(hFig, [8 8], 8)
 % ESN_Beautify_Plot(hFig, [8 8], 12)
-saveas(hFig,'single_session_modulation', 'pdf');
+% saveas(hFig,'single_session_modulation', 'pdf');
 
 end
 
@@ -4710,6 +4724,194 @@ ESN_Beautify_Plot(hFig, [8 8], 8)
 end
 end
 
+%% function plot_compare_cs_on_001_004_067_1467()
+function plot_compare_cs_on_001_004_067_1467()
+%% Compare CS_on_population_001, CS_on_population_004, CS_on_population_008
+clc;
+CS_on_population_001 = load('CS_on_population_tag_1.mat');
+CS_on_population_004 = load('CS_on_population_tag_4.mat');
+% CS_on_population_008 = load('CS_on_population_tag_8.mat');
+% CS_on_population_014 = load('CS_on_population_tag_14.mat');
+% CS_on_population_023 = load('CS_on_population_tag_23.mat');
+CS_on_population_067 = load('CS_on_population_tag_67.mat');
+% CS_on_population_235 = load('CS_on_population_tag_235.mat');
+% CS_on_population_678 = load('CS_on_population_tag_678.mat');
+% CS_on_population_148 = load('CS_on_population_tag_148.mat');
+CS_on_population_1467 = load('CS_on_population_tag_1467.mat');
+% CS_on_population_123 = load('CS_on_population_tag_1234678.mat');
+num_pCells = length(CS_on_population_1467.CS_on_population);
+for counter_pCell = 1 : num_pCells
+    CS_on_population_001.CS_ang_avg(counter_pCell,1) = CS_on_population_001.CS_on_population(counter_pCell).CS_ang_avg;
+    CS_on_population_004.CS_ang_avg(counter_pCell,1) = CS_on_population_004.CS_on_population(counter_pCell).CS_ang_avg;
+%     CS_on_population_008.CS_ang_avg(counter_pCell,1) = CS_on_population_008.CS_on_population(counter_pCell).CS_ang_avg;
+%     CS_on_population_014.CS_ang_avg(counter_pCell,1) = CS_on_population_014.CS_on_population(counter_pCell).CS_ang_avg;
+%     CS_on_population_023.CS_ang_avg(counter_pCell,1) = CS_on_population_023.CS_on_population(counter_pCell).CS_ang_avg;
+    CS_on_population_067.CS_ang_avg(counter_pCell,1) = CS_on_population_067.CS_on_population(counter_pCell).CS_ang_avg;
+%     CS_on_population_235.CS_ang_avg(counter_pCell,1) = CS_on_population_235.CS_on_population(counter_pCell).CS_ang_avg;
+%     CS_on_population_678.CS_ang_avg(counter_pCell,1) = CS_on_population_678.CS_on_population(counter_pCell).CS_ang_avg;
+%     CS_on_population_148.CS_ang_avg(counter_pCell,1) = CS_on_population_148.CS_on_population(counter_pCell).CS_ang_avg;
+    CS_on_population_1467.CS_ang_avg(counter_pCell,1) = CS_on_population_1467.CS_on_population(counter_pCell).CS_ang_avg;
+%     CS_on_population_123.CS_ang_avg(counter_pCell,1) = CS_on_population_123.CS_on_population(counter_pCell).CS_ang_avg;
+end
+CS_ang_avg_001 = CS_on_population_001.CS_ang_avg;
+CS_ang_avg_004 = CS_on_population_004.CS_ang_avg;
+% CS_ang_avg_008 = CS_on_population_008.CS_ang_avg;
+% CS_ang_avg_014 = CS_on_population_014.CS_ang_avg;
+% CS_ang_avg_023 = CS_on_population_023.CS_ang_avg;
+CS_ang_avg_067 = CS_on_population_067.CS_ang_avg;
+% CS_ang_avg_235 = CS_on_population_235.CS_ang_avg;
+% CS_ang_avg_678 = CS_on_population_678.CS_ang_avg;
+% CS_ang_avg_148 = CS_on_population_148.CS_ang_avg;
+CS_ang_avg_1467 = CS_on_population_1467.CS_ang_avg;
+% CS_ang_avg_123 = CS_on_population_123.CS_ang_avg;
+%
+CS_ang_pairs = [CS_ang_avg_001 CS_ang_avg_1467];
+x_values_ = cosd(CS_ang_pairs); 
+y_values_ = sind(CS_ang_pairs);
+diff_ang = acosd( (x_values_(:,1) .* x_values_(:,2)) + (y_values_(:,1) .* y_values_(:,2)) );
+vec_1 = [x_values_(:,1)'; y_values_(:,1)'; zeros(1,num_pCells)];
+vec_2 = [x_values_(:,2)'; y_values_(:,2)'; zeros(1,num_pCells)];
+cross_ang = cross(vec_1, vec_2);
+diff_ang_001_1467 = diff_ang .* sign(cross_ang(3,:)');
+
+CS_ang_pairs = [CS_ang_avg_004 CS_ang_avg_1467];
+x_values_ = cosd(CS_ang_pairs); 
+y_values_ = sind(CS_ang_pairs);
+diff_ang = acosd( (x_values_(:,1) .* x_values_(:,2)) + (y_values_(:,1) .* y_values_(:,2)) );
+vec_1 = [x_values_(:,1)'; y_values_(:,1)'; zeros(1,num_pCells)];
+vec_2 = [x_values_(:,2)'; y_values_(:,2)'; zeros(1,num_pCells)];
+cross_ang = cross(vec_1, vec_2);
+diff_ang_004_1467 = diff_ang .* sign(cross_ang(3,:)');
+
+CS_ang_pairs = [CS_ang_avg_067 CS_ang_avg_1467];
+x_values_ = cosd(CS_ang_pairs); 
+y_values_ = sind(CS_ang_pairs);
+diff_ang = acosd( (x_values_(:,1) .* x_values_(:,2)) + (y_values_(:,1) .* y_values_(:,2)) );
+vec_1 = [x_values_(:,1)'; y_values_(:,1)'; zeros(1,num_pCells)];
+vec_2 = [x_values_(:,2)'; y_values_(:,2)'; zeros(1,num_pCells)];
+cross_ang = cross(vec_1, vec_2);
+diff_ang_067_1467 = diff_ang .* sign(cross_ang(3,:)');
+
+%%%%%
+CS_ang_pairs = [CS_ang_avg_001 CS_ang_avg_004];
+x_values_ = cosd(CS_ang_pairs); 
+y_values_ = sind(CS_ang_pairs);
+diff_ang = acosd( (x_values_(:,1) .* x_values_(:,2)) + (y_values_(:,1) .* y_values_(:,2)) );
+vec_1 = [x_values_(:,1)'; y_values_(:,1)'; zeros(1,num_pCells)];
+vec_2 = [x_values_(:,2)'; y_values_(:,2)'; zeros(1,num_pCells)];
+cross_ang = cross(vec_1, vec_2);
+diff_ang_001_004 = diff_ang .* sign(cross_ang(3,:)');
+
+CS_ang_pairs = [CS_ang_avg_001 CS_ang_avg_067];
+x_values_ = cosd(CS_ang_pairs); 
+y_values_ = sind(CS_ang_pairs);
+diff_ang = acosd( (x_values_(:,1) .* x_values_(:,2)) + (y_values_(:,1) .* y_values_(:,2)) );
+vec_1 = [x_values_(:,1)'; y_values_(:,1)'; zeros(1,num_pCells)];
+vec_2 = [x_values_(:,2)'; y_values_(:,2)'; zeros(1,num_pCells)];
+cross_ang = cross(vec_1, vec_2);
+diff_ang_001_067 = diff_ang .* sign(cross_ang(3,:)');
+
+CS_ang_pairs = [CS_ang_avg_004 CS_ang_avg_067];
+x_values_ = cosd(CS_ang_pairs); 
+y_values_ = sind(CS_ang_pairs);
+diff_ang = acosd( (x_values_(:,1) .* x_values_(:,2)) + (y_values_(:,1) .* y_values_(:,2)) );
+vec_1 = [x_values_(:,1)'; y_values_(:,1)'; zeros(1,num_pCells)];
+vec_2 = [x_values_(:,2)'; y_values_(:,2)'; zeros(1,num_pCells)];
+cross_ang = cross(vec_1, vec_2);
+diff_ang_004_067 = diff_ang .* sign(cross_ang(3,:)');
+
+%%%%%
+step_size_ = 22.5;
+ang_edges = -135-(step_size_/2):step_size_:135+(step_size_/2);
+
+hFig = figure(7);
+clf(hFig)
+
+subplot(1,3,1)
+hold on
+diff_ang_ = diff_ang_001_1467;
+histogram(diff_ang_, ang_edges, 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'r')
+histogram(diff_ang_, ang_edges, 'DisplayStyle', 'stairs', 'EdgeColor', 'r', 'FaceColor', 'none', 'linewidth', 1)
+xline(mean(diff_ang_),'Color', 'r', 'linewidth', 1)
+set(gca, 'XTick', -135:45:135)
+ylim([0 70])
+ylabel('Count')
+title('tag1 - tag146')
+fprintf(['diff_ang_001_146, mean: ' num2str(mean(diff_ang_)) '\n'])
+fprintf(['diff_ang_001_146, sem : ' num2str(std( diff_ang_)./sqrt(num_pCells)) '\n'])
+
+subplot(1,3,2)
+hold on
+diff_ang_ = diff_ang_004_1467;
+histogram(diff_ang_, ang_edges, 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'r')
+histogram(diff_ang_, ang_edges, 'DisplayStyle', 'stairs', 'EdgeColor', 'r', 'FaceColor', 'none', 'linewidth', 1)
+xline(mean(diff_ang_),'Color', 'r', 'linewidth', 1)
+set(gca, 'XTick', -135:45:135)
+ylim([0 70])
+title('tag4 - tag146')
+fprintf(['diff_ang_004_146, mean: ' num2str(mean(diff_ang_)) '\n'])
+fprintf(['diff_ang_004_146, sem : ' num2str(std( diff_ang_)./sqrt(num_pCells)) '\n'])
+
+subplot(1,3,3)
+hold on
+diff_ang_ = diff_ang_067_1467;
+histogram(diff_ang_, ang_edges, 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'r')
+histogram(diff_ang_, ang_edges, 'DisplayStyle', 'stairs', 'EdgeColor', 'r', 'FaceColor', 'none', 'linewidth', 1)
+xline(mean(diff_ang_),'Color', 'r', 'linewidth', 1)
+set(gca, 'XTick', -135:45:135)
+ylim([0 70])
+title('tag67 - tag146')
+fprintf(['diff_ang_067_146, mean: ' num2str(mean(diff_ang_)) '\n'])
+fprintf(['diff_ang_067_146, sem : ' num2str(std( diff_ang_)./sqrt(num_pCells)) '\n'])
+
+ESN_Beautify_Plot(hFig, [4 1.5], 8)
+
+%%%%
+hFig = figure(8);
+clf(hFig)
+
+subplot(1,3,1)
+hold on
+diff_ang_ = diff_ang_001_004;
+histogram(diff_ang_, ang_edges, 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'r')
+histogram(diff_ang_, ang_edges, 'DisplayStyle', 'stairs', 'EdgeColor', 'r', 'FaceColor', 'none', 'linewidth', 1)
+xline(mean(diff_ang_),'Color', 'r', 'linewidth', 1)
+set(gca, 'XTick', -135:45:135)
+ylim([0 70])
+ylabel('Count')
+title('tag1 - tag4')
+fprintf(['diff_ang_001_004, mean: ' num2str(mean(diff_ang_)) '\n'])
+fprintf(['diff_ang_001_004, sem : ' num2str(std( diff_ang_)./sqrt(num_pCells)) '\n'])
+
+subplot(1,3,2)
+hold on
+diff_ang_ = diff_ang_001_067;
+histogram(diff_ang_, ang_edges, 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'r')
+histogram(diff_ang_, ang_edges, 'DisplayStyle', 'stairs', 'EdgeColor', 'r', 'FaceColor', 'none', 'linewidth', 1)
+xline(mean(diff_ang_),'Color', 'r', 'linewidth', 1)
+set(gca, 'XTick', -135:45:135)
+ylim([0 70])
+title('tag4 - tag67')
+fprintf(['diff_ang_001_067, mean: ' num2str(mean(diff_ang_)) '\n'])
+fprintf(['diff_ang_001_067, sem : ' num2str(std( diff_ang_)./sqrt(num_pCells)) '\n'])
+
+subplot(1,3,3)
+hold on
+diff_ang_ = diff_ang_004_067;
+histogram(diff_ang_, ang_edges, 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'r')
+histogram(diff_ang_, ang_edges, 'DisplayStyle', 'stairs', 'EdgeColor', 'r', 'FaceColor', 'none', 'linewidth', 1)
+xline(mean(diff_ang_),'Color', 'r', 'linewidth', 1)
+set(gca, 'XTick', -135:45:135)
+ylim([0 70])
+title('tag67 - tag146')
+fprintf(['diff_ang_004_067, mean: ' num2str(mean(diff_ang_)) '\n'])
+fprintf(['diff_ang_004_067, sem : ' num2str(std( diff_ang_)./sqrt(num_pCells)) '\n'])
+
+ESN_Beautify_Plot(hFig, [4 1.5], 8)
+
+
+end
+
 %% function plot_SS_peak_vs_vmax()
 function plot_SS_peak_vs_vmax()
 %% clear
@@ -4758,8 +4960,8 @@ if params.plot_mode == 2
 
 % idx_pCells: is a boolean array. 1 for including a pCell, and 0 for exluding a pCell
 % idx_mirza; % idx_ramon; % idx_pauser; % idx_burster; % idx_modulated; % idx_not_modulated;
-idx_pCells = idx_mirza | idx_ramon;
-[population_data, num_sac_data] = population_data_idx_pCells(population_data, num_sac_data, params.variable, idx_pCells);
+% idx_pCells = idx_mirza | idx_ramon;
+% [population_data, num_sac_data] = population_data_idx_pCells(population_data, num_sac_data, params.variable, idx_pCells);
 
 if strcmp(params.data_type, 'SS') || strcmp(params.data_type, 'CS')
     population_data = population_data_smooth_pCells(population_data, num_sac_data, params.variable);
@@ -4968,8 +5170,8 @@ if params.plot_mode == 2
 
 % idx_pCells: is a boolean array. 1 for including a pCell, and 0 for exluding a pCell
 % idx_mirza; % idx_ramon; % idx_pauser; % idx_burster; % idx_modulated; % idx_not_modulated;
-idx_pCells = idx_mirza | idx_ramon;
-[population_data, num_sac_data] = population_data_idx_pCells(population_data, num_sac_data, params.variable, idx_pCells);
+% idx_pCells = idx_mirza | idx_ramon;
+% [population_data, num_sac_data] = population_data_idx_pCells(population_data, num_sac_data, params.variable, idx_pCells);
 
 if strcmp(params.data_type, 'SS') || strcmp(params.data_type, 'CS')
     population_data = population_data_smooth_pCells(population_data, num_sac_data, params.variable);
@@ -6099,194 +6301,6 @@ p_value = stats(3)
 
 end
 
-%% function scratch_compare_cs_on_001_004_008_148()
-function scratch_compare_cs_on_001_004_067_1467()
-%% Compare CS_on_population_001, CS_on_population_004, CS_on_population_008
-clc;
-CS_on_population_001 = load('CS_on_population_tag_1.mat');
-CS_on_population_004 = load('CS_on_population_tag_4.mat');
-% CS_on_population_008 = load('CS_on_population_tag_8.mat');
-% CS_on_population_014 = load('CS_on_population_tag_14.mat');
-% CS_on_population_023 = load('CS_on_population_tag_23.mat');
-CS_on_population_067 = load('CS_on_population_tag_67.mat');
-% CS_on_population_235 = load('CS_on_population_tag_235.mat');
-% CS_on_population_678 = load('CS_on_population_tag_678.mat');
-% CS_on_population_148 = load('CS_on_population_tag_148.mat');
-CS_on_population_146 = load('CS_on_population_tag_1467.mat');
-% CS_on_population_123 = load('CS_on_population_tag_1234678.mat');
-num_pCells = length(CS_on_population_146.CS_on_population);
-for counter_pCell = 1 : num_pCells
-    CS_on_population_001.CS_ang_avg(counter_pCell,1) = CS_on_population_001.CS_on_population(counter_pCell).CS_ang_avg;
-    CS_on_population_004.CS_ang_avg(counter_pCell,1) = CS_on_population_004.CS_on_population(counter_pCell).CS_ang_avg;
-%     CS_on_population_008.CS_ang_avg(counter_pCell,1) = CS_on_population_008.CS_on_population(counter_pCell).CS_ang_avg;
-%     CS_on_population_014.CS_ang_avg(counter_pCell,1) = CS_on_population_014.CS_on_population(counter_pCell).CS_ang_avg;
-%     CS_on_population_023.CS_ang_avg(counter_pCell,1) = CS_on_population_023.CS_on_population(counter_pCell).CS_ang_avg;
-    CS_on_population_067.CS_ang_avg(counter_pCell,1) = CS_on_population_067.CS_on_population(counter_pCell).CS_ang_avg;
-%     CS_on_population_235.CS_ang_avg(counter_pCell,1) = CS_on_population_235.CS_on_population(counter_pCell).CS_ang_avg;
-%     CS_on_population_678.CS_ang_avg(counter_pCell,1) = CS_on_population_678.CS_on_population(counter_pCell).CS_ang_avg;
-%     CS_on_population_148.CS_ang_avg(counter_pCell,1) = CS_on_population_148.CS_on_population(counter_pCell).CS_ang_avg;
-    CS_on_population_146.CS_ang_avg(counter_pCell,1) = CS_on_population_146.CS_on_population(counter_pCell).CS_ang_avg;
-%     CS_on_population_123.CS_ang_avg(counter_pCell,1) = CS_on_population_123.CS_on_population(counter_pCell).CS_ang_avg;
-end
-CS_ang_avg_001 = CS_on_population_001.CS_ang_avg;
-CS_ang_avg_004 = CS_on_population_004.CS_ang_avg;
-% CS_ang_avg_008 = CS_on_population_008.CS_ang_avg;
-% CS_ang_avg_014 = CS_on_population_014.CS_ang_avg;
-% CS_ang_avg_023 = CS_on_population_023.CS_ang_avg;
-CS_ang_avg_067 = CS_on_population_067.CS_ang_avg;
-% CS_ang_avg_235 = CS_on_population_235.CS_ang_avg;
-% CS_ang_avg_678 = CS_on_population_678.CS_ang_avg;
-% CS_ang_avg_148 = CS_on_population_148.CS_ang_avg;
-CS_ang_avg_146 = CS_on_population_146.CS_ang_avg;
-% CS_ang_avg_123 = CS_on_population_123.CS_ang_avg;
-%
-CS_ang_pairs = [CS_ang_avg_001 CS_ang_avg_146];
-x_values_ = cosd(CS_ang_pairs); 
-y_values_ = sind(CS_ang_pairs);
-diff_ang = acosd( (x_values_(:,1) .* x_values_(:,2)) + (y_values_(:,1) .* y_values_(:,2)) );
-vec_1 = [x_values_(:,1)'; y_values_(:,1)'; zeros(1,num_pCells)];
-vec_2 = [x_values_(:,2)'; y_values_(:,2)'; zeros(1,num_pCells)];
-cross_ang = cross(vec_1, vec_2);
-diff_ang_001_146 = diff_ang .* sign(cross_ang(3,:)');
-
-CS_ang_pairs = [CS_ang_avg_004 CS_ang_avg_146];
-x_values_ = cosd(CS_ang_pairs); 
-y_values_ = sind(CS_ang_pairs);
-diff_ang = acosd( (x_values_(:,1) .* x_values_(:,2)) + (y_values_(:,1) .* y_values_(:,2)) );
-vec_1 = [x_values_(:,1)'; y_values_(:,1)'; zeros(1,num_pCells)];
-vec_2 = [x_values_(:,2)'; y_values_(:,2)'; zeros(1,num_pCells)];
-cross_ang = cross(vec_1, vec_2);
-diff_ang_004_146 = diff_ang .* sign(cross_ang(3,:)');
-
-CS_ang_pairs = [CS_ang_avg_067 CS_ang_avg_146];
-x_values_ = cosd(CS_ang_pairs); 
-y_values_ = sind(CS_ang_pairs);
-diff_ang = acosd( (x_values_(:,1) .* x_values_(:,2)) + (y_values_(:,1) .* y_values_(:,2)) );
-vec_1 = [x_values_(:,1)'; y_values_(:,1)'; zeros(1,num_pCells)];
-vec_2 = [x_values_(:,2)'; y_values_(:,2)'; zeros(1,num_pCells)];
-cross_ang = cross(vec_1, vec_2);
-diff_ang_067_146 = diff_ang .* sign(cross_ang(3,:)');
-
-%%%%%
-CS_ang_pairs = [CS_ang_avg_001 CS_ang_avg_004];
-x_values_ = cosd(CS_ang_pairs); 
-y_values_ = sind(CS_ang_pairs);
-diff_ang = acosd( (x_values_(:,1) .* x_values_(:,2)) + (y_values_(:,1) .* y_values_(:,2)) );
-vec_1 = [x_values_(:,1)'; y_values_(:,1)'; zeros(1,num_pCells)];
-vec_2 = [x_values_(:,2)'; y_values_(:,2)'; zeros(1,num_pCells)];
-cross_ang = cross(vec_1, vec_2);
-diff_ang_001_004 = diff_ang .* sign(cross_ang(3,:)');
-
-CS_ang_pairs = [CS_ang_avg_001 CS_ang_avg_067];
-x_values_ = cosd(CS_ang_pairs); 
-y_values_ = sind(CS_ang_pairs);
-diff_ang = acosd( (x_values_(:,1) .* x_values_(:,2)) + (y_values_(:,1) .* y_values_(:,2)) );
-vec_1 = [x_values_(:,1)'; y_values_(:,1)'; zeros(1,num_pCells)];
-vec_2 = [x_values_(:,2)'; y_values_(:,2)'; zeros(1,num_pCells)];
-cross_ang = cross(vec_1, vec_2);
-diff_ang_001_067 = diff_ang .* sign(cross_ang(3,:)');
-
-CS_ang_pairs = [CS_ang_avg_004 CS_ang_avg_067];
-x_values_ = cosd(CS_ang_pairs); 
-y_values_ = sind(CS_ang_pairs);
-diff_ang = acosd( (x_values_(:,1) .* x_values_(:,2)) + (y_values_(:,1) .* y_values_(:,2)) );
-vec_1 = [x_values_(:,1)'; y_values_(:,1)'; zeros(1,num_pCells)];
-vec_2 = [x_values_(:,2)'; y_values_(:,2)'; zeros(1,num_pCells)];
-cross_ang = cross(vec_1, vec_2);
-diff_ang_004_067 = diff_ang .* sign(cross_ang(3,:)');
-
-%%%%%
-step_size_ = 22.5;
-ang_edges = -135-(step_size_/2):step_size_:135+(step_size_/2);
-
-hFig = figure(7);
-clf(hFig)
-
-subplot(1,3,1)
-hold on
-diff_ang_ = diff_ang_001_146;
-histogram(diff_ang_, ang_edges, 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'r')
-histogram(diff_ang_, ang_edges, 'DisplayStyle', 'stairs', 'EdgeColor', 'r', 'FaceColor', 'none', 'linewidth', 1)
-xline(mean(diff_ang_),'Color', 'r', 'linewidth', 1)
-set(gca, 'XTick', -135:45:135)
-ylim([0 70])
-ylabel('Count')
-title('tag1 - tag146')
-fprintf(['diff_ang_001_146, mean: ' num2str(mean(diff_ang_)) '\n'])
-fprintf(['diff_ang_001_146, sem : ' num2str(std( diff_ang_)./sqrt(num_pCells)) '\n'])
-
-subplot(1,3,2)
-hold on
-diff_ang_ = diff_ang_004_146;
-histogram(diff_ang_, ang_edges, 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'r')
-histogram(diff_ang_, ang_edges, 'DisplayStyle', 'stairs', 'EdgeColor', 'r', 'FaceColor', 'none', 'linewidth', 1)
-xline(mean(diff_ang_),'Color', 'r', 'linewidth', 1)
-set(gca, 'XTick', -135:45:135)
-ylim([0 70])
-title('tag4 - tag146')
-fprintf(['diff_ang_004_146, mean: ' num2str(mean(diff_ang_)) '\n'])
-fprintf(['diff_ang_004_146, sem : ' num2str(std( diff_ang_)./sqrt(num_pCells)) '\n'])
-
-subplot(1,3,3)
-hold on
-diff_ang_ = diff_ang_067_146;
-histogram(diff_ang_, ang_edges, 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'r')
-histogram(diff_ang_, ang_edges, 'DisplayStyle', 'stairs', 'EdgeColor', 'r', 'FaceColor', 'none', 'linewidth', 1)
-xline(mean(diff_ang_),'Color', 'r', 'linewidth', 1)
-set(gca, 'XTick', -135:45:135)
-ylim([0 70])
-title('tag67 - tag146')
-fprintf(['diff_ang_067_146, mean: ' num2str(mean(diff_ang_)) '\n'])
-fprintf(['diff_ang_067_146, sem : ' num2str(std( diff_ang_)./sqrt(num_pCells)) '\n'])
-
-ESN_Beautify_Plot(hFig, [4 1.5], 8)
-
-%%%%
-hFig = figure(8);
-clf(hFig)
-
-subplot(1,3,1)
-hold on
-diff_ang_ = diff_ang_001_004;
-histogram(diff_ang_, ang_edges, 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'r')
-histogram(diff_ang_, ang_edges, 'DisplayStyle', 'stairs', 'EdgeColor', 'r', 'FaceColor', 'none', 'linewidth', 1)
-xline(mean(diff_ang_),'Color', 'r', 'linewidth', 1)
-set(gca, 'XTick', -135:45:135)
-ylim([0 70])
-ylabel('Count')
-title('tag1 - tag4')
-fprintf(['diff_ang_001_004, mean: ' num2str(mean(diff_ang_)) '\n'])
-fprintf(['diff_ang_001_004, sem : ' num2str(std( diff_ang_)./sqrt(num_pCells)) '\n'])
-
-subplot(1,3,2)
-hold on
-diff_ang_ = diff_ang_001_067;
-histogram(diff_ang_, ang_edges, 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'r')
-histogram(diff_ang_, ang_edges, 'DisplayStyle', 'stairs', 'EdgeColor', 'r', 'FaceColor', 'none', 'linewidth', 1)
-xline(mean(diff_ang_),'Color', 'r', 'linewidth', 1)
-set(gca, 'XTick', -135:45:135)
-ylim([0 70])
-title('tag4 - tag67')
-fprintf(['diff_ang_001_067, mean: ' num2str(mean(diff_ang_)) '\n'])
-fprintf(['diff_ang_001_067, sem : ' num2str(std( diff_ang_)./sqrt(num_pCells)) '\n'])
-
-subplot(1,3,3)
-hold on
-diff_ang_ = diff_ang_004_067;
-histogram(diff_ang_, ang_edges, 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'r')
-histogram(diff_ang_, ang_edges, 'DisplayStyle', 'stairs', 'EdgeColor', 'r', 'FaceColor', 'none', 'linewidth', 1)
-xline(mean(diff_ang_),'Color', 'r', 'linewidth', 1)
-set(gca, 'XTick', -135:45:135)
-ylim([0 70])
-title('tag67 - tag146')
-fprintf(['diff_ang_004_067, mean: ' num2str(mean(diff_ang_)) '\n'])
-fprintf(['diff_ang_004_067, sem : ' num2str(std( diff_ang_)./sqrt(num_pCells)) '\n'])
-
-ESN_Beautify_Plot(hFig, [4 1.5], 8)
-
-
-end
-
 %% function scratch_rename_meta_data()
 function scratch_rename_meta_data()
 %%
@@ -6524,8 +6538,8 @@ ESN_Beautify_Plot(hFig, [4,2], 8)
 
 end
 
-%% function scratch_synchrony_vs_accuracy()
-function scratch_synchrony_vs_accuracy()
+%% function scratch_synchrony_vs_sac_features()
+function scratch_synchrony_vs_sac_features()
 %% clear
 clc; clear;
 %% close all
@@ -6555,6 +6569,9 @@ joint_prob_lo_pairs = nan(num_pairs, length_trace);
 joint_prob_hi_pairs = nan(num_pairs, length_trace);
 indep_prob_lo_pairs = nan(num_pairs, length_trace);
 indep_prob_hi_pairs = nan(num_pairs, length_trace);
+CS_count_lo_pairs = nan(num_pairs, 1);
+CS_count_hi_pairs = nan(num_pairs, 1);
+median_reaction = nan(num_pairs, 1);
 fprintf(' --> Completed. \n')
 
 %% Loop over pCells
@@ -6566,7 +6583,7 @@ for counter_pCell = 1 : 2 : (num_pCells-1)
     cell_1 = load([path_cell_data cell_file_name_1], 'SACS_ALL_DATA', 'CS_on_data');
     cell_2 = load([path_cell_data cell_file_name_2], 'SACS_ALL_DATA', 'CS_on_data');
     
-    %% Re-calculate CS-on
+    %% Calculate CS-on
     CS_count_avg_1  = cell_1.CS_on_data.CS_count( 1, :) + cell_1.CS_on_data.CS_count( 4, :) + cell_1.CS_on_data.CS_count( 6, :) + cell_1.CS_on_data.CS_count( 7, :);
     CS_count_avg_2  = cell_2.CS_on_data.CS_count( 1, :) + cell_2.CS_on_data.CS_count( 4, :) + cell_2.CS_on_data.CS_count( 6, :) + cell_2.CS_on_data.CS_count( 7, :);
     sac_count_avg_1 = cell_1.CS_on_data.sac_count(1, :) + cell_1.CS_on_data.sac_count(4, :) + cell_1.CS_on_data.sac_count(6, :) + cell_1.CS_on_data.sac_count(7, :);
@@ -6609,7 +6626,7 @@ for counter_pCell = 1 : 2 : (num_pCells-1)
     cell_2.CS_on_data.idx_CS_on_pair  = idx_CS_on_pair;
     cell_2.CS_on_data.idx_CS_pair_tuned   = idx_CS_pair_tuned;
     
-    %% Compute data
+    %% Compute idx_lo, idx_hi
     event_type_name = 'onset'; % 'vmax'; % 
     expand_index = 1;
     idx_targeted = cell_1.SACS_ALL_DATA.validity;
@@ -6620,36 +6637,55 @@ for counter_pCell = 1 : 2 : (num_pCells-1)
         (cell_1.SACS_ALL_DATA.tag == 7) | ...
         (cell_1.SACS_ALL_DATA.tag == 8) );
 
-    idx_ang_tuned = (cell_1.CS_on_data.visual_ang_bin == cell_1.CS_on_data.idx_CS_pair_tuned(4)) |...
+    idx_ang_tuned = ...
+        (cell_1.CS_on_data.visual_ang_bin == cell_1.CS_on_data.idx_CS_pair_tuned(4)) | ...
         (cell_1.CS_on_data.visual_ang_bin == cell_1.CS_on_data.idx_CS_pair_tuned(5)) | ...
-        (cell_1.CS_on_data.visual_ang_bin == cell_1.CS_on_data.idx_CS_pair_tuned(6));
+        (cell_1.CS_on_data.visual_ang_bin == cell_1.CS_on_data.idx_CS_pair_tuned(6))   ...
+        ;
     
     error_p = sqrt(...
         (cell_1.SACS_ALL_DATA.tgt_px_offset - cell_1.SACS_ALL_DATA.eye_r_px_offset).^2 + ...
         (cell_1.SACS_ALL_DATA.tgt_py_offset - cell_1.SACS_ALL_DATA.eye_r_py_offset).^2);
     idx_lo_err = error_p <  median(error_p(idx_targeted));
     idx_hi_err = error_p >= median(error_p(idx_targeted));
+
+    reaction_ = cell_1.SACS_ALL_DATA.reaction;
+    idx_lo_react = reaction_ <  median(reaction_(idx_targeted));
+    idx_hi_react = reaction_ >= median(reaction_(idx_targeted));
     
-    idx_lo = idx_targeted & idx_ang_tuned & idx_lo_err;
-    idx_hi = idx_targeted & idx_ang_tuned & idx_hi_err;
+    idx_lo = idx_targeted & idx_ang_tuned & idx_lo_react; % idx_lo_err; % 
+    idx_hi = idx_targeted & idx_ang_tuned & idx_hi_react; % idx_hi_err; % 
     
+    %% bin sync_index based on idx_lo, idx_hi
     event_SS_1 = cell_1.SACS_ALL_DATA.(['neuro_SS' '_' event_type_name])(:,idx_lo);
     event_SS_2 = cell_2.SACS_ALL_DATA.(['neuro_SS' '_' event_type_name])(:,idx_lo);
     event_SS_1 = expand_index_event_data(event_SS_1, 1, expand_index);  % dim=1, expand along column. event_ is a 500xn matrix
     event_SS_2 = expand_index_event_data(event_SS_2, 1, expand_index);
-    joint_prob_lo = reshape(nanmean( ( logical(event_SS_1)) & ( logical(event_SS_2)), 2), 1, length_trace);
+    event_joint = ( logical(event_SS_1)) & ( logical(event_SS_2));
+    event_SS_1_sum = sum(event_SS_1,2);event_SS_1_sum(event_SS_1_sum<1)=nan;
+    event_SS_2_sum = sum(event_SS_2,2);event_SS_2_sum(event_SS_2_sum<1)=nan;
+    event_joint_sum = sum(event_joint,2);event_joint_sum(event_joint_sum<1)=nan;
+    joint_prob_lo = reshape(nanmean( event_joint, 2), 1, length_trace);
     indep_prob_lo = reshape(nanmean( (event_SS_1), 2), 1, length_trace) .* reshape(nanmean( (event_SS_2), 2), 1, length_trace);
 %     sync_index_lo = joint_prob_lo ./ indep_prob_lo;
-    sync_index_lo = (joint_prob_lo) ./ (indep_prob_lo);
+%     sync_index_lo = ESN_smooth(joint_prob_lo) ./ ESN_smooth(indep_prob_lo);
+    sync_index_lo = event_joint_sum./event_SS_1_sum./event_SS_2_sum.*size(event_joint,2);
+%     sync_index_lo(isnan(sync_index_lo)) = 1;
     
     event_SS_1 = cell_1.SACS_ALL_DATA.(['neuro_SS' '_' event_type_name])(:,idx_hi);
     event_SS_2 = cell_2.SACS_ALL_DATA.(['neuro_SS' '_' event_type_name])(:,idx_hi);
     event_SS_1 = expand_index_event_data(event_SS_1, 1, expand_index);  % dim=1, expand along column. event_ is a 500xn matrix
     event_SS_2 = expand_index_event_data(event_SS_2, 1, expand_index);
-    joint_prob_hi = reshape(nanmean( ( logical(event_SS_1)) & ( logical(event_SS_2)), 2), 1, length_trace);
+    event_joint = ( logical(event_SS_1)) & ( logical(event_SS_2));
+    event_SS_1_sum = sum(event_SS_1,2);event_SS_1_sum(event_SS_1_sum<1)=nan;
+    event_SS_2_sum = sum(event_SS_2,2);event_SS_2_sum(event_SS_2_sum<1)=nan;
+    event_joint_sum = sum(event_joint,2);event_joint_sum(event_joint_sum<1)=nan;
+    joint_prob_hi = reshape(nanmean( event_joint, 2), 1, length_trace);
     indep_prob_hi = reshape(nanmean( (event_SS_1), 2), 1, length_trace) .* reshape(nanmean( (event_SS_2), 2), 1, length_trace);
 %     sync_index_hi = joint_prob_hi ./ indep_prob_hi;
-    sync_index_hi = (joint_prob_hi) ./ (indep_prob_hi);
+%     sync_index_hi = ESN_smooth(joint_prob_hi) ./ ESN_smooth(indep_prob_hi);
+    sync_index_hi = event_joint_sum./event_SS_1_sum./event_SS_2_sum.*size(event_joint,2);
+%     sync_index_hi(isnan(sync_index_hi)) = 1;
     
     %% Save variables
     sync_index_lo_pairs((counter_pCell+1)/2, :) = sync_index_lo;
@@ -6658,6 +6694,37 @@ for counter_pCell = 1 : 2 : (num_pCells-1)
     joint_prob_hi_pairs((counter_pCell+1)/2, :) = joint_prob_hi;
     indep_prob_lo_pairs((counter_pCell+1)/2, :) = indep_prob_lo;
     indep_prob_hi_pairs((counter_pCell+1)/2, :) = indep_prob_hi;
+    
+    %% CS_count
+%     CS_count_1 = cell_1.SACS_ALL_DATA.neuro_CS_count_visual;
+%     CS_count_2 = cell_2.SACS_ALL_DATA.neuro_CS_count_visual;
+    CS_count_1 = sum(cell_1.SACS_ALL_DATA.neuro_CS_visual(250:450, :));
+    CS_count_2 = sum(cell_2.SACS_ALL_DATA.neuro_CS_visual(250:450, :));
+    CS_count_  = CS_count_1 + CS_count_2;
+    
+    idx_targeted = cell_1.SACS_ALL_DATA.validity;
+    idx_targeted = idx_targeted & ( ...
+        (cell_1.SACS_ALL_DATA.tag == 1) | ...
+        (cell_1.SACS_ALL_DATA.tag == 4) | ...
+        (cell_1.SACS_ALL_DATA.tag == 6) | ...
+        (cell_1.SACS_ALL_DATA.tag == 7)   ...
+        );
+
+    idx_ang_tuned = ...
+        (cell_1.CS_on_data.visual_ang_bin == cell_1.CS_on_data.idx_CS_pair_tuned(1)) ...
+        ;
+    
+    reaction_ = cell_1.SACS_ALL_DATA.reaction;
+    idx_lo_react = reaction_ <  median(reaction_(idx_targeted));
+    idx_hi_react = reaction_ >= median(reaction_(idx_targeted));
+    
+    idx_lo = idx_targeted & idx_ang_tuned & idx_lo_react; % idx_lo_err; % 
+    idx_hi = idx_targeted & idx_ang_tuned & idx_hi_react; % idx_hi_err; % 
+    
+    CS_count_lo_pairs((counter_pCell+1)/2, :) = sum(CS_count_(idx_lo)) ./ sum(idx_lo);
+    CS_count_hi_pairs((counter_pCell+1)/2, :) = sum(CS_count_(idx_hi)) ./ sum(idx_hi);
+    
+    median_reaction((counter_pCell+1)/2, :) = median(reaction_(idx_targeted));
 
 end
 fprintf('### ALL DONE. ###\n')
@@ -6692,7 +6759,6 @@ data_sem_x_axis_ = [(data_mean_x_axis) flip(data_mean_x_axis)];
 plot(data_sem_x_axis_ , data_sem_y_axis_,'-b', 'linewidth', 0.25)
 plot(data_mean_x_axis , data_mean_,'-b', 'linewidth', 1)
 
-
 % plot(data_mean_x_axis , CSxCS_norm, 'linewidth', 0.5)
 xlabel('Time (ms)')
 ylabel('Sync. index')
@@ -6702,6 +6768,20 @@ ylabel('Sync. index')
 % set(gca, 'YTick', 0.5:0.5:3)
 % ESN_Beautify_Plot(hFig, [1.5 1], 8)
 
+hFig = figure(2);
+clf(hFig);
+subplot(1,2,1)
+sync_index_hi_pairs_ = (ESN_smooth(sync_index_hi_pairs, 2));
+plot(data_mean_x_axis', sync_index_hi_pairs_(:,200:300)')
+subplot(1,2,2)
+sync_index_lo_pairs_ = (ESN_smooth(sync_index_lo_pairs, 2));
+plot(data_mean_x_axis', sync_index_lo_pairs_(:,200:300)')
+
+hFig = figure(3);
+clf(hFig);
+hold on
+bar(nanmean([CS_count_lo_pairs CS_count_hi_pairs]))
+errorbar([1 2], nanmean([CS_count_lo_pairs CS_count_hi_pairs]), nanstd([CS_count_lo_pairs CS_count_hi_pairs]) ./ sqrt(num_pairs))
 
 end
 

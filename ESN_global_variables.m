@@ -30,7 +30,7 @@ ang_edges    = (0 - (ang_step/2)) : ang_step : (360 + (ang_step/2));
 ang_values   = (0) : ang_step : (360 - ang_step);
 amp_edges    = [0 1.5 2.5 3.5 4.5 5.5 7.5 100];
 vel_edges    = [0 150 250 350 450 550 650 750 10000];
-expand_index = 0;
+expand_index = 1;
 corr_data_list = {'SS1', 'SS2', 'CS1', 'CS2'};
 
 %% if there is no flag_pair_list then return

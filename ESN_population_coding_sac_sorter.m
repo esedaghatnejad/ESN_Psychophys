@@ -427,6 +427,41 @@ CS_time   = EPHYS.CH_sorted.CS_data.CS_time;
 Corr_data = ESN_correlogram(SS_time, CS_time);
 EPHYS.CH_sorted.Corr_data = Corr_data;
 
+%% Add Neural_Properties
+clearvars -except EPHYS BEHAVE
+EPHYS.Neural_Properties = struct();
+if length(EPHYS.CH_sorted.SS_data.SS_time)>1
+    EPHYS.Neural_Properties.SS_num = length(EPHYS.CH_sorted.SS_data.SS_time);
+    EPHYS.Neural_Properties.SS_duration = EPHYS.CH_sorted.duration;
+    EPHYS.Neural_Properties.SS_firing_rate = EPHYS.Neural_Properties.SS_num / EPHYS.CH_sorted.duration;
+    EPHYS.Neural_Properties.SS_time = EPHYS.CH_sorted.SS_data.SS_time;
+    EPHYS.Neural_Properties.SS_waveform = nanmean(EPHYS.CH_sorted.SS_data.SS_waveform);
+else
+    EPHYS.Neural_Properties.SS_num = 0;
+    EPHYS.Neural_Properties.SS_duration = EPHYS.CH_sorted.duration;
+    EPHYS.Neural_Properties.SS_firing_rate = 0;
+    EPHYS.Neural_Properties.SS_time = [];
+    EPHYS.Neural_Properties.SS_waveform = zeros(1, size(EPHYS.CH_sorted.CS_data.CS_waveform, 2));
+end
+
+if length(EPHYS.CH_sorted.CS_data.CS_time)>1
+    EPHYS.Neural_Properties.CS_num = length(EPHYS.CH_sorted.CS_data.CS_time);
+    EPHYS.Neural_Properties.CS_firing_rate = EPHYS.Neural_Properties.CS_num / EPHYS.CH_sorted.duration;
+    EPHYS.Neural_Properties.CS_time = EPHYS.CH_sorted.CS_data.CS_time;
+    EPHYS.Neural_Properties.CS_waveform = nanmean(EPHYS.CH_sorted.CS_data.CS_waveform);
+else
+    EPHYS.Neural_Properties.CS_num = 0;
+    EPHYS.Neural_Properties.CS_firing_rate = 0;
+    EPHYS.Neural_Properties.CS_time = [];
+    EPHYS.Neural_Properties.CS_waveform = zeros(1, size(EPHYS.CH_sorted.SS_data.SS_waveform, 2));
+end
+EPHYS.Neural_Properties.Corr_data_CS_inds_span     = nanmean(EPHYS.CH_sorted.Corr_data.CS_inds_span);
+EPHYS.Neural_Properties.Corr_data_CS_bin_size_time = nanmean(EPHYS.CH_sorted.Corr_data.CS_bin_size_time);
+EPHYS.Neural_Properties.Corr_data_SS_inds_span     = nanmean(EPHYS.CH_sorted.Corr_data.SS_inds_span);
+EPHYS.Neural_Properties.Corr_data_SS_bin_size_time = nanmean(EPHYS.CH_sorted.Corr_data.SS_bin_size_time);
+EPHYS.Neural_Properties.Corr_data_SS_SSxSS_AUTO    = nanmean(EPHYS.CH_sorted.Corr_data.SS_SSxSS_AUTO);
+EPHYS.Neural_Properties.Corr_data_CS_CSxSS_AUTO    = nanmean(EPHYS.CH_sorted.Corr_data.CS_CSxSS_AUTO);
+
 %% SS & CS train_aligned
 clearvars -except EPHYS BEHAVE
 EPHYS_time_1K     = EPHYS.CH_EVE.EPHYS_time_1K;
@@ -484,6 +519,7 @@ for counter_event_type = 1 : length(event_type_list)
         data_type_neuro_name = data_type_neuro_list{counter_data_type_neuro};
         BEHAVE.SACS_ALL_DATA.([data_type_neuro_name '_' event_type_name]) = false(length_trace, num_sacs);
     end
+    EPHYS.Neural_Properties.(['sac' '_' 'time' '_' event_type_name]) = nan(1, num_sacs);
 end
 
 % Build stream dataset. 
@@ -560,12 +596,13 @@ for counter_sac = 1 : num_sacs
         event_inds_converted = repmat( event_ind_converted, 1, length(inds_span)) + repmat(inds_span(:)', length(event_ind_converted), 1);
         event_inds_converted( event_inds_converted < 1 ) = 1;
         event_inds_converted( event_inds_converted > length_time_ ) = length_time_;
-        for counter_data_type_eye = 1 : length(data_type_eye_list)
+        for counter_data_type_eye = 1 : length(data_type_neuro_list)
             data_type_neuro_name = data_type_neuro_list{counter_data_type_eye};
             data_type_EPHYS_name = data_type_EPHYS_list{counter_data_type_eye};
             BEHAVE.SACS_ALL_DATA.([data_type_neuro_name '_' event_type_name])(:,counter_sac) = ...
                 logical(reshape(EPHYS.CH_EVE.(data_type_EPHYS_name)(event_inds_converted), length_trace, 1));
         end
+        EPHYS.Neural_Properties.(['sac' '_' 'time' '_' event_type_name])(:,counter_sac) = EPHYS.CH_EVE.EPHYS_time_1K(event_ind_converted);
     end
 end
 
@@ -610,42 +647,9 @@ end
 
 fprintf(' --> Completed. \n')
 
-%% Add Neural_Properties
-clearvars -except EPHYS BEHAVE
-EPHYS.Neural_Properties = struct();
-if length(EPHYS.CH_sorted.SS_data.SS_time)>1
-    EPHYS.Neural_Properties.SS_num = length(EPHYS.CH_sorted.SS_data.SS_time);
-    EPHYS.Neural_Properties.SS_duration = EPHYS.CH_sorted.duration;
-    EPHYS.Neural_Properties.SS_firing_rate = EPHYS.Neural_Properties.SS_num / EPHYS.CH_sorted.duration;
-    EPHYS.Neural_Properties.SS_time = EPHYS.CH_sorted.SS_data.SS_time;
-    EPHYS.Neural_Properties.SS_waveform = nanmean(EPHYS.CH_sorted.SS_data.SS_waveform);
-else
-    EPHYS.Neural_Properties.SS_num = 0;
-    EPHYS.Neural_Properties.SS_duration = EPHYS.CH_sorted.duration;
-    EPHYS.Neural_Properties.SS_firing_rate = 0;
-    EPHYS.Neural_Properties.SS_time = [];
-    EPHYS.Neural_Properties.SS_waveform = zeros(1, size(EPHYS.CH_sorted.CS_data.CS_waveform, 2));
-end
-
-if length(EPHYS.CH_sorted.CS_data.CS_time)>1
-    EPHYS.Neural_Properties.CS_num = length(EPHYS.CH_sorted.CS_data.CS_time);
-    EPHYS.Neural_Properties.CS_firing_rate = EPHYS.Neural_Properties.CS_num / EPHYS.CH_sorted.duration;
-    EPHYS.Neural_Properties.CS_time = EPHYS.CH_sorted.CS_data.CS_time;
-    EPHYS.Neural_Properties.CS_waveform = nanmean(EPHYS.CH_sorted.CS_data.CS_waveform);
-else
-    EPHYS.Neural_Properties.CS_num = 0;
-    EPHYS.Neural_Properties.CS_firing_rate = 0;
-    EPHYS.Neural_Properties.CS_time = [];
-    EPHYS.Neural_Properties.CS_waveform = zeros(1, size(EPHYS.CH_sorted.SS_data.SS_waveform, 2));
-end
-EPHYS.Neural_Properties.Corr_data_CS_inds_span     = nanmean(EPHYS.CH_sorted.Corr_data.CS_inds_span);
-EPHYS.Neural_Properties.Corr_data_CS_bin_size_time = nanmean(EPHYS.CH_sorted.Corr_data.CS_bin_size_time);
-EPHYS.Neural_Properties.Corr_data_SS_inds_span     = nanmean(EPHYS.CH_sorted.Corr_data.SS_inds_span);
-EPHYS.Neural_Properties.Corr_data_SS_bin_size_time = nanmean(EPHYS.CH_sorted.Corr_data.SS_bin_size_time);
-EPHYS.Neural_Properties.Corr_data_SS_SSxSS_AUTO    = nanmean(EPHYS.CH_sorted.Corr_data.SS_SSxSS_AUTO);
-EPHYS.Neural_Properties.Corr_data_CS_CSxSS_AUTO    = nanmean(EPHYS.CH_sorted.Corr_data.CS_CSxSS_AUTO);
 
 %% outputs
+clearvars -except EPHYS BEHAVE
 SACS_ALL_DATA = BEHAVE.SACS_ALL_DATA;
 Neural_Properties = EPHYS.Neural_Properties;
 EXPERIMENT_PARAMS = BEHAVE.EXPERIMENT_PARAMS;
@@ -730,6 +734,11 @@ for counter_pCell = 1 : 1 : num_pCells
     data_cell.Neural_Properties.CS_firing_rate = 0;
     data_cell.Neural_Properties.SS_time = [];
     data_cell.Neural_Properties.CS_time = [];
+    data_cell.Neural_Properties.sac_time_visual = [];
+    data_cell.Neural_Properties.sac_time_onset = [];
+    data_cell.Neural_Properties.sac_time_vmax = [];
+    data_cell.Neural_Properties.sac_time_offset = [];
+    data_cell.Neural_Properties.sac_time_auditory = [];
     variable_names = {'SS_waveform', 'CS_waveform', ...
         'Corr_data_CS_inds_span', 'Corr_data_CS_bin_size_time', 'Corr_data_SS_inds_span', 'Corr_data_SS_bin_size_time', ...
         'Corr_data_SS_SSxSS_AUTO','Corr_data_CS_CSxSS_AUTO'};
@@ -750,6 +759,16 @@ for counter_pCell = 1 : 1 : num_pCells
             data_recordings(counter_recording).Neural_Properties.SS_time);
         data_cell.Neural_Properties.CS_time = vertcat(data_cell.Neural_Properties.CS_time, ...
             data_recordings(counter_recording).Neural_Properties.CS_time);
+        data_cell.Neural_Properties.sac_time_visual = horzcat(data_cell.Neural_Properties.sac_time_visual ,...
+            data_recordings(counter_recording).Neural_Properties.sac_time_visual);
+        data_cell.Neural_Properties.sac_time_onset  = horzcat(data_cell.Neural_Properties.sac_time_onset ,...
+            data_recordings(counter_recording).Neural_Properties.sac_time_onset);
+        data_cell.Neural_Properties.sac_time_vmax   = horzcat(data_cell.Neural_Properties.sac_time_vmax ,...
+            data_recordings(counter_recording).Neural_Properties.sac_time_vmax);
+        data_cell.Neural_Properties.sac_time_offset = horzcat(data_cell.Neural_Properties.sac_time_offset ,...
+            data_recordings(counter_recording).Neural_Properties.sac_time_offset);
+        data_cell.Neural_Properties.sac_time_auditory = horzcat(data_cell.Neural_Properties.sac_time_auditory ,...
+            data_recordings(counter_recording).Neural_Properties.sac_time_auditory);
         % compute weighted average for these variables
         for counter_variable = 1 : length(variable_names)
             variable_name = variable_names{counter_variable};
@@ -896,6 +915,11 @@ for counter_pCell = 1 : 1 : num_pCells
     data_cell.Neural_Properties.CS_firing_rate = 0;
     data_cell.Neural_Properties.SS_time = [];
     data_cell.Neural_Properties.CS_time = [];
+    data_cell.Neural_Properties.sac_time_visual = [];
+    data_cell.Neural_Properties.sac_time_onset = [];
+    data_cell.Neural_Properties.sac_time_vmax = [];
+    data_cell.Neural_Properties.sac_time_offset = [];
+    data_cell.Neural_Properties.sac_time_auditory = [];
     variable_names = {'SS_waveform', 'CS_waveform', ...
         'Corr_data_CS_inds_span', 'Corr_data_CS_bin_size_time', 'Corr_data_SS_inds_span', 'Corr_data_SS_bin_size_time', ...
         'Corr_data_SS_SSxSS_AUTO','Corr_data_CS_CSxSS_AUTO'};
@@ -916,6 +940,16 @@ for counter_pCell = 1 : 1 : num_pCells
             data_recordings(counter_recording).Neural_Properties.SS_time);
         data_cell.Neural_Properties.CS_time = vertcat(data_cell.Neural_Properties.CS_time, ...
             data_recordings(counter_recording).Neural_Properties.CS_time);
+        data_cell.Neural_Properties.sac_time_visual = horzcat(data_cell.Neural_Properties.sac_time_visual ,...
+            data_recordings(counter_recording).Neural_Properties.sac_time_visual);
+        data_cell.Neural_Properties.sac_time_onset  = horzcat(data_cell.Neural_Properties.sac_time_onset ,...
+            data_recordings(counter_recording).Neural_Properties.sac_time_onset);
+        data_cell.Neural_Properties.sac_time_vmax   = horzcat(data_cell.Neural_Properties.sac_time_vmax ,...
+            data_recordings(counter_recording).Neural_Properties.sac_time_vmax);
+        data_cell.Neural_Properties.sac_time_offset = horzcat(data_cell.Neural_Properties.sac_time_offset ,...
+            data_recordings(counter_recording).Neural_Properties.sac_time_offset);
+        data_cell.Neural_Properties.sac_time_auditory = horzcat(data_cell.Neural_Properties.sac_time_auditory ,...
+            data_recordings(counter_recording).Neural_Properties.sac_time_auditory);
         % compute weighted average for these variables
         for counter_variable = 1 : length(variable_names)
             variable_name = variable_names{counter_variable};
@@ -1145,7 +1179,7 @@ for counter_pCell = 1 : num_pCells
     CS_on_data.CS_ang_std_perm = CS_ang_std_perm;
     
     %% Append CS_on_data to cell_data
-%     save([path_cell_data cell_file_name], 'CS_on_data', '-append');
+    save([path_cell_data cell_file_name], 'CS_on_data', '-append');
     CS_on_population(counter_pCell) = CS_on_data;
 end
 fprintf('### ALL DONE. ###\n')
@@ -1271,7 +1305,7 @@ population_neural_properties = struct;
 field_names_Neural_Properties = fieldnames(Neural_Properties);
 for counter_field_Neural_Properties = 1 : length(field_names_Neural_Properties)
     field_name_Neural_Properties = field_names_Neural_Properties{counter_field_Neural_Properties};
-    if strcmp(field_name_Neural_Properties, 'SS_time') || strcmp(field_name_Neural_Properties, 'CS_time')
+    if strcmp(field_name_Neural_Properties, 'SS_time') || strcmp(field_name_Neural_Properties, 'CS_time') || contains(field_name_Neural_Properties, 'sac_time')
         % skip the SS_time and CS_time since their size are varibale
         continue;
     end
@@ -1300,7 +1334,7 @@ for counter_pCell = 1 : num_pCells
     %%
     for counter_field_Neural_Properties = 1 : length(field_names_Neural_Properties)
         field_name_Neural_Properties = field_names_Neural_Properties{counter_field_Neural_Properties};
-        if strcmp(field_name_Neural_Properties, 'SS_time') || strcmp(field_name_Neural_Properties, 'CS_time')
+        if strcmp(field_name_Neural_Properties, 'SS_time') || strcmp(field_name_Neural_Properties, 'CS_time') || contains(field_name_Neural_Properties, 'sac_time')
             % skip the SS_time and CS_time since their size are varibale
             continue;
         end
@@ -3622,13 +3656,14 @@ clc; clear;
 close all;
 %% set params
 fprintf('params ...')
-params.data_type       = 'SS';
+params.data_type       = 'VM';
 params.CSYS_type       = 'tuned'; % tuned % absol
-params.event_type_name = 'offset'; % visual % onset % vmax
+params.event_type_name = 'onset'; % visual % onset % vmax
 params.variable        = 'vel';
-params.tag_id          = 10;
+params.tag_id          = 1;
 params.flag_smooth_plot = true; % false; % 
 params.fig_num = 3;
+% params.ylim = [-100 200]; % []; %
 params.plot_mode = 1; % mode=1 collapse the amp/vel, mode=2 plots the amp/vel
 fprintf(' --> Completed. \n')
 %% Load data
@@ -3660,8 +3695,8 @@ if params.plot_mode == 1
 [population_dir, num_sac_dir] = population_data_combine_levels(population_dir, num_sac_dir, params.variable, 2, [3 7]);
 [population_dir, num_sac_dir] = population_data_combine_levels(population_dir, num_sac_dir, params.variable, 2, [2 8]);
 [population_dir, num_sac_dir] = population_data_combine_levels(population_dir, num_sac_dir, params.variable, 2, [4 6]);
-[population_dir, num_sac_dir] = population_data_combine_tags(  population_dir, num_sac_dir, params.variable, [1 4 6 7]); % [1 4 6 7 8]
-% [population_dir, num_sac_dir] = population_data_combine_tags(  population_dir, num_sac_dir, params.variable, 10);
+% [population_dir, num_sac_dir] = population_data_combine_tags(  population_dir, num_sac_dir, params.variable, [1 4 6 7]); % [1 4 6 7 8]
+% [population_dir, num_sac_dir] = population_data_combine_tags(  population_dir, num_sac_dir, params.variable, [6 7 8]);
 
 % idx_pCells: is a boolean array. 1 for including a pCell, and 0 for exluding a pCell
 % idx_mirza; % idx_ramon; % idx_pauser; % idx_burster; % idx_modulated; % idx_not_modulated; % idx_pairs;
@@ -3983,7 +4018,7 @@ end
 %}
 
 %% function plot_single_session_modulation
-function plot_sample_pCell_fig1()
+function plot_single_session_modulation()
 %% clear
 clc; clear;
 %% close all
@@ -7562,6 +7597,693 @@ clf(hFig);
 hold on
 bar(nanmean([CS_count_lo_pairs CS_count_hi_pairs]))
 errorbar([1 2], nanmean([CS_count_lo_pairs CS_count_hi_pairs]), nanstd([CS_count_lo_pairs CS_count_hi_pairs]) ./ sqrt(num_pairs))
+
+end
+
+%% function scratch_synchrony_vs_sac_trajectory()
+function scratch_synchrony_vs_sac_trajectory()
+%% Set params
+clc; close all; clear;
+flag_pair_list = true;   % This should be true. DO NOT change it to false
+ESN_global_variables(flag_pair_list);
+global event_type_list amp_edges vel_edges length_trace ang_values range_cell_with_4dir_behave ang_edges expand_index tag_name_list
+if isempty(event_type_list)
+    fprintf('><ERROR><: Global variables are empty.\n');
+    return;
+end
+path_pair_data = uigetdir;
+if ~strcmp(path_pair_data(end), filesep);path_pair_data = [path_pair_data filesep];end
+pCell_ids = build_pCell_ids(flag_pair_list);
+% [~, pCell_ids] = JSP_build_pair_list();
+num_pCells = size(pCell_ids, 1);
+tag_bin = 1 : length(tag_name_list);
+num_tag_bin = length(tag_bin);
+num_ang_bin = length(ang_edges) - 2;
+num_amp_bin = length(amp_edges) - 1;
+num_vel_bin = length(vel_edges) - 1;
+
+%% Init variables
+% STRUCT (SS / CS) -> 10x1 tag struct (amp / vel) -> variable name (onset / vmax / offset / visual) -> 6x8 cell (ampXang / velXang) -> 138x500 double (pCellXtrace)
+fprintf(['Initializing synchrony_data' ' ...'])
+clearvars sync_database
+sync_database = struct;
+for counter_tag = 1 : num_tag_bin
+    for counter_event_type = 1 : length(event_type_list)
+        event_type_name = event_type_list{counter_event_type};
+        
+        sync_database.event_SS_joint_allPairs.vel(        counter_tag).(event_type_name) = cell(num_vel_bin, num_ang_bin);
+        sync_database.event_SS_margn_allPairs.vel(        counter_tag).(event_type_name) = cell(num_vel_bin, num_ang_bin);
+        sync_database.event_SS_joint_hiSync_allPairs.vel( counter_tag).(event_type_name) = cell(num_vel_bin, num_ang_bin);
+        sync_database.event_SS_margn_hiSync_allPairs.vel( counter_tag).(event_type_name) = cell(num_vel_bin, num_ang_bin);
+        sync_database.event_SS_joint_loSync_allPairs.vel( counter_tag).(event_type_name) = cell(num_vel_bin, num_ang_bin);
+        sync_database.event_SS_margn_loSync_allPairs.vel( counter_tag).(event_type_name) = cell(num_vel_bin, num_ang_bin);
+        sync_database.sync_value_allPairs.vel(            counter_tag).(event_type_name) = cell(num_vel_bin, num_ang_bin);
+        sync_database.sync_value_hiSync_allPairs.vel(     counter_tag).(event_type_name) = cell(num_vel_bin, num_ang_bin);
+        sync_database.sync_value_loSync_allPairs.vel(     counter_tag).(event_type_name) = cell(num_vel_bin, num_ang_bin);
+        sync_database.eye_trajectory_vm.vel(              counter_tag).(event_type_name) = cell(num_vel_bin, num_ang_bin);
+        sync_database.eye_trajectory_vm_hiSync.vel(       counter_tag).(event_type_name) = cell(num_vel_bin, num_ang_bin);
+        sync_database.eye_trajectory_vm_loSync.vel(       counter_tag).(event_type_name) = cell(num_vel_bin, num_ang_bin);
+        sync_database.num_synch_tuned.vel(                counter_tag).(event_type_name) = cell(num_vel_bin, num_ang_bin);
+        sync_database.num_synch_tuned_hiSync.vel(         counter_tag).(event_type_name) = cell(num_vel_bin, num_ang_bin);
+        sync_database.num_synch_tuned_loSync.vel(         counter_tag).(event_type_name) = cell(num_vel_bin, num_ang_bin);
+        sync_database.eye_amp_m.vel(                      counter_tag).(event_type_name) = cell(num_vel_bin, num_ang_bin);
+        sync_database.eye_amp_m_hiSync.vel(               counter_tag).(event_type_name) = cell(num_vel_bin, num_ang_bin);
+        sync_database.eye_amp_m_loSync.vel(               counter_tag).(event_type_name) = cell(num_vel_bin, num_ang_bin);
+        sync_database.sac_sync_index.vel(                 counter_tag).(event_type_name) = cell(num_vel_bin, num_ang_bin);
+        sync_database.sac_sync_type.vel(                  counter_tag).(event_type_name) = cell(num_vel_bin, num_ang_bin);
+        sync_database.sac_tag_values.vel(                 counter_tag).(event_type_name) = cell(num_vel_bin, num_ang_bin);
+        
+        
+        for counter_ang = 1 : num_ang_bin
+            for counter_vel = 1 : num_vel_bin
+                sync_database.event_SS_joint_allPairs.vel(        counter_tag).(event_type_name){counter_vel, counter_ang} = nan(  num_pCells, length_trace);
+                sync_database.event_SS_margn_allPairs.vel(        counter_tag).(event_type_name){counter_vel, counter_ang} = nan(  num_pCells, length_trace);
+                sync_database.event_SS_joint_hiSync_allPairs.vel( counter_tag).(event_type_name){counter_vel, counter_ang} = nan(  num_pCells, length_trace);
+                sync_database.event_SS_margn_hiSync_allPairs.vel( counter_tag).(event_type_name){counter_vel, counter_ang} = nan(  num_pCells, length_trace);
+                sync_database.event_SS_joint_loSync_allPairs.vel( counter_tag).(event_type_name){counter_vel, counter_ang} = nan(  num_pCells, length_trace);
+                sync_database.event_SS_margn_loSync_allPairs.vel( counter_tag).(event_type_name){counter_vel, counter_ang} = nan(  num_pCells, length_trace);
+                sync_database.sync_value_allPairs.vel(            counter_tag).(event_type_name){counter_vel, counter_ang} = nan(  num_pCells, length_trace);
+                sync_database.sync_value_hiSync_allPairs.vel(     counter_tag).(event_type_name){counter_vel, counter_ang} = nan(  num_pCells, length_trace);
+                sync_database.sync_value_loSync_allPairs.vel(     counter_tag).(event_type_name){counter_vel, counter_ang} = nan(  num_pCells, length_trace);
+                sync_database.eye_trajectory_vm.vel(              counter_tag).(event_type_name){counter_vel, counter_ang} = nan(  num_pCells, length_trace);
+                sync_database.eye_trajectory_vm_hiSync.vel(       counter_tag).(event_type_name){counter_vel, counter_ang} = nan(  num_pCells, length_trace);
+                sync_database.eye_trajectory_vm_loSync.vel(       counter_tag).(event_type_name){counter_vel, counter_ang} = nan(  num_pCells, length_trace);
+                sync_database.num_synch_tuned.vel(                counter_tag).(event_type_name){counter_vel, counter_ang} = zeros(num_pCells, 1);
+                sync_database.num_synch_tuned_hiSync.vel(         counter_tag).(event_type_name){counter_vel, counter_ang} = zeros(num_pCells, 1);
+                sync_database.num_synch_tuned_loSync.vel(         counter_tag).(event_type_name){counter_vel, counter_ang} = zeros(num_pCells, 1);
+                sync_database.eye_amp_m.vel(                      counter_tag).(event_type_name){counter_vel, counter_ang} = zeros(num_pCells, 1);
+                sync_database.eye_amp_m_hiSync.vel(               counter_tag).(event_type_name){counter_vel, counter_ang} = zeros(num_pCells, 1);
+                sync_database.eye_amp_m_loSync.vel(               counter_tag).(event_type_name){counter_vel, counter_ang} = zeros(num_pCells, 1);
+                sync_database.sac_sync_index.vel(                 counter_tag).(event_type_name){counter_vel, counter_ang} = cell( num_pCells, 1);
+                sync_database.sac_sync_type.vel(                  counter_tag).(event_type_name){counter_vel, counter_ang} = cell( num_pCells, 1);
+                sync_database.sac_tag_values.vel(                 counter_tag).(event_type_name){counter_vel, counter_ang} = cell( num_pCells, 1);
+            end
+        end
+    end
+end
+fprintf(' --> Completed. \n')
+
+%% Loop over pairs
+for counter_pair = 1 : 2 : (num_pCells-1)
+    fprintf(['### ' 'Analyzing pCell no. ', num2str((counter_pair+1)/2), ' / ' num2str(num_pCells/2) ' ###' '\n']);
+    %% load SACS_ALL_DATA
+    cell_file_name_1 = pCell_ids{counter_pair  , 1};
+    cell_file_name_2 = pCell_ids{counter_pair+1, 1};
+    cell_1 = load([path_pair_data cell_file_name_1], 'SACS_ALL_DATA', 'CS_on_data');
+    cell_2 = load([path_pair_data cell_file_name_2], 'SACS_ALL_DATA', 'CS_on_data');
+    
+    %% Re-calculate CS-on
+    CS_count_avg_1  = cell_1.CS_on_data.CS_count( 1, :) + cell_1.CS_on_data.CS_count( 4, :) + cell_1.CS_on_data.CS_count( 6, :) + cell_1.CS_on_data.CS_count( 7, :);
+    CS_count_avg_2  = cell_2.CS_on_data.CS_count( 1, :) + cell_2.CS_on_data.CS_count( 4, :) + cell_2.CS_on_data.CS_count( 6, :) + cell_2.CS_on_data.CS_count( 7, :);
+    sac_count_avg_1 = cell_1.CS_on_data.sac_count(1, :) + cell_1.CS_on_data.sac_count(4, :) + cell_1.CS_on_data.sac_count(6, :) + cell_1.CS_on_data.sac_count(7, :);
+    sac_count_avg_2 = cell_2.CS_on_data.sac_count(1, :) + cell_2.CS_on_data.sac_count(4, :) + cell_2.CS_on_data.sac_count(6, :) + cell_2.CS_on_data.sac_count(7, :);
+    CS_count_pair    = CS_count_avg_1  + CS_count_avg_2;
+    sac_count_pair   = sac_count_avg_1 + sac_count_avg_2;
+    % 'prim_success' tag 1 % 'corr_success' tag 4
+    CS_prob_pair = CS_count_pair ./ sac_count_pair;
+    
+    r_pair = nansum(CS_prob_pair.* exp(1i*deg2rad(ang_values)) , 2); % compute weighted sum of cos and sin of angles
+    CS_ang_pair =  wrapTo360(rad2deg(angle(r_pair)));
+    
+    CS_rho_pair = abs(r_pair) ./ nansum(CS_prob_pair,2);
+    
+    if (counter_pair >= range_cell_with_4dir_behave(1)) && (counter_pair <= range_cell_with_4dir_behave(2))
+        idx_CS_on_pair = discretize( ESN_Round(CS_ang_pair, 90.0, 'round'), ang_edges);
+    else
+        idx_CS_on_pair = discretize(CS_ang_pair, ang_edges);
+    end
+    
+    last_bin_id = length(ang_edges) - 1;
+    if idx_CS_on_pair == last_bin_id; idx_CS_on_pair = 1; end
+    
+    idx_ = idx_CS_on_pair - 1; % make it 0-index format
+    if (idx_ == 8); idx_ = 0; end
+    idx_CS_pair_tuned = mod((idx_ : 1 : idx_+7), 8) + 1;
+    CS_prob_pair_tuned = CS_prob_pair(idx_CS_pair_tuned);
+    
+    cell_1.CS_on_data.CS_prob_pair = CS_prob_pair;
+    cell_1.CS_on_data.CS_prob_pair_tuned = CS_prob_pair_tuned;
+    cell_1.CS_on_data.CS_ang_pair  = CS_ang_pair;
+    cell_1.CS_on_data.CS_rho_pair  = CS_rho_pair;
+    cell_1.CS_on_data.idx_CS_on_pair  = idx_CS_on_pair;
+    cell_1.CS_on_data.idx_CS_pair_tuned   = idx_CS_pair_tuned;
+    
+    cell_2.CS_on_data.CS_prob_pair = CS_prob_pair;
+    cell_2.CS_on_data.CS_prob_pair_tuned = CS_prob_pair_tuned;
+    cell_2.CS_on_data.CS_ang_pair  = CS_ang_pair;
+    cell_2.CS_on_data.CS_rho_pair  = CS_rho_pair;
+    cell_2.CS_on_data.idx_CS_on_pair  = idx_CS_on_pair;
+    cell_2.CS_on_data.idx_CS_pair_tuned   = idx_CS_pair_tuned;
+    
+    %% Compute data
+    SACS_vel_bin_1 = discretize(cell_1.SACS_ALL_DATA.eye_r_vm_max, vel_edges);
+    SACS_vel_bin_2 = discretize(cell_2.SACS_ALL_DATA.eye_r_vm_max, vel_edges);
+%     for counter_event_type = 1 : length(event_type_list)
+    counter_event_type = 3;
+    event_type_name = event_type_list{counter_event_type};
+    idx_tag_1 = false(size(cell_1.SACS_ALL_DATA.tag));
+    idx_tag_2 = false(size(cell_2.SACS_ALL_DATA.tag));
+    tags_of_interest = [1 4 6 7];
+    for counter_tag = tags_of_interest
+        idx_tag_1 = idx_tag_1 | (cell_1.SACS_ALL_DATA.tag == tag_bin(counter_tag));
+        idx_tag_2 = idx_tag_2 | (cell_2.SACS_ALL_DATA.tag == tag_bin(counter_tag));
+    end
+    counter_tag = tags_of_interest(1);
+    %% counter_ang for loop
+    for counter_ang = 1 : num_ang_bin
+        %% inside counter_ang for loop
+        idx_ang_tuned_1 = (cell_1.CS_on_data.visual_ang_bin == cell_1.CS_on_data.idx_CS_pair_tuned(counter_ang));
+        idx_ang_tuned_2 = (cell_2.CS_on_data.visual_ang_bin == cell_2.CS_on_data.idx_CS_pair_tuned(counter_ang));
+        
+        idx_vel_1 = false(size(SACS_vel_bin_1));
+        idx_vel_2 = false(size(SACS_vel_bin_2));
+        vel_bins_of_interest = [1 2 3 4 5 6 7 8];
+        for counter_vel = vel_bins_of_interest
+            idx_vel_1 = idx_vel_1 | (SACS_vel_bin_1 == counter_vel);
+            idx_vel_2 = idx_vel_2 | (SACS_vel_bin_2 == counter_vel);
+        end
+        counter_vel = vel_bins_of_interest(1);
+        idx_tuned_1 = idx_tag_1 & idx_vel_1 & idx_ang_tuned_1;
+        idx_tuned_2 = idx_tag_2 & idx_vel_2 & idx_ang_tuned_2;
+        
+        eye_amp_m_1 = (cell_1.SACS_ALL_DATA.eye_r_amp_m(:,idx_tuned_1));
+        eye_amp_m_2 = (cell_2.SACS_ALL_DATA.eye_r_amp_m(:,idx_tuned_2));
+        eye_vx_1 = (cell_1.SACS_ALL_DATA.(['eye_vx' '_' event_type_name])(:,idx_tuned_1));
+        eye_vy_1 = (cell_1.SACS_ALL_DATA.(['eye_vy' '_' event_type_name])(:,idx_tuned_1));
+        eye_vx_2 = (cell_1.SACS_ALL_DATA.(['eye_vx' '_' event_type_name])(:,idx_tuned_2));
+        eye_vy_2 = (cell_1.SACS_ALL_DATA.(['eye_vy' '_' event_type_name])(:,idx_tuned_2));
+        eye_vm_1 = sqrt(eye_vx_1.^2 + eye_vy_1.^2 );
+        eye_vm_2 = sqrt(eye_vx_2.^2 + eye_vy_2.^2 );
+        
+        event_SS_1 = logical(cell_1.SACS_ALL_DATA.(['neuro_SS' '_' event_type_name])(:,idx_tuned_1));
+        num_synch_1 = nansum(idx_tuned_1);
+        event_SS_2 = logical(cell_2.SACS_ALL_DATA.(['neuro_SS' '_' event_type_name])(:,idx_tuned_2));
+        num_synch_2 = nansum(idx_tuned_2);
+        
+        event_SS_joint = ( logical(event_SS_1)) & ( logical(event_SS_2));
+        
+        win_of_interest = 50:450; % 175:325; % 200:350;
+        p_joint_per_sac = sum(event_SS_joint(win_of_interest,:)) ./ num_synch_1;
+        p_SS_1_per_sac = sum(event_SS_1(win_of_interest,:)) ./ num_synch_1;
+        p_SS_2_per_sac = sum(event_SS_2(win_of_interest,:)) ./ num_synch_2;
+        sync_per_sac = p_joint_per_sac ./ p_SS_1_per_sac ./ p_SS_2_per_sac;
+%         median_ = nanmedian(sync_per_sac);
+%         if median_<0.01; median_=0.01; end
+%         idx_high_sync = sync_per_sac >= median_;
+        [~, idx_sorted] = sort(sync_per_sac, 'ascend', 'MissingPlacement', 'first');
+        idx_mid_ = ceil(length(sync_per_sac) / 2);
+        idx_high_sync = false(size(sync_per_sac));
+        if ~isempty(idx_high_sync)
+            idx_high_sync(idx_sorted(idx_mid_:end)) = true;
+        end
+        num_synch_hiSync = sum(idx_high_sync);
+        num_synch_loSync = sum(~idx_high_sync);
+        
+        event_SS_p1p2 = reshape(nanmean( event_SS_1 & event_SS_2, 2), 1, length_trace);
+        event_SS_p1 = reshape(nanmean( event_SS_1, 2), 1, length_trace);
+        event_SS_p2 = reshape(nanmean( event_SS_2, 2), 1, length_trace);
+        
+        event_SS_p1p2_hiSync = reshape(nanmean( event_SS_1(:,idx_high_sync) & event_SS_2(:,idx_high_sync), 2), 1, length_trace);
+        event_SS_p1_hiSync = reshape(nanmean( event_SS_1(:,idx_high_sync), 2), 1, length_trace);
+        event_SS_p2_hiSync = reshape(nanmean( event_SS_2(:,idx_high_sync), 2), 1, length_trace);
+        
+        event_SS_p1p2_loSync = reshape(nanmean( event_SS_1(:,~idx_high_sync) & event_SS_2(:,~idx_high_sync), 2), 1, length_trace);
+        event_SS_p1_loSync = reshape(nanmean( event_SS_1(:,~idx_high_sync), 2), 1, length_trace);
+        event_SS_p2_loSync = reshape(nanmean( event_SS_2(:,~idx_high_sync), 2), 1, length_trace);
+        
+        sync_value = event_SS_p1p2 ./ event_SS_p1 ./ event_SS_p2;
+        sync_value_hiSync = event_SS_p1p2_hiSync ./ event_SS_p1_hiSync ./ event_SS_p2_hiSync;
+        sync_value_loSync = event_SS_p1p2_loSync ./ event_SS_p1_loSync ./ event_SS_p2_loSync;
+        
+        eye_trajectory_vm_1 = reshape(nanmean( eye_vm_1, 2), 1, length_trace);
+        eye_trajectory_vm_2 = reshape(nanmean( eye_vm_2, 2), 1, length_trace);
+        eye_trajectory_vm_1_hiSync = reshape(nanmean( eye_vm_1(:,idx_high_sync), 2), 1, length_trace);
+        eye_trajectory_vm_2_hiSync = reshape(nanmean( eye_vm_2(:,idx_high_sync), 2), 1, length_trace);
+        eye_trajectory_vm_1_loSync = reshape(nanmean( eye_vm_1(:,~idx_high_sync), 2), 1, length_trace);
+        eye_trajectory_vm_2_loSync = reshape(nanmean( eye_vm_2(:,~idx_high_sync), 2), 1, length_trace);
+        
+        %% store data
+        sync_database.event_SS_joint_allPairs.vel(        counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair,   :) = event_SS_p1p2;
+        sync_database.event_SS_joint_allPairs.vel(        counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair+1, :) = event_SS_p1p2;
+        sync_database.event_SS_margn_allPairs.vel(        counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair,   :) = event_SS_p1;
+        sync_database.event_SS_margn_allPairs.vel(        counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair+1, :) = event_SS_p2;
+        sync_database.event_SS_joint_hiSync_allPairs.vel( counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair,   :) = event_SS_p1p2_hiSync;
+        sync_database.event_SS_joint_hiSync_allPairs.vel( counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair+1, :) = event_SS_p1p2_hiSync;
+        sync_database.event_SS_margn_hiSync_allPairs.vel( counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair,   :) = event_SS_p1_hiSync;
+        sync_database.event_SS_margn_hiSync_allPairs.vel( counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair+1, :) = event_SS_p2_hiSync;
+        sync_database.event_SS_joint_loSync_allPairs.vel( counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair,   :) = event_SS_p1p2_loSync;
+        sync_database.event_SS_joint_loSync_allPairs.vel( counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair+1, :) = event_SS_p1p2_loSync;
+        sync_database.event_SS_margn_loSync_allPairs.vel( counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair,   :) = event_SS_p1_loSync;
+        sync_database.event_SS_margn_loSync_allPairs.vel( counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair+1, :) = event_SS_p2_loSync;
+        sync_database.sync_value_allPairs.vel(            counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair,   :) = sync_value;
+        sync_database.sync_value_allPairs.vel(            counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair+1, :) = sync_value;
+        sync_database.sync_value_hiSync_allPairs.vel(     counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair,   :) = sync_value_hiSync;
+        sync_database.sync_value_hiSync_allPairs.vel(     counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair+1, :) = sync_value_hiSync;
+        sync_database.sync_value_loSync_allPairs.vel(     counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair,   :) = sync_value_loSync;
+        sync_database.sync_value_loSync_allPairs.vel(     counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair+1, :) = sync_value_loSync;
+        sync_database.eye_trajectory_vm.vel(              counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair,   :) = eye_trajectory_vm_1;
+        sync_database.eye_trajectory_vm.vel(              counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair+1, :) = eye_trajectory_vm_2;
+        sync_database.eye_trajectory_vm_hiSync.vel(       counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair,   :) = eye_trajectory_vm_1_hiSync;
+        sync_database.eye_trajectory_vm_hiSync.vel(       counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair+1, :) = eye_trajectory_vm_2_hiSync;
+        sync_database.eye_trajectory_vm_loSync.vel(       counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair,   :) = eye_trajectory_vm_1_loSync;
+        sync_database.eye_trajectory_vm_loSync.vel(       counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair+1, :) = eye_trajectory_vm_2_loSync;
+        sync_database.num_synch_tuned.vel(                counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair,   :) = num_synch_1;
+        sync_database.num_synch_tuned.vel(                counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair+1, :) = num_synch_2;
+        sync_database.num_synch_tuned_hiSync.vel(         counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair,   :) = num_synch_hiSync;
+        sync_database.num_synch_tuned_hiSync.vel(         counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair+1, :) = num_synch_hiSync;
+        sync_database.num_synch_tuned_loSync.vel(         counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair,   :) = num_synch_loSync;
+        sync_database.num_synch_tuned_loSync.vel(         counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair+1, :) = num_synch_loSync;
+        sync_database.eye_amp_m.vel(                      counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair,   :) = nanmedian(eye_amp_m_1);
+        sync_database.eye_amp_m.vel(                      counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair+1, :) = nanmedian(eye_amp_m_2);
+        sync_database.eye_amp_m_hiSync.vel(               counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair,   :) = nanmedian(eye_amp_m_1(:, idx_high_sync));
+        sync_database.eye_amp_m_hiSync.vel(               counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair+1, :) = nanmedian(eye_amp_m_2(:, idx_high_sync));
+        sync_database.eye_amp_m_loSync.vel(               counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair,   :) = nanmedian(eye_amp_m_1(:,~idx_high_sync));
+        sync_database.eye_amp_m_loSync.vel(               counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair+1, :) = nanmedian(eye_amp_m_2(:,~idx_high_sync));
+        sync_database.sac_sync_index.vel(                 counter_tag).(event_type_name){counter_vel, counter_ang}{counter_pair,   :} = sync_per_sac;
+        sync_database.sac_sync_index.vel(                 counter_tag).(event_type_name){counter_vel, counter_ang}{counter_pair+1, :} = sync_per_sac;
+        sync_database.sac_sync_type.vel(                  counter_tag).(event_type_name){counter_vel, counter_ang}{counter_pair,   :} = idx_high_sync;
+        sync_database.sac_sync_type.vel(                  counter_tag).(event_type_name){counter_vel, counter_ang}{counter_pair+1, :} = idx_high_sync;
+        sync_database.sac_tag_values.vel(                 counter_tag).(event_type_name){counter_vel, counter_ang}{counter_pair,   :} = cell_1.SACS_ALL_DATA.tag(:,idx_tuned_1);
+        sync_database.sac_tag_values.vel(                 counter_tag).(event_type_name){counter_vel, counter_ang}{counter_pair+1, :} = cell_2.SACS_ALL_DATA.tag(:,idx_tuned_2);
+    end
+
+end
+fprintf('### ALL DONE. ###\n')
+
+%% Save data
+fprintf(['Saving .mat files' ' ...'])
+clearvars -except path_pair_data sync_database
+
+save([path_pair_data '..' filesep 'sync_vs_eye_trajectory' '.mat'], 'sync_database', '-v7.3');
+
+fprintf(' --> Completed. \n')
+
+%% plot sync index
+clearvars -except sync_database
+clearvars params
+params.data_type       = 'SS';
+params.CSYS_type       = 'tuned'; % should be fixed to 'tuned', do not change to 'absol'
+params.event_type_name = 'vmax';
+params.variable        = 'vel';
+params.tag_id          = 1;
+params.flag_smooth_plot = true;
+params.fig_num = 3;
+params.plot_mode = 1; % mode=1 collapse the amp/vel, mode=2 plots the amp/vel
+params.ylim = [0 3];
+params.scale = 1;
+params.win_len = '1ms';
+
+params.plot_mode = 1;
+if params.plot_mode == 1
+    % all saccade
+    num_synch = sync_database.num_synch_tuned;
+    synch_joint = sync_database.event_SS_joint_allPairs;
+    synch_margn = sync_database.event_SS_margn_allPairs;
+elseif params.plot_mode == 2
+    % hi synced saccades
+    num_synch = sync_database.num_synch_tuned_hiSync;
+    synch_joint = sync_database.event_SS_joint_hiSync_allPairs;
+    synch_margn = sync_database.event_SS_margn_hiSync_allPairs;
+elseif params.plot_mode == 3
+    % low synced saccades
+    num_synch = sync_database.num_synch_tuned_loSync;
+    synch_joint = sync_database.event_SS_joint_loSync_allPairs;
+    synch_margn = sync_database.event_SS_margn_loSync_allPairs;
+elseif params.plot_mode == 4
+    % within-cell diff, hi minus lo
+    % implemented in the next section
+end
+
+[synch_joint_dir, num_joint_dir] = population_data_avg_over_levels(synch_joint, num_synch, params.variable, 1);
+[synch_joint_dir, num_joint_dir] = population_data_combine_levels(synch_joint_dir, num_joint_dir, params.variable, 2, [3 7]);
+[synch_joint_dir, num_joint_dir] = population_data_combine_levels(synch_joint_dir, num_joint_dir, params.variable, 2, [2 8]);
+[synch_joint_dir, num_joint_dir] = population_data_combine_levels(synch_joint_dir, num_joint_dir, params.variable, 2, [4 6]);
+% [synch_joint_dir, num_joint_dir] = population_data_combine_tags(  synch_joint_dir, num_joint_dir, params.variable, [1 4 6 7]); % [1 4 6 7 8]
+
+[synch_margn_dir, num_margn_dir] = population_data_avg_over_levels(synch_margn, num_synch, params.variable, 1);
+[synch_margn_dir, num_margn_dir] = population_data_combine_levels(synch_margn_dir, num_margn_dir, params.variable, 2, [3 7]);
+[synch_margn_dir, num_margn_dir] = population_data_combine_levels(synch_margn_dir, num_margn_dir, params.variable, 2, [2 8]);
+[synch_margn_dir, num_margn_dir] = population_data_combine_levels(synch_margn_dir, num_margn_dir, params.variable, 2, [4 6]);
+% [synch_margn_dir, num_margn_dir] = population_data_combine_tags(  synch_margn_dir, num_margn_dir, params.variable, [1 4 6 7]); % [1 4 6 7 8]
+
+[synch_joint_allDir, num_joint_allDir] = population_data_avg_over_levels(synch_joint_dir, num_joint_dir, params.variable, 2);
+[synch_margn_allDir, num_margn_allDir] = population_data_avg_over_levels(synch_margn_dir, num_margn_dir, params.variable, 2);
+
+synch_ratio_dir = synchrony_data_ratio(synch_joint_dir, synch_margn_dir, params.variable);
+synch_ratio_allDir = synchrony_data_ratio(synch_joint_allDir, synch_margn_allDir, params.variable);
+
+% remove douplicates
+% idx_pCells: is a boolean array. 1 for including a pCell, and 0 for exluding a pCell
+num_pCells = size(synch_joint.vel(1).vmax{1,1},1);
+idx_pCells = true(num_pCells, 1);
+idx_pCells(2:2:num_pCells, 1) = false;
+[synch_ratio_dir, num_joint_dir] = population_data_idx_pCells(synch_ratio_dir, num_joint_dir, params.variable, idx_pCells);
+[synch_ratio_allDir, num_joint_allDir] = population_data_idx_pCells(synch_ratio_allDir, num_joint_allDir, params.variable, idx_pCells);
+
+% smooth data
+synch_ratio_dir = population_data_smooth_pCells(synch_ratio_dir, num_joint_dir, params.variable);
+synch_ratio_allDir = population_data_smooth_pCells(synch_ratio_allDir, num_joint_allDir, params.variable);
+
+% avg over pCells
+[synch_ratio_avg_dir, synch_ratio_sem_dir] = population_data_avg_over_pCells(synch_ratio_dir, num_joint_dir, params.variable);
+[synch_ratio_avg_allDir, synch_ratio_sem_allDir] = population_data_avg_over_pCells(synch_ratio_allDir, num_joint_allDir, params.variable);
+
+% plot results
+data_avg_dir     = synch_ratio_avg_dir.(params.variable)(params.tag_id).(params.event_type_name);
+data_sem_dir     = synch_ratio_sem_dir.(params.variable)(params.tag_id).(params.event_type_name);
+data_avg_allDir = synch_ratio_avg_allDir.(params.variable)(params.tag_id).(params.event_type_name);
+data_sem_allDir = synch_ratio_sem_allDir.(params.variable)(params.tag_id).(params.event_type_name);
+
+plot_population_data(params.fig_num, data_avg_dir, data_avg_allDir, params, data_sem_dir, data_sem_allDir);
+
+%% plot sync index, within-cell diff
+clearvars -except sync_database
+clearvars params
+params.data_type       = 'SS';
+params.CSYS_type       = 'tuned'; % should be fixed to 'tuned', do not change to 'absol'
+params.event_type_name = 'vmax';
+params.variable        = 'vel';
+params.tag_id          = 1;
+params.flag_smooth_plot = true;
+params.fig_num = 4;
+params.plot_mode = 1; % mode=1 collapse the amp/vel, mode=2 plots the amp/vel
+params.ylim = [-0.5 1.5];
+params.scale = 1;
+params.win_len = '1ms';
+
+num_synch = sync_database.num_synch_tuned_hiSync;
+synch_joint = sync_database.event_SS_joint_hiSync_allPairs;
+synch_margn = sync_database.event_SS_margn_hiSync_allPairs;
+[synch_joint_dir, num_joint_dir] = population_data_avg_over_levels(synch_joint, num_synch, params.variable, 1);
+[synch_joint_dir, num_joint_dir] = population_data_combine_levels(synch_joint_dir, num_joint_dir, params.variable, 2, [3 7]);
+[synch_joint_dir, num_joint_dir] = population_data_combine_levels(synch_joint_dir, num_joint_dir, params.variable, 2, [2 8]);
+[synch_joint_dir, num_joint_dir] = population_data_combine_levels(synch_joint_dir, num_joint_dir, params.variable, 2, [4 6]);
+[synch_margn_dir, num_margn_dir] = population_data_avg_over_levels(synch_margn, num_synch, params.variable, 1);
+[synch_margn_dir, num_margn_dir] = population_data_combine_levels(synch_margn_dir, num_margn_dir, params.variable, 2, [3 7]);
+[synch_margn_dir, num_margn_dir] = population_data_combine_levels(synch_margn_dir, num_margn_dir, params.variable, 2, [2 8]);
+[synch_margn_dir, num_margn_dir] = population_data_combine_levels(synch_margn_dir, num_margn_dir, params.variable, 2, [4 6]);
+[synch_joint_allDir, num_joint_allDir] = population_data_avg_over_levels(synch_joint_dir, num_joint_dir, params.variable, 2);
+[synch_margn_allDir, num_margn_allDir] = population_data_avg_over_levels(synch_margn_dir, num_margn_dir, params.variable, 2);
+synch_ratio_dir = synchrony_data_ratio(synch_joint_dir, synch_margn_dir, params.variable);
+synch_ratio_allDir = synchrony_data_ratio(synch_joint_allDir, synch_margn_allDir, params.variable);
+
+synch_ratio_dir_hi = synch_ratio_dir;
+synch_ratio_allDir_hi = synch_ratio_allDir;
+
+num_synch = sync_database.num_synch_tuned_loSync;
+synch_joint = sync_database.event_SS_joint_loSync_allPairs;
+synch_margn = sync_database.event_SS_margn_loSync_allPairs;
+[synch_joint_dir, num_joint_dir] = population_data_avg_over_levels(synch_joint, num_synch, params.variable, 1);
+[synch_joint_dir, num_joint_dir] = population_data_combine_levels(synch_joint_dir, num_joint_dir, params.variable, 2, [3 7]);
+[synch_joint_dir, num_joint_dir] = population_data_combine_levels(synch_joint_dir, num_joint_dir, params.variable, 2, [2 8]);
+[synch_joint_dir, num_joint_dir] = population_data_combine_levels(synch_joint_dir, num_joint_dir, params.variable, 2, [4 6]);
+[synch_margn_dir, num_margn_dir] = population_data_avg_over_levels(synch_margn, num_synch, params.variable, 1);
+[synch_margn_dir, num_margn_dir] = population_data_combine_levels(synch_margn_dir, num_margn_dir, params.variable, 2, [3 7]);
+[synch_margn_dir, num_margn_dir] = population_data_combine_levels(synch_margn_dir, num_margn_dir, params.variable, 2, [2 8]);
+[synch_margn_dir, num_margn_dir] = population_data_combine_levels(synch_margn_dir, num_margn_dir, params.variable, 2, [4 6]);
+[synch_joint_allDir, num_joint_allDir] = population_data_avg_over_levels(synch_joint_dir, num_joint_dir, params.variable, 2);
+[synch_margn_allDir, num_margn_allDir] = population_data_avg_over_levels(synch_margn_dir, num_margn_dir, params.variable, 2);
+synch_ratio_dir = synchrony_data_ratio(synch_joint_dir, synch_margn_dir, params.variable);
+synch_ratio_allDir = synchrony_data_ratio(synch_joint_allDir, synch_margn_allDir, params.variable);
+
+synch_ratio_dir_lo = synch_ratio_dir;
+synch_ratio_allDir_lo = synch_ratio_allDir;
+
+num_ang_bin = 8;
+for counter_ang = 1 : num_ang_bin
+    synch_ratio_dir.vel(params.tag_id).(params.event_type_name){1, counter_ang} = ...
+        synch_ratio_dir_hi.vel(params.tag_id).(params.event_type_name){1, counter_ang} - ...
+        synch_ratio_dir_lo.vel(params.tag_id).(params.event_type_name){1, counter_ang};
+end
+synch_ratio_allDir.vel(params.tag_id).(params.event_type_name){1, 1} = ...
+        synch_ratio_allDir_hi.vel(params.tag_id).(params.event_type_name){1, 1} - ...
+        synch_ratio_allDir_lo.vel(params.tag_id).(params.event_type_name){1, 1};
+
+% remove douplicates
+% idx_pCells: is a boolean array. 1 for including a pCell, and 0 for exluding a pCell
+num_pCells = size(synch_joint.vel(1).vmax{1,1},1);
+idx_pCells = true(num_pCells, 1);
+idx_pCells(2:2:num_pCells, 1) = false;
+[synch_ratio_dir, num_joint_dir] = population_data_idx_pCells(synch_ratio_dir, num_joint_dir, params.variable, idx_pCells);
+[synch_ratio_allDir, num_joint_allDir] = population_data_idx_pCells(synch_ratio_allDir, num_joint_allDir, params.variable, idx_pCells);
+
+% smooth data
+synch_ratio_dir = population_data_smooth_pCells(synch_ratio_dir, num_joint_dir, params.variable);
+synch_ratio_allDir = population_data_smooth_pCells(synch_ratio_allDir, num_joint_allDir, params.variable);
+
+% avg over pCells
+[synch_ratio_avg_dir, synch_ratio_sem_dir] = population_data_avg_over_pCells(synch_ratio_dir, num_joint_dir, params.variable);
+[synch_ratio_avg_allDir, synch_ratio_sem_allDir] = population_data_avg_over_pCells(synch_ratio_allDir, num_joint_allDir, params.variable);
+
+% plot results
+data_avg_dir     = synch_ratio_avg_dir.(params.variable)(params.tag_id).(params.event_type_name);
+data_sem_dir     = synch_ratio_sem_dir.(params.variable)(params.tag_id).(params.event_type_name);
+data_avg_allDir = synch_ratio_avg_allDir.(params.variable)(params.tag_id).(params.event_type_name);
+data_sem_allDir = synch_ratio_sem_allDir.(params.variable)(params.tag_id).(params.event_type_name);
+
+plot_population_data(params.fig_num, data_avg_dir, data_avg_allDir, params, data_sem_dir, data_sem_allDir);
+
+%% plot velocity
+clearvars -except sync_database
+clearvars params
+params.data_type       = 'VM';
+params.CSYS_type       = 'tuned'; % tuned % absol
+params.event_type_name = 'vmax'; % visual % onset % vmax
+params.variable        = 'vel';
+params.tag_id          = 1;
+params.flag_smooth_plot = true; % false; % 
+params.fig_num = 5;
+% params.ylim = [-100 200]; % []; %
+
+params.plot_mode = 3;
+if params.plot_mode == 1
+    % all saccade
+    num_sac_data = sync_database.num_synch_tuned;
+    population_data = sync_database.eye_trajectory_vm;
+elseif params.plot_mode == 2
+    % hi synced saccades
+    num_sac_data = sync_database.num_synch_tuned_hiSync;
+    population_data = sync_database.eye_trajectory_vm_hiSync;
+elseif params.plot_mode == 3
+    % low synced saccades
+    num_sac_data = sync_database.num_synch_tuned_loSync;
+    population_data = sync_database.eye_trajectory_vm_loSync;
+elseif params.plot_mode == 4
+    % within-cell diff, hi minus lo
+%     num_sac_data_hi = num_synch_tuned_hiSync;
+    num_sac_data_lo = sync_database.num_synch_tuned_loSync;
+    population_data_hi = sync_database.eye_trajectory_vm_hiSync;
+    population_data_lo = sync_database.eye_trajectory_vm_loSync;
+    num_sac_data = num_sac_data_lo;
+    population_data = population_data_lo;
+    num_ang_bin = 8;
+    for counter_ang = 1 : num_ang_bin
+        population_data.vel(params.tag_id).(params.event_type_name){1, counter_ang} = ...
+            population_data_hi.vel(params.tag_id).(params.event_type_name){1, counter_ang} - ...
+            population_data_lo.vel(params.tag_id).(params.event_type_name){1, counter_ang};
+    end
+    params.ylim = [-10 15];
+end
+
+
+[population_dir, num_sac_dir] = population_data_avg_over_levels(population_data, num_sac_data, params.variable, 1);
+
+[population_dir, num_sac_dir] = population_data_combine_levels(population_dir, num_sac_dir, params.variable, 2, [3 7]);
+[population_dir, num_sac_dir] = population_data_combine_levels(population_dir, num_sac_dir, params.variable, 2, [2 8]);
+[population_dir, num_sac_dir] = population_data_combine_levels(population_dir, num_sac_dir, params.variable, 2, [4 6]);
+
+% idx_pCells: is a boolean array. 1 for including a pCell, and 0 for exluding a pCell
+% idx_mirza; % idx_ramon; % idx_pauser; % idx_burster; % idx_modulated; % idx_not_modulated; % idx_pairs;
+% idx_pCells = idx_mirza | idx_ramon;
+% idx_pCells = idx_ramon;
+% [population_dir, num_sac_dir] = population_data_idx_pCells(population_dir, num_sac_dir, params.variable, idx_pCells);
+
+[population_avg_dir, population_sem_dir] = population_data_avg_over_pCells(population_dir, num_sac_dir, params.variable);
+[population_allDir, num_sac_allDir] = population_data_avg_over_levels(population_dir, num_sac_dir, params.variable, 2);
+[population_avg_allDir, population_sem_allDir] = population_data_avg_over_pCells(population_allDir, num_sac_allDir, params.variable);
+
+data_avg_dir     = population_avg_dir.(params.variable)(params.tag_id).(params.event_type_name);
+data_sem_dir     = population_sem_dir.(params.variable)(params.tag_id).(params.event_type_name);
+data_avg_allDir = population_avg_allDir.(params.variable)(params.tag_id).(params.event_type_name);
+data_sem_allDir = population_sem_allDir.(params.variable)(params.tag_id).(params.event_type_name);
+
+plot_population_data(params.fig_num, data_avg_dir, data_avg_allDir, params, data_sem_dir, data_sem_allDir);
+
+%% Plot amplitude bar graphs
+clearvars -except sync_database
+clearvars params
+params.data_type       = 'VM';
+params.CSYS_type       = 'tuned'; % tuned % absol
+params.event_type_name = 'vmax'; % visual % onset % vmax
+params.variable        = 'vel';
+params.tag_id          = 1;
+params.fig_num = 6;
+% params.ylim = [-100 200]; % []; %
+
+eye_amp_m_hiSync = sync_database.eye_amp_m_hiSync.(params.variable)(params.tag_id).(params.event_type_name)(1,:);
+eye_amp_m_loSync = sync_database.eye_amp_m_loSync.(params.variable)(params.tag_id).(params.event_type_name)(1,:);
+
+eye_amp_m_diff_mean = nan(1,8);
+eye_amp_m_diff_stdv = nan(1,8);
+eye_amp_m_diff_pValue = nan(1,8);
+for counter_ang = 1 : 8
+    eye_amp_m_diff_mean(1,counter_ang) = nanmean(eye_amp_m_hiSync{1,counter_ang}(1:2:end)-eye_amp_m_loSync{1,counter_ang}(1:2:end));
+    eye_amp_m_diff_stdv(1,counter_ang) = nanstd( eye_amp_m_hiSync{1,counter_ang}(1:2:end)-eye_amp_m_loSync{1,counter_ang}(1:2:end)) ./ sqrt(42);
+    [~,p_,~] = ttest2(eye_amp_m_hiSync{1,counter_ang}(1:2:end), eye_amp_m_loSync{1,counter_ang}(1:2:end));
+    eye_amp_m_diff_pValue(1,counter_ang) = p_;
+end
+
+hFig = figure(params.fig_num);
+clf(hFig)
+hold on
+errorbar(0:45:315, eye_amp_m_diff_mean, eye_amp_m_diff_stdv, 'o')
+set(gca, 'XTick', 0:45:315)
+text(0, 0.0, ['p=' mat2str(eye_amp_m_diff_pValue,2)])
+yline(0)
+xlim([-45 360])
+xlabel('Direction based on CS-on')
+ylabel('Within-cell amplitude diff (deg)')
+ESN_Beautify_Plot(hFig, [3 1.5], 8)
+
+%% plot sync_over_time distribution
+clearvars -except sync_database
+clearvars params
+params.data_type       = 'VM';
+params.CSYS_type       = 'tuned'; % tuned % absol
+params.event_type_name = 'vmax'; % visual % onset % vmax
+params.variable        = 'vel';
+params.tag_id          = 1;
+params.fig_num = 7;
+% params.ylim = [-100 200]; % []; %
+sac_sync_index = sync_database.sac_sync_index.(params.variable)(params.tag_id).(params.event_type_name)(1,:);
+% sac_sync_type = sync_database.sac_sync_type.(params.variable)(params.tag_id).(params.event_type_name)(1,:);
+
+edges_ = -1.0:0.5:10.0;
+sac_sync_index_hist = nan(42, length(edges_)-1);
+counter_ang = 5;
+for counter_pair = 1 : 84
+%     sac_sync_index_all_ang_ = [];
+%     for counter_ang = 1 : 8
+%         sac_sync_index_ = sac_sync_index{1,counter_ang}{counter_pair,1};
+%         sac_sync_index_all_ang_ = horzcat(sac_sync_index_all_ang_, sac_sync_index_);
+%     end
+%     sac_sync_index_all_ang_(isnan(sac_sync_index_all_ang_)) = -1;
+    sac_sync_index_all_ang_ = sac_sync_index{1,counter_ang}{counter_pair,1};
+    [hist_count_,~] = histcounts(sac_sync_index_all_ang_, edges_, 'Normalization', 'probability');
+    sac_sync_index_hist(counter_pair, :) = hist_count_;
+end
+sac_sync_index_hist = sac_sync_index_hist(1:2:end, :);
+sac_sync_index_hist_mean = nanmean(sac_sync_index_hist);
+sac_sync_index_hist_stdv = nanstd( sac_sync_index_hist)./sqrt(42);
+sac_sync_index_hist_stdv_p = sac_sync_index_hist_mean + sac_sync_index_hist_stdv;
+sac_sync_index_hist_stdv_m = sac_sync_index_hist_mean - sac_sync_index_hist_stdv;
+sac_sync_index_hist_stdv_p(sac_sync_index_hist_stdv_p<0)=0;
+sac_sync_index_hist_stdv_m(sac_sync_index_hist_stdv_m<0)=0;
+
+hFig = figure(params.fig_num);
+clf(hFig)
+hold on
+histogram('BinEdges',edges_,'BinCounts',sac_sync_index_hist_stdv_p, 'DisplayStyle', 'stairs', 'EdgeColor', 'b', 'FaceColor', 'none', 'linewidth', 1)
+histogram('BinEdges',edges_,'BinCounts',sac_sync_index_hist_stdv_m, 'DisplayStyle', 'stairs', 'EdgeColor', 'b', 'FaceColor', 'none', 'linewidth', 1)
+histogram('BinEdges',edges_,'BinCounts',sac_sync_index_hist_mean, 'DisplayStyle', 'stairs', 'EdgeColor', 'r', 'FaceColor', 'none', 'linewidth', 1)
+histogram('BinEdges',edges_,'BinCounts',sac_sync_index_hist_mean, 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'r')
+xline(1)
+xlabel('Sync. index')
+ylabel('Prob.')
+ylim([0 0.6])
+ESN_Beautify_Plot(hFig, [3 1.5], 8)
+
+%% Plot sample pair
+counter_tag = 1;
+event_type_name = 'vmax';
+counter_vel = 1;
+counter_ang = 5;
+counter_pair = 41;
+
+event_SS_p1p2 = sync_database.event_SS_joint_allPairs.vel(        counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair,   :);
+% event_SS_p1p2 = sync_database.event_SS_joint_allPairs.vel(        counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair+1, :);
+event_SS_p1 = sync_database.event_SS_margn_allPairs.vel(        counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair,   :);
+event_SS_p2 = sync_database.event_SS_margn_allPairs.vel(        counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair+1, :);
+event_SS_p1p2_hiSync = sync_database.event_SS_joint_hiSync_allPairs.vel( counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair,   :);
+% event_SS_p1p2_hiSync = sync_database.event_SS_joint_hiSync_allPairs.vel( counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair+1, :);
+event_SS_p1_hiSync = sync_database.event_SS_margn_hiSync_allPairs.vel( counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair,   :);
+event_SS_p2_hiSync = sync_database.event_SS_margn_hiSync_allPairs.vel( counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair+1, :);
+event_SS_p1p2_loSync = sync_database.event_SS_joint_loSync_allPairs.vel( counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair,   :);
+% event_SS_p1p2_loSync = sync_database.event_SS_joint_loSync_allPairs.vel( counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair+1, :);
+event_SS_p1_loSync = sync_database.event_SS_margn_loSync_allPairs.vel( counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair,   :);
+event_SS_p2_loSync = sync_database.event_SS_margn_loSync_allPairs.vel( counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair+1, :);
+sync_value = sync_database.sync_value_allPairs.vel(            counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair,   :);
+% sync_value = sync_database.sync_value_allPairs.vel(            counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair+1, :);
+sync_value_hiSync = sync_database.sync_value_hiSync_allPairs.vel(     counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair,   :);
+% sync_value_hiSync = sync_database.sync_value_hiSync_allPairs.vel(     counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair+1, :);
+sync_value_loSync = sync_database.sync_value_loSync_allPairs.vel(     counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair,   :);
+% sync_value_loSync = sync_database.sync_value_loSync_allPairs.vel(     counter_tag).(event_type_name){counter_vel, counter_ang}(counter_pair+1, :);
+sync_per_sac = sync_database.sac_sync_index.vel(                 counter_tag).(event_type_name){counter_vel, counter_ang}{counter_pair,   :};
+% sync_per_sac = sync_database.sac_sync_index.vel(                 counter_tag).(event_type_name){counter_vel, counter_ang}{counter_pair+1, :};
+        
+hFig_ = figure(1);
+clf(hFig_)
+fig_row=2;
+fig_col=2;
+x_lim_=[25 475];
+range_=25:475;
+x_tick_ = [25 100 175 250 325 400 475];
+x_tick_label_ = {'', '-150', '', '0', '', '150', ''};
+
+subplot(fig_row, fig_col, 1)
+hold on
+plot(range_, ESN_smooth(event_SS_p1(:,range_)), 'g')
+plot(range_, ESN_smooth(event_SS_p1_hiSync(:,range_)), 'r')
+plot(range_, ESN_smooth(event_SS_p1_loSync(:,range_)), 'b')
+xlim(x_lim_)
+set(gca, 'XTick', x_tick_, 'XTickLabel', x_tick_label_)
+title('Cell-1')
+
+subplot(fig_row, fig_col, 3)
+hold on
+plot(range_, ESN_smooth(event_SS_p2(:,range_)), 'g')
+plot(range_, ESN_smooth(event_SS_p2_hiSync(:,range_)), 'r')
+plot(range_, ESN_smooth(event_SS_p2_loSync(:,range_)), 'b')
+xlim(x_lim_)
+set(gca, 'XTick', x_tick_, 'XTickLabel', x_tick_label_)
+title('Cell-2')
+
+subplot(fig_row, fig_col, 2)
+hold on
+plot(range_, ESN_smooth(event_SS_p1p2(:,range_)), 'g')
+plot(range_, ESN_smooth(event_SS_p1p2_hiSync(:,range_)), 'r')
+plot(range_, ESN_smooth(event_SS_p1p2_loSync(:,range_)), 'b')
+xlim(x_lim_)
+ylim([0 inf])
+set(gca, 'XTick', x_tick_, 'XTickLabel', x_tick_label_)
+title('Joint')
+
+subplot(fig_row, fig_col, 4)
+hold on
+plot(range_, ESN_smooth(sync_value(:,range_)), 'g')
+plot(range_, ESN_smooth(sync_value_hiSync(:,range_)), 'r')
+plot(range_, ESN_smooth(sync_value_loSync(:,range_)), 'b')
+xlim(x_lim_)
+ylim([0 inf])
+set(gca, 'XTick', x_tick_, 'XTickLabel', x_tick_label_)
+title('Sync index')
+
+ESN_Beautify_Plot(hFig_, [3 2.5], 8)
+
+edges_ = -1.0:0.5:10.0;
+sac_sync_index_ = sync_per_sac;
+sac_sync_index_(isnan(sac_sync_index_)) = -1;
+
+hFig = figure(2);
+clf(hFig)
+hold on
+histogram(sync_per_sac,edges_, 'DisplayStyle', 'stairs', 'EdgeColor', 'k', 'FaceColor', 'none', 'linewidth', 1, 'Normalization', 'probability')
+histogram(sync_per_sac,edges_, 'DisplayStyle', 'bar', 'EdgeColor', 'none', 'FaceColor', 'k', 'Normalization', 'probability')
+% xline(1)
+xlabel('Sync. index')
+ylabel('Prob.')
+% ylim([0 0.6])
+ESN_Beautify_Plot(hFig, [3 1.5], 8)
 
 end
 
